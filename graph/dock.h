@@ -16,12 +16,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 {
     /**
      * @brief Dock represents a structure that stores a graph as an augmented parallel balanced binary tree.
-     * Keys in this tree are graph vertices and values are compressed edges, compressed walks, and metropolis hastings samplers.
+     * Keys in this tree are graph vertices and values are compressed edges, and metropolis hastings samplers.
      */
     class Dock
     {
         public:
-            using Graph = aug_map<dygrl::Vertex>;
+            using Graph       = aug_map<dygrl::Vertex>;
+            using WalkStorage = libcuckoo::cuckoohash_map<types::WalkID, std::vector<types::Vertex>>;
 
             /**
              * @brief Dock constructor.
@@ -53,9 +54,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     auto S = pbbs::delayed_seq<uintV>(deg, [&](size_t j) { return edges[off + j]; });
 
                     if (deg > 0)
-                        vertices[index] = std::make_pair(index, VertexEntry(types::CompressedEdges(S, index), dygrl::CompressedWalks(), new dygrl::SamplerManager(0)));
+                        vertices[index] = std::make_pair(index, VertexEntry(types::CompressedEdges(S, index), new dygrl::SamplerManager(0)));
                     else
-                        vertices[index] = std::make_pair(index, VertexEntry(types::CompressedEdges(), dygrl::CompressedWalks(), new dygrl::SamplerManager(0)));
+                        vertices[index] = std::make_pair(index, VertexEntry(types::CompressedEdges(), new dygrl::SamplerManager(0)));
                 });
 
                 // 4. Construct the graph
@@ -228,12 +229,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 parallel_for(0, walks, [&](types::WalkID walk_id)
                 {
                     if (graph[walk_id % total_vertices].degrees == 0) return;
-                    types::State state  = model->initial_state(walk_id % total_vertices);
+
+                    this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
+                    types::State state = model->initial_state(walk_id % total_vertices);
 
                     for(types::Position position = 0; position < config::walk_length; position++)
                     {
-//                        std::cout << state.first << " ";
-
                         if (!graph[state.first].samplers->contains(state.second))
                         {
                             graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
@@ -241,54 +242,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                         auto new_state = graph[state.first].samplers->find(state.second).sample(state, model);
 
-                        if (!cuckoo.contains(state.first))
-                            cuckoo.insert(state.first, std::vector<types::Vertex>());
-
-                        cuckoo.update_fn(state.first, [&](auto& vector)
+                        this->walk_storage.update_fn(walk_id, [&](auto& vector)
                         {
-                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({walk_id*config::walk_length + position, new_state.first});
-                            vector.push_back(hash);
+                            vector.push_back(state.first);
                         });
 
                         state = new_state;
                     }
-
-//                    std::cout << std::endl;
                 });
-
-                parallel_for(0, total_vertices, [&](types::Vertex vertex)
-                {
-                    if (cuckoo.contains(vertex))
-                    {
-                        auto triplets = cuckoo.find(vertex);
-                        auto sequence = pbbs::sequence<types::Vertex>(triplets.size());
-
-                        for(auto index = 0; index < triplets.size(); index++)
-                            sequence[index] = triplets[index];
-
-                        pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
-                        vertices[vertex] = std::make_pair(vertex, VertexEntry(types::CompressedEdges(), dygrl::CompressedWalks(sequence, vertex), new dygrl::SamplerManager(0)));
-                    }
-                    else
-                    {
-                        vertices[vertex] = std::make_pair(vertex, VertexEntry(types::CompressedEdges(), dygrl::CompressedWalks(), new dygrl::SamplerManager(0)));
-                    }
-                });
-
-                auto replace = [&] (const uintV src, const VertexEntry& x, const VertexEntry& y)
-                {
-                    auto tree_plus = tree_plus::uniont(x.compressed_walks, y.compressed_walks, src);
-
-                    // deallocate the memory
-                    lists::deallocate(x.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
-                    lists::deallocate(y.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
-
-                    return VertexEntry(x.compressed_edges, CompressedWalks(tree_plus.plus, tree_plus.root), x.sampler_manager);
-                };
-
-                this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, vertices.begin(), vertices.size(), replace, true);
 
                 delete model;
             }
@@ -302,34 +263,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              */
             std::string rewalk(types::WalkID walk_id)
             {
-                // 1. Grab the first vertex in the walk
-                types::Vertex current_vertex = walk_id % this->number_of_vertices();
-
                 std::stringstream string_stream;
-//                string_stream << "WalkID: " << walk_id << " | ";
+                if (!this->walk_storage.contains(walk_id)) return string_stream.str();
 
-                // 2. Rewalk
-                for (types::Position position = 0; position < config::walk_length; position++)
+                for(auto& item : this->walk_storage.find(walk_id))
                 {
-//                    position + 1 == config::walk_length ? string_stream << current_vertex : string_stream << current_vertex << ", ";
-                    position + 1 == config::walk_length ? string_stream << current_vertex : string_stream << current_vertex << " ";
-
-
-                    auto tree_node = this->graph_tree.find(current_vertex);
-
-                    #ifdef DOCK_DEBUG
-                        if (!tree_node.valid)
-                        {
-                            std::cerr << "Dock debug error! Dock::Rewalk::Vertex="
-                                      << current_vertex << " is not found in the vertex tree!"
-                                      << std::endl;
-
-                            std::exit(1);
-                        }
-                    #endif
-
-                    if (tree_node.value.compressed_edges.degree() == 0) break;
-                    current_vertex = tree_node.value.compressed_walks.find_next(walk_id, position, current_vertex);
+                    string_stream << item << " ";
                 }
 
                 return string_stream.str();
@@ -414,7 +353,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     auto S = pbbs::delayed_seq<uintV>(deg, [&] (size_t i) { return get<1>(E[off + i]); });
 
-                    new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), dygrl::CompressedWalks(), new dygrl::SamplerManager(0)));
+                    new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), new dygrl::SamplerManager(0)));
                 });
 
                 types::MapOfChanges rewalk_points = types::MapOfChanges(0);
@@ -428,29 +367,29 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(b.compressed_edges.plus);
                     tree_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
-                    a.compressed_walks.iter_elms(v, [&](auto value)
+                    for(auto& element : this->walk_storage.lock_table())
                     {
-                        auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
-
-                        auto walk_id = pair.first / config::walk_length;
-                        auto position = pair.first - (walk_id * config::walk_length);
-                        auto next = pair.second;
-
-                        if (!rewalk_points.template contains(walk_id))
+                        for (types::Position position = 0; position < element.second.size(); position++)
                         {
-                            rewalk_points.template insert(walk_id, std::make_tuple(position, v));
-                        }
-                        else
-                        {
-                            types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
-                            if (current_min_pos > position)
+                            if (element.second[position] != v) continue;
+
+                            if (!rewalk_points.contains(element.first))
                             {
-                                rewalk_points.template update(walk_id, std::make_tuple(position, v));
+                                rewalk_points.insert(element.first, position);
+                            }
+                            else
+                            {
+                                types::Position current_min_pos = rewalk_points.find(element.first);
+
+                                if (current_min_pos > position)
+                                {
+                                    rewalk_points.update(element.first, position);
+                                }
                             }
                         }
-                    });
+                    }
 
-                    return VertexEntry(union_edge_tree, a.compressed_walks, a.sampler_manager);
+                    return VertexEntry(union_edge_tree, a.sampler_manager);
                 };
 
                 #ifdef DOCK_TIMER
@@ -467,7 +406,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_update_time.start();
                 #endif
 
-                if (apply_walk_updates) this->batch_walk_update(rewalk_points);
+                if (apply_walk_updates) this->update_walks(rewalk_points);
 
                 #ifdef DOCK_TIMER
                     walk_update_time.stop();
@@ -478,21 +417,15 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 if (edges_deduped)           pbbs::free_array(edges_deduped);
 
                 #ifdef DOCK_DEBUG
-                    std::cout << "Rewalk points (MapOfChanges): " << std::endl;
+                    std::cout << "Rewalk points (MapOfChanges): " << rewalk_points.size() << std::endl;
 
-                    auto table = rewalk_points.lock_table();
-
-                    for(auto& item : table)
+                    for(auto& item : rewalk_points.lock_table())
                     {
                         std::cout << "Walk ID: " << item.first
                                   << " Position: "
-                                  << (int) std::get<0>(item.second)
-                                  << " Next: "
-                                  << std::get<1>(item.second)
+                                  << (int) item.second
                                   << std::endl;
                     }
-
-                    table.unlock();
                 #endif
 
                 #ifdef DOCK_TIMER
@@ -580,7 +513,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     auto S = pbbs::delayed_seq<uintV>(deg, [&] (size_t i) { return get<1>(E[off + i]); });
 
-                    new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), dygrl::CompressedWalks(), new SamplerManager(0)));
+                    new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), new SamplerManager(0)));
                 });
 
                 types::MapOfChanges rewalk_points = types::MapOfChanges(0);
@@ -594,29 +527,29 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(b.compressed_edges.plus);
                     tree_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
-                    a.compressed_walks.iter_elms(v, [&](auto value)
+                    for(auto& element : this->walk_storage.lock_table())
                     {
-                        auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
-
-                        auto walk_id = pair.first / config::walk_length;
-                        auto position = pair.first - (walk_id * config::walk_length);
-                        auto next = pair.second;
-
-                        if (!rewalk_points.template contains(walk_id))
+                        for (types::Position position = 0; position < element.second.size(); position++)
                         {
-                            rewalk_points.template insert(walk_id, std::make_tuple(position, v));
-                        }
-                        else
-                        {
-                            types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
-                            if (current_min_pos > position)
+                            if (element.second[position] != v) continue;
+
+                            if (!rewalk_points.contains(element.first))
                             {
-                                rewalk_points.template insert(walk_id, std::make_tuple(position, v));
+                                rewalk_points.insert(element.first, position);
+                            }
+                            else
+                            {
+                                types::Position current_min_pos = rewalk_points.find(element.first);
+
+                                if (current_min_pos > position)
+                                {
+                                    rewalk_points.update(element.first, position);
+                                }
                             }
                         }
-                    });
+                    }
 
-                    return VertexEntry(difference_edge_tree, a.compressed_walks, a.sampler_manager);
+                    return VertexEntry(difference_edge_tree, a.sampler_manager);
                 };
 
                 #ifdef DOCK_TIMER
@@ -633,7 +566,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_update_time.start();
                 #endif
 
-                if (apply_walk_updates) this->batch_walk_update(rewalk_points);
+                if (apply_walk_updates) this->update_walks(rewalk_points);
 
                 #ifdef DOCK_TIMER
                     walk_update_time.stop();
@@ -652,9 +585,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     {
                         std::cout << "Walk ID: " << item.first
                                   << " Position: "
-                                  << (int) std::get<0>(item.second)
-                                  << " Next: "
-                                  << std::get<1>(item.second)
+                                  << (int) item.second
                                   << std::endl;
                     }
                 #endif
@@ -666,18 +597,15 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             }
 
 
-            void batch_walk_update(types::MapOfChanges& rewalk_points)
+            void update_walks(types::MapOfChanges& rewalk_points)
             {
-                types::ChangeAccumulator deletes = types::ChangeAccumulator();
-                types::ChangeAccumulator inserts = types::ChangeAccumulator();
-
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 uintV index = 0;
 
                 for(auto& entry : rewalk_points.lock_table())
                 {
                     affected_walks[index++] = entry.first;
-                    std::cout << entry.first << std::endl;
+                    std::cout << entry.first << " " << (int) entry.second << std::endl;
                 }
 
                 auto graph = this->flatten_graph();
@@ -698,104 +626,19 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 parallel_for(0, affected_walks.size(), [&](auto index)
                 {
-                    auto entry = rewalk_points.template find(affected_walks[index]);
-                    auto current_position = std::get<0>(entry);
-
-                    auto current_vertex_old_walk = std::get<1>(entry);
-                    auto current_vertex_new_walk = current_vertex_old_walk;
+                    auto current_position = rewalk_points.template find(affected_walks[index]);
+                    auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
 
                     for (types::Position position = current_position; position < config::walk_length; position++)
                     {
-                        auto tree_node = this->graph_tree.find(current_vertex_old_walk);
-                        auto next_old_walk = tree_node.value.compressed_walks.find_next(affected_walks[index], position, current_vertex_old_walk);
-
-                        auto state = model->initial_state(current_vertex_new_walk);
-                        auto new_state = graph[state.first].samplers->find(state.second).sample(state, model);
-
-                        types::PairedTriplet hash_insert = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, new_state.first});
-                        types::PairedTriplet hash_delete = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, next_old_walk});
-
-                        if (!deletes.contains(current_vertex_old_walk)) deletes.insert(current_vertex_old_walk, std::vector<types::PairedTriplet>());
-                        if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
-
-                        deletes.update_fn(current_vertex_old_walk, [&](auto& vector)
+                        this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
                         {
-                            vector.push_back(hash_delete);
+                            vector[position] = state.first;
                         });
 
-                        inserts.update_fn(current_vertex_new_walk, [&](auto& vector)
-                        {
-                            vector.push_back(hash_insert);
-                        });
-
-                        current_vertex_new_walk = new_state.first;
-                        current_vertex_old_walk = next_old_walk;
+                        state = graph[state.first].samplers->find(state.second).sample(state, model);
                     }
                 });
-
-                using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
-                auto insert_walks  = pbbs::sequence<VertexStruct>(inserts.size());
-                auto delete_walks  = pbbs::sequence<VertexStruct>(deletes.size());
-                index = 0;
-
-                for(auto& item : inserts.lock_table())
-                {
-                    auto sequence = pbbs::sequence<types::Vertex>(item.second.size());
-
-                    for(auto i = 0; i < item.second.size(); i++)
-                        sequence[i] = item.second[i];
-
-                    pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
-                    insert_walks[index++] = std::make_pair(item.first, VertexEntry(types::CompressedEdges(), dygrl::CompressedWalks(sequence, item.first), new dygrl::SamplerManager(0)));
-                }
-
-                index = 0;
-                for(auto& item : deletes.lock_table())
-                {
-                    auto sequence = pbbs::sequence<types::Vertex>(item.second.size());
-
-                    for(auto i = 0; i < item.second.size(); i++)
-                        sequence[i] = item.second[i];
-
-                    pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
-                    delete_walks[index++] = std::make_pair(item.first, VertexEntry(types::CompressedEdges(), dygrl::CompressedWalks(sequence, item.first), new dygrl::SamplerManager(0)));
-                }
-
-//                for(int i = 0; i < delete_walks.size(); i++)
-//                {
-//                    std::cout << delete_walks[i].first << " " << delete_walks[i].second.compressed_walks.size() << std::endl;
-//                }
-
-                auto replaceD = [&] (const uintV src, const VertexEntry& x, const VertexEntry& y)
-                {
-                    // TODO Caution! y first, then x
-                    auto tree_plus = tree_plus::difference(y.compressed_walks, x.compressed_walks, src);
-
-                    // deallocate the memory
-                    lists::deallocate(x.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
-                    lists::deallocate(y.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
-
-                    return VertexEntry(x.compressed_edges, dygrl::CompressedWalks(tree_plus.plus, tree_plus.root), x.sampler_manager);
-                };
-
-                this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, delete_walks.begin(), delete_walks.size(), replaceD, true);
-
-                auto replaceI = [&] (const uintV src, const VertexEntry& x, const VertexEntry& y)
-                {
-                    auto tree_plus = tree_plus::uniont(x.compressed_walks, y.compressed_walks, src);
-
-                    // deallocate the memory
-                    lists::deallocate(x.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
-                    lists::deallocate(y.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
-
-                    return VertexEntry(x.compressed_edges, dygrl::CompressedWalks(tree_plus.plus, tree_plus.root), x.sampler_manager);
-                };
-
-                this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, insert_walks.begin(), insert_walks.size(), replaceI, true);
             }
 
             /**
@@ -823,10 +666,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     flat_graph_bytes += sizeof(flat_graph[i]);
 
                     edges_heads += flat_graph[i].compressed_edges.edge_tree_nodes();
-                    walks_heads += flat_graph[i].compressed_walks.edge_tree_nodes();
-
                     edges_bytes += flat_graph[i].compressed_edges.size_in_bytes(i);
-                    walks_bytes += flat_graph[i].compressed_walks.size_in_bytes(i);
                 }
 
                 std::cout << "Graph: \n\t" << "Vertices: " << graph_vertices << ", Edges: " << graph_edges << std::endl;
@@ -894,6 +734,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
         private:
             Graph graph_tree;
+            WalkStorage walk_storage;
 
             /**
             * Initializes memory pools for underlying lists.

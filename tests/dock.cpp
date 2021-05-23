@@ -15,7 +15,7 @@ class DockTest : public testing::Test
         uintE* offsets;
         bool mmap = false;          // TODO @Djordjije: do we need this?
         bool is_symmetric = true;   // TODO @Djordjije: do we need this?
-        std::string default_file_path = "data/aspen-paper-graph";
+        std::string default_file_path = "data/email-graph";
 };
 
 void DockTest::SetUp()
@@ -70,10 +70,6 @@ TEST_F(DockTest, DockConstructor)
 
         // assert expected degrees
         ASSERT_EQ(flat_snapshot[i].compressed_edges.degree(), degree);
-
-        // assert that compressed_walks_tree is empty
-        ASSERT_EQ(flat_snapshot[i].compressed_walks.root, nullptr);
-        ASSERT_EQ(flat_snapshot[i].compressed_walks.size(), 0);
 
         auto edges = flat_snapshot[i].compressed_edges.get_edges(i);
 
@@ -167,9 +163,9 @@ TEST_F(DockTest, DEV)
         std::cout << dock.rewalk(i) << std::endl;
     }
 
-    std::tuple<uintV, uintV>* generated_edges = new std::tuple<uintV, uintV>[1];
+    std::tuple<uintV, uintV>* generated_edges = new std::tuple<uintV, uintV>[2];
     generated_edges[0] = {1, 3};
-//    generated_edges[1] = {3, 1};
+    generated_edges[1] = {3, 1};
     auto edges_generated = 1;
 
     // insert batch of edges

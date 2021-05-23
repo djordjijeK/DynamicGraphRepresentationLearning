@@ -37,10 +37,7 @@ namespace types
     enum SamplerInitStartegy { RANDOM, BURNIN, WEIGHT };
 
     // Global Map of Changes (MoC) = contains starting positions to crop the walk
-    using MapOfChanges         = libcuckoo::cuckoohash_map<WalkID, std::tuple<Position, Vertex>>;
-
-    // ChangeAccumulator = accumulator of changes for walk updates
-    using ChangeAccumulator    = libcuckoo::cuckoohash_map<WalkID, std::vector<PairedTriplet>>;
+    using MapOfChanges         = libcuckoo::cuckoohash_map<WalkID, Position>;
 }
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_TYPES_H
