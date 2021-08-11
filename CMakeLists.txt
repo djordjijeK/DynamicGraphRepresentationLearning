@@ -16,6 +16,6 @@ include_directories(config)
 enable_testing()
 add_subdirectory(tests)
 
-# experiments
+# experimentss
 add_subdirectory(experiments)
 # -------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING WITH METROPOLIS HASTINGS ----------------------------
