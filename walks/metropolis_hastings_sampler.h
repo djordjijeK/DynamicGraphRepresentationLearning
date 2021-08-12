@@ -66,7 +66,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             * @param model         - model of random walk
             * @param init_startegy - initialization strategy
             */
-            void init(types::State& current_state, dygrl::RandomWalkModel* model, types::SamplerInitStartegy init_startegy)
+            void init(types::State& current_state, dygrl::RandomWalkModel* model, types::SamplerInitStrategy init_startegy)
             {
                 /* Random initialization of MH sampler */
                 if (init_startegy == types::RANDOM)

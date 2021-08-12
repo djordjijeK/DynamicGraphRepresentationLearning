@@ -17,10 +17,13 @@ namespace tree_plus {
     using key_t = uintV; // the 'head' edge of this node.
     using val_t = AT*; // the set of edges stored in this node.
     static bool comp(const key_t& a, const key_t& b) { return a < b; }
+
+    // Walk-tree Augmentation
     using aug_t = uintV; // num. edges in this subtree
     static aug_t get_empty() { return 0; }
     static aug_t from_entry(const key_t& k, const val_t& v) { return 1 + lists::node_size(v); }
     static aug_t combine(const aug_t& a, const aug_t& b) { return a + b; }
+
     using entry_t = std::pair<key_t,val_t>;
     static entry_t copy_entry(const entry_t& e) {
       // TODO: Instead of copying, bump a ref-ct (note that copy_node and

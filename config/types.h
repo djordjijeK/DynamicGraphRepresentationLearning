@@ -31,7 +31,7 @@ namespace types
     enum RandomWalkModelType   { DEEPWALK, NODE2VEC };
 
     // StartMode = edge sampler initialization strategy
-    enum SamplerInitStartegy   { RANDOM, BURNIN, WEIGHT };
+    enum SamplerInitStrategy   { RANDOM, BURNIN, WEIGHT };
 
     // Global Map of Changes (MoC) = contains starting positions to crop the walk
     using MapOfChanges         = libcuckoo::cuckoohash_map<WalkID, std::tuple<Position, Vertex, bool>>;

@@ -93,19 +93,19 @@ void vertex_classification_incremental(commandLine& command_line, const std::vec
 
     if (init_strategy == "burnin")
     {
-        config::sampler_init_strategy = types::SamplerInitStartegy::BURNIN;
+        config::sampler_init_strategy = types::SamplerInitStrategy::BURNIN;
 
         std::cout << "Sampler strategy: BURNIN" << std::endl;
     }
     else if (init_strategy == "weight")
     {
-        config::sampler_init_strategy = types::SamplerInitStartegy::WEIGHT;
+        config::sampler_init_strategy = types::SamplerInitStrategy::WEIGHT;
 
         std::cout << "Sampler strategy: WEIGHT" << std::endl;
     }
     else if (init_strategy == "random")
     {
-        config::sampler_init_strategy = types::SamplerInitStartegy::RANDOM;
+        config::sampler_init_strategy = types::SamplerInitStrategy::RANDOM;
 
         std::cout << "Sampler strategy: RANDOM" << std::endl;
     }
@@ -251,19 +251,19 @@ void vertex_classification_static(commandLine& command_line, const std::vector<s
 
     if (init_strategy == "burnin")
     {
-        config::sampler_init_strategy = types::SamplerInitStartegy::BURNIN;
+        config::sampler_init_strategy = types::SamplerInitStrategy::BURNIN;
 
         std::cout << "Sampler strategy: BURNIN" << std::endl;
     }
     else if (init_strategy == "weight")
     {
-        config::sampler_init_strategy = types::SamplerInitStartegy::WEIGHT;
+        config::sampler_init_strategy = types::SamplerInitStrategy::WEIGHT;
 
         std::cout << "Sampler strategy: WEIGHT" << std::endl;
     }
     else if (init_strategy == "random")
     {
-        config::sampler_init_strategy = types::SamplerInitStartegy::RANDOM;
+        config::sampler_init_strategy = types::SamplerInitStrategy::RANDOM;
 
         std::cout << "Sampler strategy: RANDOM" << std::endl;
     }

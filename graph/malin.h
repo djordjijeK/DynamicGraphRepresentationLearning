@@ -716,6 +716,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
             /**
             * @brief Updates affected walks in batch mode.
+            * REMARK: A batch contains all the update and does it at once.
             *
             * @param types::MapOfChanges - rewalking points
             */
@@ -900,6 +901,19 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, insert_walks.begin(), insert_walks.size(), replaceI, true);
             }
+
+
+        /**
+         * @brief Updates affected walks in mini-batch mode.
+         * REMARK: The update happens in mini-batches, as we streamline the process utilizing a ring buffer.
+         * TODO: to be completed
+         * @param types::MapOfChanges - rewalking points
+         */
+        void mini_batch_walk_update(types::MapOfChanges& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks)
+        {
+            ;
+        }
+
 
         /**
          * @brief Prints memory footprint details.

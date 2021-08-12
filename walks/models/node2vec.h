@@ -112,7 +112,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             bool has_edge(types::Vertex prev, types::Vertex next)
             {
                 auto neighbors = this->snapshot->neighbors(prev);
-                bool res = binary_search(std::get<0>(neighbors), std::get<0>(neighbors) + std::get<1>(neighbors), next);
+                bool res = std::binary_search(std::get<0>(neighbors), std::get<0>(neighbors) + std::get<1>(neighbors), next);
                 if (std::get<2>(neighbors)) pbbs::free_array(std::get<0>(neighbors));
 
                 return res;

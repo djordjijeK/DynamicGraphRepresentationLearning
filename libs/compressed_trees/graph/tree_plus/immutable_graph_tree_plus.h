@@ -7,7 +7,7 @@
 #include "../../pbbslib/integer_sort.h"
 #include "../../pbbslib/merge_sort.h"
 #include "../../trees/pam.h"
-#include "tree_plus.h"
+#include "edge_plus.h"
 
 #include <limits>
 
