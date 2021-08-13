@@ -27,8 +27,8 @@ namespace types
     using State                = std::pair<Vertex, Vertex>;
 
     // CompressedEdges = structure (augmented parallel binary tree) that stores compressed edges
-    using CompressedEdges      = tree_plus::treeplus;
-    using CompressedTreesLists = tree_plus::edge_list;
+    using CompressedEdges      = edge_plus::treeplus;
+    using CompressedTreesLists = edge_plus::edge_list;
 
     // RandomWalkModelType = different walking models
     enum RandomWalkModelType   { DEEPWALK, NODE2VEC };

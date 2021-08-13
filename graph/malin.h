@@ -3,6 +3,7 @@
 
 #include <graph/api.h>
 #include <cuckoohash_map.hh>
+#include <concurrentqueue.h>
 
 #include <config.h>
 #include <pairings.h>
@@ -224,7 +225,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     if (entry.second.compressed_walks.root)
                     {
-                        auto T = tree_plus::edge_list();
+                        auto T = walk_plus::edge_list();
 
                         T.root = entry.second.compressed_walks.root;
                         entry.second.compressed_walks.root = nullptr;
@@ -337,13 +338,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 auto replace = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
                 {
-                    auto tree_plus = tree_plus::uniont(x.compressed_walks, y.compressed_walks, src);
+                    auto tree_plus = walk_plus::uniont(x.compressed_walks, y.compressed_walks, src);
 
                     // deallocate the memory
                     lists::deallocate(x.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
+                    walk_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
                     lists::deallocate(y.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
+                    walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
 
                     return VertexEntry(x.compressed_edges, CompressedWalks(tree_plus.plus, tree_plus.root), x.sampler_manager);
                 };
@@ -497,13 +498,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 auto replace = [&, run_seq] (const intV& v, const VertexEntry& a, const VertexEntry& b)
                 {
-                    auto union_edge_tree = tree_plus::uniont(b.compressed_edges, a.compressed_edges, v, run_seq);
+                    auto union_edge_tree = edge_plus::uniont(b.compressed_edges, a.compressed_edges, v, run_seq);
 
                     lists::deallocate(a.compressed_edges.plus);
-                    tree_plus::Tree_GC::decrement_recursive(a.compressed_edges.root, run_seq);
+                    edge_plus::Tree_GC::decrement_recursive(a.compressed_edges.root, run_seq);
 
                     lists::deallocate(b.compressed_edges.plus);
-                    tree_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
+                    edge_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
                     a.compressed_walks.iter_elms(v, [&](auto value)
                     {
@@ -649,13 +650,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 auto replace = [&,run_seq] (const intV& v, const VertexEntry& a, const VertexEntry& b)
                 {
-                    auto difference_edge_tree = tree_plus::difference(b.compressed_edges, a.compressed_edges, v, run_seq);
+                    auto difference_edge_tree = edge_plus::difference(b.compressed_edges, a.compressed_edges, v, run_seq);
 
                     lists::deallocate(a.compressed_edges.plus);
-                    tree_plus::Tree_GC::decrement_recursive(a.compressed_edges.root, run_seq);
+                    edge_plus::Tree_GC::decrement_recursive(a.compressed_edges.root, run_seq);
 
                     lists::deallocate(b.compressed_edges.plus);
-                    tree_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
+                    edge_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
                     bool should_reset = difference_edge_tree.degree() == 0;
 
@@ -894,13 +895,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 auto replaceD = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
                 {
-                    auto tree_plus = tree_plus::difference(y.compressed_walks, x.compressed_walks, src);
+                    auto tree_plus = walk_plus::difference(y.compressed_walks, x.compressed_walks, src);
 
                     // deallocate the memory
                     lists::deallocate(x.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
+                    walk_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
                     lists::deallocate(y.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
+                    walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
 
                     return VertexEntry(x.compressed_edges, dygrl::CompressedWalks(tree_plus.plus, tree_plus.root), x.sampler_manager);
                 };
@@ -909,13 +910,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 auto replaceI = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
                 {
-                    auto tree_plus = tree_plus::uniont(x.compressed_walks, y.compressed_walks, src);
+                    auto tree_plus = walk_plus::uniont(x.compressed_walks, y.compressed_walks, src);
 
                     // deallocate the memory
                     lists::deallocate(x.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
+                    walk_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
                     lists::deallocate(y.compressed_walks.plus);
-                    tree_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
+                    walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
 
                     return VertexEntry(x.compressed_edges, dygrl::CompressedWalks(tree_plus.plus, tree_plus.root), x.sampler_manager);
                 };

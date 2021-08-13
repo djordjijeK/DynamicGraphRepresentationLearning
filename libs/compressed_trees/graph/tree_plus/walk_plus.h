@@ -9,15 +9,17 @@
 //#define lists uncompressed_lists
 //#define CHECK_CORRECTNESS 1
 
-namespace tree_plus {
+namespace walk_plus {
 
   using AT = lists::array_type;
 
   struct edge_entry {
-    using key_t = uintV; // the 'head' edge of this node.
-    using val_t = AT*; // the set of edges stored in this node.
+    using key_t = uintV;        // the 'head' edge of this node.
+    using val_t = AT*;          // the set of edges stored in this node.
     static bool comp(const key_t& a, const key_t& b) { return a < b; }
-    using aug_t = uintV; // num. edges in this subtree
+
+    // Walk-tree augmentation
+    using aug_t = uintV;        // num. edges in this subtree
     static aug_t get_empty() { return 0; }
     static aug_t from_entry(const key_t& k, const val_t& v) { return 1 + lists::node_size(v); }
     static aug_t combine(const aug_t& a, const aug_t& b) { return a + b; }

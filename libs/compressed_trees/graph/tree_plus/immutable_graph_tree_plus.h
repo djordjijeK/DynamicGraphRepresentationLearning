@@ -7,7 +7,7 @@
 #include "../../pbbslib/integer_sort.h"
 #include "../../pbbslib/merge_sort.h"
 #include "../../trees/pam.h"
-#include "tree_plus.h"
+#include "edge_plus.h"
 
 #include <limits>
 
@@ -22,13 +22,15 @@ static double format_gb(size_t bytes) {
 
 struct sym_immutable_graph_tree_plus {
 
-  using edge_struct = tree_plus::treeplus;
+  using edge_struct = edge_plus::treeplus;
 
   struct vertex_entry {
     using key_t = uintV;
     using val_t = edge_struct;
     static bool comp(const key_t& a, const key_t& b) { return a < b; }
     using aug_t = uintE;
+
+    // Edge-tree augmentation
     static aug_t get_empty() { return 0; }
     static aug_t from_entry(const key_t& k, const val_t& v) { return v.size(); }
     static aug_t combine(const aug_t& a, const aug_t& b) { return a + b; }
@@ -37,7 +39,7 @@ struct sym_immutable_graph_tree_plus {
     static entry_t copy_entry(const entry_t& e) {
 //      cout << "Copied entry: " << "key = " << e.first << " plus size = " << lists::node_size(plus) << " root = " << ((size_t)e.second.root) << " plus = " << ((size_t)plus) << endl;
       auto plus = lists::copy_node(e.second.plus); // bumps ref-cnt
-      auto root = tree_plus::Tree_GC::inc(e.second.root); // bumps ref-cnt
+      auto root = edge_plus::Tree_GC::inc(e.second.root); // bumps ref-cnt
       return make_pair(e.first, edge_struct(plus, root));
     }
 
@@ -48,7 +50,7 @@ struct sym_immutable_graph_tree_plus {
         e.second.plus = nullptr;
       }
       if (e.second.root) {
-        auto T = tree_plus::edge_list();
+        auto T = edge_plus::edge_list();
         T.root = e.second.root;
         e.second.root = nullptr;
       }
@@ -397,15 +399,15 @@ struct sym_immutable_graph_tree_plus {
     }, (run_seq) ? std::numeric_limits<long>::max() : 1);
 
     auto replace = [run_seq] (const uintV& v, const edge_struct& a, const edge_struct& b) {
-      auto ret = tree_plus::uniont(a, b, v, run_seq);
+      auto ret = edge_plus::uniont(a, b, v, run_seq);
 
       // Should decrement ref-ct, free if only owner
       lists::deallocate(a.plus);
-      tree_plus::Tree_GC::decrement_recursive(a.root, run_seq);
+      edge_plus::Tree_GC::decrement_recursive(a.root, run_seq);
 
       // Decrement count on b (we don't use copy constructor currently)
       lists::deallocate(b.plus);
-      tree_plus::Tree_GC::decrement_recursive(b.root, run_seq);
+      edge_plus::Tree_GC::decrement_recursive(b.root, run_seq);
 
       return ret;
     };
@@ -470,12 +472,12 @@ struct sym_immutable_graph_tree_plus {
     // note that we can filter out unnecessary updates.
 
     auto replace = [run_seq] (const intV& v, const edge_struct& a, const edge_struct& b) {
-      auto ret = tree_plus::difference(b, a, v, run_seq);
+      auto ret = edge_plus::difference(b, a, v, run_seq);
       lists::deallocate(a.plus);
-      tree_plus::Tree_GC::decrement_recursive(a.root, run_seq);
+      edge_plus::Tree_GC::decrement_recursive(a.root, run_seq);
 
       lists::deallocate(b.plus);
-      tree_plus::Tree_GC::decrement_recursive(b.root, run_seq);
+      edge_plus::Tree_GC::decrement_recursive(b.root, run_seq);
 
       return ret;
     };
@@ -532,7 +534,7 @@ struct sym_immutable_graph_tree_plus {
 
   static void init(size_t n, size_t m) {
     // edge_lists are the 'tree nodes' in edgelists
-    using edge_list = tree_plus::edge_list;
+    using edge_list = edge_plus::edge_list;
     edge_list::init(); edge_list::reserve(n/16);
 
     lists::init(n);
@@ -618,7 +620,7 @@ struct sym_immutable_graph_tree_plus {
   sym_immutable_graph_tree_plus(vertices _V) : V(std::move(_V)) {}
 
   static void print_stats() {
-    using edge_list = tree_plus::edge_list;
+    using edge_list = edge_plus::edge_list;
 
     cout << "Vertices" << endl;
     vertices::print_stats();
@@ -632,7 +634,7 @@ struct sym_immutable_graph_tree_plus {
 
 
   void print_compression_stats() {
-    using edge_list = tree_plus::edge_list;
+    using edge_list = edge_plus::edge_list;
     size_t n = num_vertices();
     size_t m = num_edges();
 

@@ -84,11 +84,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
         {
             // copy compressed edges
             auto ce_plus = lists::copy_node(entry.second.compressed_edges.plus);         // ce plus part; bumps ref-cnt
-            auto ce_root = tree_plus::Tree_GC::inc(entry.second.compressed_edges.root);  // ce root part; bumps ref-cnt
+            auto ce_root = edge_plus::Tree_GC::inc(entry.second.compressed_edges.root);  // ce root part; bumps ref-cnt
 
             // copy compressed walks
             auto cw_plus = lists::copy_node(entry.second.compressed_walks.plus);         // cw plus part; bumps ref-cnt
-            auto cw_root = tree_plus::Tree_GC::inc(entry.second.compressed_walks.root);  // cw root part; bumps ref-cnt
+            auto cw_root = walk_plus::Tree_GC::inc(entry.second.compressed_walks.root);  // cw root part; bumps ref-cnt
 
             // copy sampler manager
             auto sampler = new SamplerManager(entry.second.sampler_manager->size());
@@ -118,7 +118,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
             if (entry.second.compressed_edges.root)
             {
-                auto T = tree_plus::edge_list();
+                auto T = edge_plus::edge_list();
 
                 T.root = entry.second.compressed_edges.root;
                 entry.second.compressed_edges.root = nullptr;
@@ -133,7 +133,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
             if (entry.second.compressed_walks.root)
             {
-                auto T = tree_plus::edge_list();
+                auto T = walk_plus::edge_list();
 
                 T.root = entry.second.compressed_walks.root;
                 entry.second.compressed_walks.root = nullptr;

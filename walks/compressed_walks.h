@@ -1,7 +1,8 @@
 #ifndef DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_COMPRESSED_WALKS_H
 #define DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_COMPRESSED_WALKS_H
 
-#include <graph/tree_plus/tree_plus.h>
+#include <graph/tree_plus/edge_plus.h>
+#include <graph/tree_plus/walk_plus.h>
 
 namespace dynamic_graph_representation_learning_with_metropolis_hastings
 {
@@ -10,13 +11,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
     * It essentially represents a compressed purely functional tree (C-Tree) that achieves compression
     * based on differential coding.
     */
-    class CompressedWalks : public tree_plus::treeplus
+    class CompressedWalks : public walk_plus::treeplus
     {
         public:
             /**
              * @brief CompressedWalks default constructor.
              */
-            CompressedWalks() : tree_plus::treeplus() {};
+            CompressedWalks() : walk_plus::treeplus() {};
 
             /**
              * @brief CompressedWalks constructor.
@@ -24,8 +25,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              * @param plus - tree plus
              * @param root - tree root
              */
-            CompressedWalks(tree_plus::AT* plus, tree_plus::treeplus::Node* root)
-                : tree_plus::treeplus(plus, root) {};
+            CompressedWalks(walk_plus::AT* plus, walk_plus::treeplus::Node* root)
+            : walk_plus::treeplus(plus, root) {};
 
             /**
             * @brief CompressedWalks constructor.
@@ -38,7 +39,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             */
             template<class Sequence>
             CompressedWalks(const Sequence &sequence, types::Vertex source, pbbs::flags flag = pbbs::no_flag)
-                : tree_plus::treeplus(sequence, source, flag) {};
+            : walk_plus::treeplus(sequence, source, flag) {};
 
             /**
             * @brief Finds the next vertex in the walk given walk id and position
