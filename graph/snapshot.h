@@ -167,7 +167,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             */
             size_t size_in_bytes() final
             {
-                std::atomic<size_t> total  = 0;
+//                std::atomic<size_t> total  = 0;
+
+                size_t total = 0;
 
                 parallel_for(0, this->snapshot.size(), [&](auto index)
                 {

@@ -1,17 +1,17 @@
-# -------------------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING -----------------------------------------
+# -------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING WITH METROPOLIS HASTINGS ----------------------------
 
-option(CLANG     "???" OFF)
-option(CILK      "???" OFF)
-option(OPENMP    "???" OFF)
-option(HOMEGROWN "???" OFF)
-option(SERIAL    "???" OFF)
+option(CLANG     OFF)
+option(CILK      OFF)
+option(OPENMP    OFF)
+option(HOMEGROWN OFF)
+option(SERIAL    OFF)
 
 # compile flags options
 set(OMPFLAGS     "-DOPENMP -fopenmp")
 set(CILKFLAGS    "-DCILK -fcilkplus")
 set(HGFLAGS      "-DHOMEGROWN -pthread")
 set(OPTIMIZATION "-O3 -g")
-set(CFLAGS       "-DEDGELONG  -mcx16 ${OPTIMIZATION} -ldl -std=c++17 -march=native -Wall -Wno-subobject-linkage -DUSEMALLOC ") #
+set(CFLAGS       "-DEDGELONG  -mcx16 ${OPTIMIZATION} -ldl -std=c++17 -march=native -Wall -Wno-subobject-linkage -DUSEMALLOC")
 
 if(CLANG)
     set(CMAKE_CXX_COMPILER "clang++")
@@ -36,12 +36,14 @@ endif()
 # set compile flags
 set(CMAKE_CXX_FLAGS "${CFLAGS} ${PFLAGS}")
 
-file(COPY ../experiments/data DESTINATION .)
-file(COPY ../experiments/scripts/SNAPtoAdj DESTINATION .)
-file(COPY ../experiments/scripts/SNAPtoAdj DESTINATION .)
+file(COPY data DESTINATION .)
+#file(COPY bin/SNAPtoAdj DESTINATION .)
+#file(COPY bin/to_word2vec.pl DESTINATION .)
+#file(COPY bin/vertex-classification.py DESTINATION .)
 
-# MEMORY FOOTPRINT EXPERIMENT EXECUTABLE
-#add_executable(memory_footprint src/memory_footprint.cpp)
-#add_executable(run_batch_updates src/run_batch_updates.cpp)
-add_executable(learn_embeddings src/learn_embeddings.cpp ../training/word2vec.c)
-# -------------------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING -----------------------------------------
+# experiments executables
+#add_executable(throughput-latency src/throughput-latency.cpp)
+#add_executable(memory-footprint src/memory-footprint.cpp)
+#add_executable(vertex-classification src/vertex-classification.cpp)
+
+# -------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING WITH METROPOLIS HASTINGS ----------------------------

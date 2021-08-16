@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include <dock.h>
+#include <wharfmh.h>
 
-class DockTest : public testing::Test
+class WharfMHTest : public testing::Test
 {
     public:
         void SetUp()    override;
@@ -18,10 +18,10 @@ class DockTest : public testing::Test
         std::string default_file_path = "data/email-graph";
 };
 
-void DockTest::SetUp()
+void WharfMHTest::SetUp()
 {
     std::cout << "-----------------------------------------------------------------------------------------------------" << std::endl;
-    std::cout << "Dock running with " << num_workers() << " threads" << std::endl;
+    std::cout << "WharfMH running with " << num_workers() << " threads" << std::endl;
 
     // transform an input graph file into an adjacency graph format
     std::string command = "./SNAPtoAdj -s -f " + this->default_file_path + " data/adjacency-graph-format.txt";
@@ -29,7 +29,7 @@ void DockTest::SetUp()
 
     if (result != 0)
     {
-        std::cerr << "DockTest::SetUp::Input file could not be transformed!" << std::endl;
+        std::cerr << "WharfMHTest::SetUp::Input file could not be transformed!" << std::endl;
         exit(1);
     }
 
@@ -37,29 +37,29 @@ void DockTest::SetUp()
     std::cout << std::endl;
 }
 
-void DockTest::TearDown()
+void WharfMHTest::TearDown()
 {
     // remove adjaceny graph format representation
     int graph = system("rm -rf data/adjacency-graph-format.txt");
 
     if (graph != 0)
     {
-        std::cerr << "DockTest::TearDown::Could not remove static graph input file" << std::endl;
+        std::cerr << "WharfMHTest::TearDown::Could not remove static graph input file" << std::endl;
     }
 
     std::cout << "-----------------------------------------------------------------------------------------------------" << std::endl;
 }
 
-TEST_F(DockTest, DockConstructor)
+TEST_F(WharfMHTest, WharfMHConstructor)
 {
-    dygrl::Dock dock = dygrl::Dock(total_vertices, total_edges, offsets, edges, false);
+    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges, false);
 
     // assert the number of vertices and edges in a graph
-    ASSERT_EQ(dock.number_of_vertices(), total_vertices);
-    ASSERT_EQ(dock.number_of_edges(), total_edges);
+    ASSERT_EQ(WharfMH.number_of_vertices(), total_vertices);
+    ASSERT_EQ(WharfMH.number_of_edges(), total_edges);
 
     // construct a flat snapshot of a graph
-    auto flat_snapshot = dock.flatten_vertex_tree();
+    auto flat_snapshot = WharfMH.flatten_vertex_tree();
 
     // assert
     parallel_for(0, total_vertices, [&] (long i)
@@ -88,79 +88,79 @@ TEST_F(DockTest, DockConstructor)
     });
 }
 
-TEST_F(DockTest, DockDestructor)
+TEST_F(WharfMHTest, WharfMHDestructor)
 {
-    dygrl::Dock dock = dygrl::Dock(total_vertices, total_edges, offsets, edges);
+    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
 
-    dock.print_memory_pool_stats();
-    dock.destroy();
-    dock.print_memory_pool_stats();
+    WharfMH.print_memory_pool_stats();
+    WharfMH.destroy();
+    WharfMH.print_memory_pool_stats();
 
     // assert vertices and edges
-    ASSERT_EQ(dock.number_of_vertices(), 0);
-    ASSERT_EQ(dock.number_of_edges(), 0);
+    ASSERT_EQ(WharfMH.number_of_vertices(), 0);
+    ASSERT_EQ(WharfMH.number_of_edges(), 0);
 
     // construct a flat snapshot of a graph
-    auto flat_snapshot = dock.flatten_vertex_tree();
+    auto flat_snapshot = WharfMH.flatten_vertex_tree();
 
     // assert that flat snapshot does not exits
     ASSERT_EQ(flat_snapshot.size(), 0);
 }
 
-TEST_F(DockTest, InsertBatchOfEdges)
+TEST_F(WharfMHTest, InsertBatchOfEdges)
 {
     // create wharf instance (vertices & edges)
-    dygrl::Dock dock = dygrl::Dock(total_vertices, total_edges, offsets, edges);
-    auto start_edges = dock.number_of_edges();
+    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
+    auto start_edges = WharfMH.number_of_edges();
 
     // geneate edges
-//    auto edges = utility::generate_batch_of_edges(2 * dock.number_of_vertices(), dock.number_of_vertices(), false, false);
+//    auto edges = utility::generate_batch_of_edges(2 * WharfMH.number_of_vertices(), WharfMH.number_of_vertices(), false, false);
 
     std::tuple<uintV, uintV>* generated_edges = new std::tuple<uintV, uintV>[1];
     generated_edges[0] = {1, 3};
     auto edges_generated = 1;
 
     // insert batch of edges
-    dock.insert_edges_batch(edges_generated, generated_edges, true, false);
+    WharfMH.insert_edges_batch(edges_generated, generated_edges, true, false);
 
     std::cout << "Edges before batch insert: " << start_edges << std::endl;
-    std::cout << "Edges after batch insert: "  << dock.number_of_edges() << std::endl;
+    std::cout << "Edges after batch insert: "  << WharfMH.number_of_edges() << std::endl;
 
     // assert edge insertion
-    ASSERT_GE(dock.number_of_edges(), start_edges);
+    ASSERT_GE(WharfMH.number_of_edges(), start_edges);
 }
 
-TEST_F(DockTest, DeleteBatchOfEdges)
+TEST_F(WharfMHTest, DeleteBatchOfEdges)
 {
     // create wharf instance (vertices & edges)
-    dygrl::Dock dock = dygrl::Dock(total_vertices, total_edges, offsets, edges);
-    auto start_edges = dock.number_of_edges();
+    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
+    auto start_edges = WharfMH.number_of_edges();
 
     // geneate edges
-//    auto edges = utility::generate_batch_of_edges(2 * dock.number_of_vertices(), dock.number_of_vertices(), false, false);
+//    auto edges = utility::generate_batch_of_edges(2 * WharfMH.number_of_vertices(), WharfMH.number_of_vertices(), false, false);
 
     std::tuple<uintV, uintV>* generated_edges = new std::tuple<uintV, uintV>[1];
     generated_edges[0] = {2, 5};
     auto edges_generated = 1;
 
     // insert batch of edges
-    dock.delete_edges_batch(edges_generated, generated_edges, true, false);
+    WharfMH.delete_edges_batch(edges_generated, generated_edges, true, false);
 
     std::cout << "Edges before batch delete: " << start_edges << std::endl;
-    std::cout << "Edges after batch delete: " << dock.number_of_edges() << std::endl;
+    std::cout << "Edges after batch delete: " << WharfMH.number_of_edges() << std::endl;
 
     // assert edge deletion
-    ASSERT_LE(dock.number_of_edges(), start_edges);
+    ASSERT_LE(WharfMH.number_of_edges(), start_edges);
 }
 
-TEST_F(DockTest, DEV)
+TEST_F(WharfMHTest, DEV)
 {
-    dygrl::Dock dock = dygrl::Dock(total_vertices, total_edges, offsets, edges);
-    dock.create_random_walks();
+    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
+    WharfMH.create_random_walks();
 
-    for(int i = 0; i < config::walks_per_vertex * dock.number_of_vertices(); i++)
+    for(int i = 0; i < config::walks_per_vertex * WharfMH.number_of_vertices(); i++)
     {
-        std::cout << dock.rewalk(i) << std::endl;
+        std::cout << WharfMH.rewalk(i) << std::endl;
     }
 
     std::tuple<uintV, uintV>* generated_edges = new std::tuple<uintV, uintV>[2];
@@ -169,12 +169,12 @@ TEST_F(DockTest, DEV)
     auto edges_generated = 1;
 
     // insert batch of edges
-    dock.insert_edges_batch(edges_generated, generated_edges, true, false);
-//    dock.delete_edges_batch(edges_generated, generated_edges, true, false);
+    WharfMH.insert_edges_batch(edges_generated, generated_edges, true, false);
+//    WharfMH.delete_edges_batch(edges_generated, generated_edges, true, false);
 
-    for(int i = 0; i < config::walks_per_vertex * dock.number_of_vertices(); i++)
+    for(int i = 0; i < config::walks_per_vertex * WharfMH.number_of_vertices(); i++)
     {
-        std::cout << dock.rewalk(i) << std::endl;
+        std::cout << WharfMH.rewalk(i) << std::endl;
     }
 }
 

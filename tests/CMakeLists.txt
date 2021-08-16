@@ -64,20 +64,19 @@ set(GTEST_LIBRARIES libgtest libgtest_main libgmock)
 # ---------------------------------------------------- TEST DATA -------------------------------------------------------
 
 file(COPY ../experiments/data DESTINATION .)
-file(COPY ../experiments/scripts/SNAPtoAdj DESTINATION .)
+#file(COPY ../experiments/bin/SNAPtoAdj DESTINATION .)
 
 # -------------------------------------------------- COMPILE FLAGS -----------------------------------------------------
 
 # build options
-option(CLANG        "???"               OFF)
-option(CILK         "???"               OFF)
-option(OPENMP       "???"               OFF)
-option(HOMEGROWN    "???"               OFF)
-option(DOCK_DEBUG   "Dock debug mode"   OFF)
-option(SERIAL       "???"               OFF)
+option(CLANG      OFF)
+option(CILK       OFF)
+option(OPENMP     OFF)
+option(HOMEGROWN  OFF)
+option(DOCK_DEBUG OFF)
+option(SERIAL     OFF)
 
-#set(SERIAL ON)
-set(DOCK_DEBUG ON)
+set(WHARFMH_DEBUG ON)
 
 # build variables
 set(OMPFLAGS         "-DOPENMP -fopenmp")
@@ -85,7 +84,7 @@ set(CILKFLAGS        "-DCILK -fcilkplus")
 set(HGFLAGS          "-DHOMEGROWN -pthread")
 set(OPTIMIZATION     "-O3 -g")
 set(CFLAGS           "-DEDGELONG -mcx16 ${OPTIMIZATION} -ldl -std=c++17 -march=native -Wall -Wno-subobject-linkage -DUSEMALLOC -DNDEBUG")
-set(DOCK_DEBUG_FLAGS "-DEDGELONG -mcx16 ${OPTIMIZATION} -ldl -std=c++17 -march=native -Wall -Wno-subobject-linkage -DUSEMALLOC")
+set(WHARFMH_DEBUG_FLAGS "-DEDGELONG -mcx16 ${OPTIMIZATION} -ldl -std=c++17 -march=native -Wall -Wno-subobject-linkage -DUSEMALLOC")
 
 if(CLANG)
     set(CMAKE_CXX_COMPILER "clang++")
@@ -108,18 +107,18 @@ else()
 endif()
 
 # set compile flags
-if (DOCK_DEBUG)
-    set(CMAKE_CXX_FLAGS "${DOCK_DEBUG_FLAGS} ${PFLAGS} -DDOCK_DEBUG -DDOCK_TIMER -DVERTEXLONG") # -DDOCK_DEBUG -DDOCK_TIMER
+if (WHARFMH_DEBUG)
+    set(CMAKE_CXX_FLAGS "${WHARFMH_DEBUG_FLAGS} ${PFLAGS} -DWHARFMH_DEBUG -DWHARFMH_TIMER")
 else()
     set(CMAKE_CXX_FLAGS "${CFLAGS} ${PFLAGS}")
 endif()
 
 # ------------------------------------------------------ TESTS ---------------------------------------------------------
 
-# Dock tests
-add_executable(dock dock.cpp)
-target_link_libraries(dock ${GTEST_LIBRARIES})
-add_test(NAME wharf COMMAND dock)
+# WharfMH tests
+add_executable(wharfmh wharfmh.cpp)
+target_link_libraries(wharfmh ${GTEST_LIBRARIES})
+add_test(NAME wharfmh COMMAND wharfmh)
 
 # Pairing function tests
 add_executable(pairings pairings.cpp)
@@ -132,4 +131,3 @@ target_link_libraries(sampler ${GTEST_LIBRARIES})
 add_test(NAME sampler COMMAND sampler)
 
 # -------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING WITH METROPOLIS HASTINGS ----------------------------
-

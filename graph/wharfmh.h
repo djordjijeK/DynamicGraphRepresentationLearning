@@ -1,5 +1,5 @@
-#ifndef DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_DOCK_H
-#define DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_DOCK_H
+#ifndef DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_WharfMH_H
+#define DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_WharfMH_H
 
 #include <graph/api.h>
 #include <cuckoohash_map.hh>
@@ -15,17 +15,17 @@
 namespace dynamic_graph_representation_learning_with_metropolis_hastings
 {
     /**
-     * @brief Dock represents a structure that stores a graph as an augmented parallel balanced binary tree.
+     * @brief WharfMH represents a structure that stores a graph as an augmented parallel balanced binary tree.
      * Keys in this tree are graph vertices and values are compressed edges, and metropolis hastings samplers.
      */
-    class Dock
+    class WharfMH
     {
         public:
             using Graph       = aug_map<dygrl::Vertex>;
             using WalkStorage = libcuckoo::cuckoohash_map<types::WalkID, std::vector<types::Vertex>>;
 
             /**
-             * @brief Dock constructor.
+             * @brief WharfMH constructor.
              *
              * @param graph_vertices - total vertices in a graph
              * @param graph_edges    - total edges in a graph
@@ -33,14 +33,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              * @param edges          - edges
              * @param free_memory    - free memory excess after graph is loaded
              */
-            Dock(long graph_vertices, long graph_edges, uintE* offsets, uintV* edges, bool free_memory = true)
+            WharfMH(long graph_vertices, long graph_edges, uintE* offsets, uintV* edges, bool free_memory = true)
             {
-                #ifdef DOCK_TIMER
-                    timer timer("Dock::Constructor");
+                #ifdef WHARFMH_TIMER
+                    timer timer("WharfMH::Constructor");
                 #endif
 
                 // 1. Initialize memory pools
-                Dock::init_memory_pools(graph_vertices, graph_edges);
+                WharfMH::init_memory_pools(graph_vertices, graph_edges);
 
                 // 2. Create an empty vertex sequence
                 using VertexStruct = std::pair<types::Vertex, VertexEntry>;
@@ -72,7 +72,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 vertices.clear();
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     timer.reportTotal("time(seconds)");
                 #endif
             }
@@ -107,8 +107,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              */
             [[nodiscard]] FlatVertexTree flatten_vertex_tree() const
             {
-                #ifdef DOCK_TIMER
-                    timer timer("Dock::FlattenVertexTree");
+                #ifdef WHARFMH_TIMER
+                    timer timer("WharfMH::FlattenVertexTree");
                 #endif
 
                 types::Vertex n_vertices = this->number_of_vertices();
@@ -123,7 +123,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 this->map_vertices(map_func);
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     timer.reportTotal("time(seconds)");
 
                     std::cout << "Flat vertex tree memory footprint: "
@@ -142,8 +142,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             */
             [[nodiscard]] FlatGraph flatten_graph() const
             {
-                #ifdef DOCK_TIMER
-                    timer timer("Dock::FlattenGraph");
+                #ifdef WHARFMH_TIMER
+                    timer timer("WharfMH::FlattenGraph");
                 #endif
 
                 size_t n_vertices = this->number_of_vertices();
@@ -161,12 +161,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 this->map_vertices(map_func);
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     timer.reportTotal("time(seconds)");
 
                     auto size = flat_graph.size_in_bytes();
 
-                    std::cout << "Dock::FlattenGraph: Flat graph memory footprint: "
+                    std::cout << "WharfMH::FlattenGraph: Flat graph memory footprint: "
                               << utility::MB(size)
                               << " MB = " << utility::GB(size)
                               << " GB" << std::endl;
@@ -191,7 +191,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             }
 
             /**
-             * @brief Destroys dock instance.
+             * @brief Destroys WharfMH instance.
              */
             void destroy()
             {
@@ -286,9 +286,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             */
             void insert_edges_batch(size_t m, std::tuple<uintV, uintV>* edges, bool sorted = false, bool remove_dups = false, size_t nn = std::numeric_limits<size_t>::max(), bool apply_walk_updates = true, bool run_seq = false)
             {
-                #ifdef DOCK_TIMER
-                    timer graph_update_time("Dock::InsertEdgesBatch::GraphUpdateTime");
-                    timer walk_update_time("Dock::InsertEdgesBatch::WalkUpdateTime");
+                #ifdef WHARFMH_TIMER
+                    timer graph_update_time("WharfMH::InsertEdgesBatch::GraphUpdateTime");
+                    timer walk_update_time("WharfMH::InsertEdgesBatch::WalkUpdateTime");
                 #endif
 
                 auto fl = run_seq ? pbbs::fl_sequential : pbbs::no_flag;
@@ -302,7 +302,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // 2. Sort the edges in the batch (by source)
                 if (!sorted)
                 {
-                    Dock::sort_edge_batch_by_source(edges, m, nn);
+                    WharfMH::sort_edge_batch_by_source(edges, m, nn);
                 }
 
                 // 3. Remove duplicate edges
@@ -392,23 +392,23 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     return VertexEntry(union_edge_tree, a.sampler_manager);
                 };
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     graph_update_time.start();
                 #endif
 
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace, true, run_seq);
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     graph_update_time.stop();
                 #endif
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     walk_update_time.start();
                 #endif
 
                 if (apply_walk_updates) this->update_walks(rewalk_points);
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
                 #endif
 
@@ -416,7 +416,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 if (num_starts > stack_size) pbbs::free_array(new_verts);
                 if (edges_deduped)           pbbs::free_array(edges_deduped);
 
-                #ifdef DOCK_DEBUG
+                #ifdef WHARFMH_DEBUG
                     std::cout << "Rewalk points (MapOfChanges): " << rewalk_points.size() << std::endl;
 
                     for(auto& item : rewalk_points.lock_table())
@@ -428,7 +428,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     }
                 #endif
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     graph_update_time.reportTotal("time(seconds)");
                     walk_update_time.reportTotal("time(seconds)");
                 #endif
@@ -446,9 +446,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             */
             void delete_edges_batch(size_t m, tuple<uintV, uintV>* edges, bool sorted = false, bool remove_dups = false, size_t nn = std::numeric_limits<size_t>::max(), bool apply_walk_updates = true, bool run_seq = false)
             {
-                #ifdef DOCK_TIMER
-                    timer graph_update_time("Dock::DeleteEdgesBatch::GraphUpdateTime");
-                    timer walk_update_time("Dock::DeleteEdgesBatch::WalkUpdateTime");
+                #ifdef WHARFMH_TIMER
+                    timer graph_update_time("WharfMH::DeleteEdgesBatch::GraphUpdateTime");
+                    timer walk_update_time("WharfMH::DeleteEdgesBatch::WalkUpdateTime");
                 #endif
 
                 auto fl = run_seq ? pbbs::fl_sequential : pbbs::no_flag;
@@ -462,7 +462,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // 2. Sort the edges in the batch (by source)
                 if (!sorted)
                 {
-                    Dock::sort_edge_batch_by_source(edges, m, nn);
+                    WharfMH::sort_edge_batch_by_source(edges, m, nn);
                 }
 
                 // 3. Remove duplicate edges
@@ -552,23 +552,23 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     return VertexEntry(difference_edge_tree, a.sampler_manager);
                 };
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     graph_update_time.start();
                 #endif
 
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace, true, run_seq);
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     graph_update_time.stop();
                 #endif
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     walk_update_time.start();
                 #endif
 
                 if (apply_walk_updates) this->update_walks(rewalk_points);
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
                 #endif
 
@@ -576,7 +576,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 if (num_starts > stack_size) pbbs::free_array(new_verts);
                 if (edges_deduped) pbbs::free_array(edges_deduped);
 
-                #ifdef DOCK_DEBUG
+                #ifdef WHARFMH_DEBUG
                     std::cout << "Rewalk points (MapOfChanges): " << std::endl;
 
                     auto table = rewalk_points.lock_table();
@@ -590,7 +590,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     }
                 #endif
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     graph_update_time.reportTotal("time(seconds)");
                     walk_update_time.reportTotal("time(seconds)");
                 #endif
@@ -763,8 +763,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             */
             static void sort_edge_batch_by_source(std::tuple<uintV, uintV>* edges, size_t batch_edges, size_t nn = std::numeric_limits<size_t>::max())
             {
-                #ifdef DOCK_TIMER
-                    timer timer("Dock::SortEdgeBatchBySource");
+                #ifdef WHARFMH_TIMER
+                    timer timer("WharfMH::SortEdgeBatchBySource");
                 #endif
 
                 // 1. Set up
@@ -806,11 +806,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     pbbs::sample_sort_inplace(edges_original, std::less<>());
                 }
 
-                #ifdef DOCK_TIMER
+                #ifdef WHARFMH_TIMER
                     timer.reportTotal("time (seconds)");
                 #endif
             }
     };
 }
 
-#endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_DOCK_H
+#endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_WharfMH_H
