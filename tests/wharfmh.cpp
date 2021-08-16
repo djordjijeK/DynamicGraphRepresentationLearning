@@ -13,9 +13,9 @@ class WharfMHTest : public testing::Test
         long total_edges;
         uintV* edges;
         uintE* offsets;
-        bool mmap = false;          // TODO @Djordjije: do we need this?
-        bool is_symmetric = true;   // TODO @Djordjije: do we need this?
-        std::string default_file_path = "data/email-graph";
+        bool mmap = false;
+        bool is_symmetric = true;
+        std::string default_file_path = "data/wiki-graph";
 };
 
 void WharfMHTest::SetUp()
