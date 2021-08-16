@@ -50,131 +50,112 @@ void WharfMHTest::TearDown()
     std::cout << "-----------------------------------------------------------------------------------------------------" << std::endl;
 }
 
-TEST_F(WharfMHTest, WharfMHConstructor)
+TEST_F(WharfMHTest, WharfMHThroughputLatency)
 {
-    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges, false);
+    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
+    WharfMH.generate_initial_random_walks();
+    int n_trials = 3;
 
-    // assert the number of vertices and edges in a graph
-    ASSERT_EQ(WharfMH.number_of_vertices(), total_vertices);
-    ASSERT_EQ(WharfMH.number_of_edges(), total_edges);
+    double limit = 5.5;
 
-    // construct a flat snapshot of a graph
-    auto flat_snapshot = WharfMH.flatten_vertex_tree();
 
-    // assert
-    parallel_for(0, total_vertices, [&] (long i)
+    auto batch_sizes = pbbs::sequence<size_t>(6);
+    batch_sizes[0] = 5;
+    batch_sizes[1] = 50;
+    batch_sizes[2] = 500;
+    batch_sizes[3] = 5000;
+    batch_sizes[4] = 50000;
+    batch_sizes[5] = 500000;
+
+    for (short int i = 0; i < batch_sizes.size(); i++)
     {
-        size_t off = offsets[i];
-        size_t degree = ((i == (total_vertices - 1)) ? total_edges : offsets[i+1]) - off;
-        auto S = pbbs::delayed_seq<uintV>(degree, [&] (size_t j) { return edges[off + j]; });
+        timer insert_timer("InsertTimer");
+        timer delete_timer("DeleteTimer");
 
-        // assert expected degrees
-        ASSERT_EQ(flat_snapshot[i].compressed_edges.degree(), degree);
+        graph_update_time_on_insert.reset();
+        walk_update_time_on_insert.reset();
+        graph_update_time_on_delete.reset();
+        walk_update_time_on_delete.reset();
 
-        auto edges = flat_snapshot[i].compressed_edges.get_edges(i);
+        std::cout << "Batch size = " << 2*batch_sizes[i] << " | ";
 
-        // assert expected neighbours
-        for(auto j = 0; j < degree; j++)
+        double last_insert_time = 0;
+        double last_delete_time = 0;
+
+        auto latency_insert = pbbs::sequence<double>(n_trials);
+        auto latency_delete = pbbs::sequence<double>(n_trials);
+        auto latency        = pbbs::sequence<double>(n_trials);
+
+        double total_insert_walks_affected = 0;
+        double total_delete_walks_affected = 0;
+
+        for (short int trial = 0; trial < n_trials; trial++)
         {
-            bool flag = false;
+            size_t graph_size_pow2 = 1 << (pbbs::log2_up(total_vertices) - 1);
+            auto edges = utility::generate_batch_of_edges(batch_sizes[i], total_vertices, false, false);
 
-            for (auto k = 0; k <  S.size(); k++)
-            {
-                if (S[k] == edges[j]) flag = true;
-            }
+            std::cout << edges.second << " ";
 
-            ASSERT_EQ(flag, true);
+            insert_timer.start();
+            auto x = WharfMH.insert_edges_batch(edges.second, edges.first, false, true, graph_size_pow2);
+            insert_timer.stop();
+
+            total_insert_walks_affected += x;
+
+            last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
+            latency_insert[trial] = (double) last_insert_time / x;
+
+            delete_timer.start();
+            auto y = WharfMH.delete_edges_batch(edges.second, edges.first, false, true, graph_size_pow2);
+            delete_timer.stop();
+
+            total_delete_walks_affected += y;
+
+            last_delete_time = walk_update_time_on_delete.get_total() - last_delete_time;
+            latency_delete[trial] = (double) last_delete_time / y;
+
+            latency[trial] = (double) (last_insert_time + last_delete_time) / (x + y);
+
+            if (insert_timer.get_total() > 2*limit || delete_timer.get_total() > 2*limit) goto endloop;
+
+            // free edges
+            pbbs::free_array(edges.first);
         }
-    });
-}
 
-TEST_F(WharfMHTest, WharfMHDestructor)
-{
-    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
+        std::cout << std::endl;
 
-    WharfMH.print_memory_pool_stats();
-    WharfMH.destroy();
-    WharfMH.print_memory_pool_stats();
+        std::cout << "Average insert time = " << insert_timer.get_total() / n_trials << std::endl;
+        std::cout << "Average graph update insert time = " << graph_update_time_on_insert.get_total() / n_trials << std::endl;
+        std::cout << "Average walk update insert time = " << walk_update_time_on_insert.get_total() / n_trials
+                  << ", average walk affected = " << total_insert_walks_affected / n_trials << std::endl;
 
-    // assert vertices and edges
-    ASSERT_EQ(WharfMH.number_of_vertices(), 0);
-    ASSERT_EQ(WharfMH.number_of_edges(), 0);
+        std::cout << "Average delete time = " << delete_timer.get_total() / n_trials << std::endl;
+        std::cout << "Average graph update delete time = " << graph_update_time_on_delete.get_total() / n_trials << std::endl;
+        std::cout << "Average walk update delete time = " << walk_update_time_on_delete.get_total() / n_trials
+                  << ", average walk affected = " << total_delete_walks_affected / n_trials << std::endl;
 
-    // construct a flat snapshot of a graph
-    auto flat_snapshot = WharfMH.flatten_vertex_tree();
+        std::cout << "Average walk insert latency = { ";
+        for(int i = 0; i < n_trials; i++)
+        {
+            std::cout << latency_insert[i] << " ";
+        }
+        std::cout << "}" << std::endl;
 
-    // assert that flat snapshot does not exits
-    ASSERT_EQ(flat_snapshot.size(), 0);
-}
+        std::cout << "Average walk delete latency = { ";
+        for(int i = 0; i < n_trials; i++)
+        {
+            std::cout << latency_delete[i] << " ";
+        }
+        std::cout << "}" << std::endl;
 
-TEST_F(WharfMHTest, InsertBatchOfEdges)
-{
-    // create wharf instance (vertices & edges)
-    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
-    auto start_edges = WharfMH.number_of_edges();
-
-    // geneate edges
-//    auto edges = utility::generate_batch_of_edges(2 * WharfMH.number_of_vertices(), WharfMH.number_of_vertices(), false, false);
-
-    std::tuple<uintV, uintV>* generated_edges = new std::tuple<uintV, uintV>[1];
-    generated_edges[0] = {1, 3};
-    auto edges_generated = 1;
-
-    // insert batch of edges
-    WharfMH.insert_edges_batch(edges_generated, generated_edges, true, false);
-
-    std::cout << "Edges before batch insert: " << start_edges << std::endl;
-    std::cout << "Edges after batch insert: "  << WharfMH.number_of_edges() << std::endl;
-
-    // assert edge insertion
-    ASSERT_GE(WharfMH.number_of_edges(), start_edges);
-}
-
-TEST_F(WharfMHTest, DeleteBatchOfEdges)
-{
-    // create wharf instance (vertices & edges)
-    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
-    auto start_edges = WharfMH.number_of_edges();
-
-    // geneate edges
-//    auto edges = utility::generate_batch_of_edges(2 * WharfMH.number_of_vertices(), WharfMH.number_of_vertices(), false, false);
-
-    std::tuple<uintV, uintV>* generated_edges = new std::tuple<uintV, uintV>[1];
-    generated_edges[0] = {2, 5};
-    auto edges_generated = 1;
-
-    // insert batch of edges
-    WharfMH.delete_edges_batch(edges_generated, generated_edges, true, false);
-
-    std::cout << "Edges before batch delete: " << start_edges << std::endl;
-    std::cout << "Edges after batch delete: " << WharfMH.number_of_edges() << std::endl;
-
-    // assert edge deletion
-    ASSERT_LE(WharfMH.number_of_edges(), start_edges);
-}
-
-TEST_F(WharfMHTest, DEV)
-{
-    dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
-    WharfMH.create_random_walks();
-
-    for(int i = 0; i < config::walks_per_vertex * WharfMH.number_of_vertices(); i++)
-    {
-        std::cout << WharfMH.rewalk(i) << std::endl;
+        std::cout << "Average walk update latency = { ";
+        for(int i = 0; i < n_trials; i++)
+        {
+            std::cout << latency[i] << " ";
+        }
+        std::cout << "}" << std::endl;
     }
 
-    std::tuple<uintV, uintV>* generated_edges = new std::tuple<uintV, uintV>[2];
-    generated_edges[0] = {1, 3};
-    generated_edges[1] = {3, 1};
-    auto edges_generated = 1;
-
-    // insert batch of edges
-    WharfMH.insert_edges_batch(edges_generated, generated_edges, true, false);
-//    WharfMH.delete_edges_batch(edges_generated, generated_edges, true, false);
-
-    for(int i = 0; i < config::walks_per_vertex * WharfMH.number_of_vertices(); i++)
-    {
-        std::cout << WharfMH.rewalk(i) << std::endl;
-    }
+    endloop:
+        std::cout << "Loop ended" << std::endl;
 }
-

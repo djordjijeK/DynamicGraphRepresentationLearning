@@ -76,7 +76,7 @@ option(HOMEGROWN  OFF)
 option(DOCK_DEBUG OFF)
 option(SERIAL     OFF)
 
-set(WHARFMH_DEBUG ON)
+#set(WHARFMH_DEBUG ON)
 
 # build variables
 set(OMPFLAGS         "-DOPENMP -fopenmp")
@@ -119,11 +119,6 @@ endif()
 add_executable(wharfmh wharfmh.cpp)
 target_link_libraries(wharfmh ${GTEST_LIBRARIES})
 add_test(NAME wharfmh COMMAND wharfmh)
-
-# Pairing function tests
-add_executable(pairings pairings.cpp)
-target_link_libraries(pairings ${GTEST_LIBRARIES})
-add_test(NAME pairings COMMAND pairings)
 
 # Sampler tests
 add_executable(sampler sampler.cpp)

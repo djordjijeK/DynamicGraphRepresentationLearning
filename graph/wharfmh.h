@@ -5,7 +5,6 @@
 #include <cuckoohash_map.hh>
 
 #include <config.h>
-#include <pairings.h>
 #include <vertex.h>
 #include <snapshot.h>
 
@@ -200,9 +199,17 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             }
 
             /**
+            * @brief Destroys corpus of random walks.
+            */
+            void destroy_walks()
+            {
+                this->walk_storage.clear();
+            }
+
+            /**
              * @brief Creates initial set of random walks.
              */
-            void create_random_walks()
+            void generate_initial_random_walks()
             {
                 auto graph          = this->flatten_graph();
                 auto total_vertices = this->number_of_vertices();
@@ -228,9 +235,21 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 parallel_for(0, walks, [&](types::WalkID walk_id)
                 {
-                    if (graph[walk_id % total_vertices].degrees == 0) return;
+                    if (graph[walk_id % total_vertices].degrees == 0)
+                    {
+                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
 
-                    this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
+                        this->walk_storage.update_fn(walk_id, [&](auto& vector)
+                        {
+                            vector.push_back(walk_id % total_vertices);
+                        });
+
+                        return;
+                    }
+
+                    this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
+
+                    auto random = utility::Random(walk_id / total_vertices);
                     types::State state = model->initial_state(walk_id % total_vertices);
 
                     for(types::Position position = 0; position < config::walk_length; position++)
@@ -241,6 +260,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         }
 
                         auto new_state = graph[state.first].samplers->find(state.second).sample(state, model);
+                        new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
 
                         this->walk_storage.update_fn(walk_id, [&](auto& vector)
                         {
@@ -261,7 +281,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              *
              * @return - walk string representation
              */
-            std::string rewalk(types::WalkID walk_id)
+            std::string walk(types::WalkID walk_id)
             {
                 std::stringstream string_stream;
                 if (!this->walk_storage.contains(walk_id)) return string_stream.str();
@@ -284,7 +304,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             * @param nn
             * @param apply_walk_updates - decides if walk updates will be executed
             */
-            void insert_edges_batch(size_t m, std::tuple<uintV, uintV>* edges, bool sorted = false, bool remove_dups = false, size_t nn = std::numeric_limits<size_t>::max(), bool apply_walk_updates = true, bool run_seq = false)
+            int insert_edges_batch(size_t m, std::tuple<uintV, uintV>* edges, bool sorted = false, bool remove_dups = false, size_t nn = std::numeric_limits<size_t>::max(), bool apply_walk_updates = true, bool run_seq = false)
             {
                 #ifdef WHARFMH_TIMER
                     timer graph_update_time("WharfMH::InsertEdgesBatch::GraphUpdateTime");
@@ -356,7 +376,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), new dygrl::SamplerManager(0)));
                 });
 
-                types::MapOfChanges rewalk_points = types::MapOfChanges(0);
+                types::MapOfChanges rewalk_points = types::MapOfChanges();
                 auto replace = [&, run_seq] (const intV& v, const VertexEntry& a, const VertexEntry& b)
                 {
                     auto union_edge_tree = tree_plus::uniont(b.compressed_edges, a.compressed_edges, v, run_seq);
@@ -406,7 +426,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_update_time.start();
                 #endif
 
-                if (apply_walk_updates) this->update_walks(rewalk_points);
+//                if (apply_walk_updates) this->update_walks(rewalk_points);
 
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
@@ -432,6 +452,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     graph_update_time.reportTotal("time(seconds)");
                     walk_update_time.reportTotal("time(seconds)");
                 #endif
+
+                return rewalk_points.size();
             }
 
             /**
@@ -444,7 +466,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             * @param nn
             * @param run_seq - decides if walk updates will be executed
             */
-            void delete_edges_batch(size_t m, tuple<uintV, uintV>* edges, bool sorted = false, bool remove_dups = false, size_t nn = std::numeric_limits<size_t>::max(), bool apply_walk_updates = true, bool run_seq = false)
+            int delete_edges_batch(size_t m, tuple<uintV, uintV>* edges, bool sorted = false, bool remove_dups = false, size_t nn = std::numeric_limits<size_t>::max(), bool apply_walk_updates = true, bool run_seq = false)
             {
                 #ifdef WHARFMH_TIMER
                     timer graph_update_time("WharfMH::DeleteEdgesBatch::GraphUpdateTime");
@@ -516,7 +538,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), new SamplerManager(0)));
                 });
 
-                types::MapOfChanges rewalk_points = types::MapOfChanges(0);
+                types::MapOfChanges rewalk_points = types::MapOfChanges();
+
                 auto replace = [&,run_seq] (const intV& v, const VertexEntry& a, const VertexEntry& b)
                 {
                     auto difference_edge_tree = tree_plus::difference(b.compressed_edges, a.compressed_edges, v, run_seq);
@@ -566,7 +589,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_update_time.start();
                 #endif
 
-                if (apply_walk_updates) this->update_walks(rewalk_points);
+//                if (apply_walk_updates) this->update_walks(rewalk_points);
 
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
@@ -594,8 +617,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     graph_update_time.reportTotal("time(seconds)");
                     walk_update_time.reportTotal("time(seconds)");
                 #endif
-            }
 
+                return rewalk_points.size();
+            }
 
             void update_walks(types::MapOfChanges& rewalk_points)
             {
@@ -605,7 +629,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 for(auto& entry : rewalk_points.lock_table())
                 {
                     affected_walks[index++] = entry.first;
-                    std::cout << entry.first << " " << (int) entry.second << std::endl;
                 }
 
                 auto graph = this->flatten_graph();
@@ -636,100 +659,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             vector[position] = state.first;
                         });
 
+                        if (!graph[state.first].samplers->contains(state.second))
+                        {
+                            graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
+                        }
+
                         state = graph[state.first].samplers->find(state.second).sample(state, model);
                     }
                 });
-            }
-
-            /**
-             * @brief Prints memory footprint details.
-             */
-            void memory_footprint() const
-            {
-                std::cout << std::endl;
-
-                size_t graph_vertices = this->number_of_vertices();
-                size_t graph_edges    = this->number_of_edges();
-
-                size_t vertex_node_size = Graph::node_size();
-                size_t c_tree_node_size = types::CompressedTreesLists::node_size();
-
-                size_t edges_heads = 0;
-                size_t walks_heads = 0;
-                size_t edges_bytes = 0;
-                size_t walks_bytes = 0;
-                size_t flat_graph_bytes = 0;
-                auto flat_graph = this->flatten_vertex_tree();
-
-                for (auto i = 0; i < flat_graph.size(); i++)
-                {
-                    flat_graph_bytes += sizeof(flat_graph[i]);
-
-                    edges_heads += flat_graph[i].compressed_edges.edge_tree_nodes();
-                    edges_bytes += flat_graph[i].compressed_edges.size_in_bytes(i);
-                }
-
-                std::cout << "Graph: \n\t" << "Vertices: " << graph_vertices << ", Edges: " << graph_edges << std::endl;
-
-                std::cout << "Vertex Tree: \n\t"
-                          << "Heads: " << Graph::used_node()
-                          << ", Head size: " << vertex_node_size
-                          << ", Memory usage: " << utility::MB(Graph::get_used_bytes()) << " MB"
-                          << " = " << utility::GB(Graph::get_used_bytes()) << " GB" << std::endl;
-
-                std::cout << "Edge Trees: \n\t"
-                          << "Heads: " << edges_heads
-                          << ", Head size: " << c_tree_node_size
-                          << ", Lists memory: " << utility::MB(edges_bytes) << " MB"
-                          << " = " << utility::GB(edges_bytes) << " GB"
-                          << ", Total memory usage: " << utility::MB(edges_bytes + edges_heads*c_tree_node_size)
-                          << " MB = " << utility::GB(edges_bytes + edges_heads*c_tree_node_size)
-                          << " GB" << std::endl;
-
-                std::cout << "Walks Trees: \n\t"
-                          << "Heads: " << walks_heads
-                          << ", Head size: " << c_tree_node_size
-                          << ", Lists memory: " << utility::MB(walks_bytes) << " MB"
-                          << " = " << utility::GB(walks_bytes) << " GB"
-                          << ", Total memory usage: " << utility::MB(walks_bytes + walks_heads*c_tree_node_size)
-                          << " MB = " << utility::GB(walks_bytes + walks_heads*c_tree_node_size)
-                          << " GB" << std::endl;
-
-                std::cout << "Flat graph: \n\t"
-                          << "Total memory usage: " << utility::MB(flat_graph_bytes)
-                          << " MB = " << utility::GB(flat_graph_bytes)
-                          << " GB" << std::endl;
-
-                size_t total_memory = Graph::get_used_bytes()
-                        + walks_bytes + walks_heads*c_tree_node_size
-                        + edges_bytes + edges_heads*c_tree_node_size;
-
-                std::cout << "Total memory used: \n\t" << utility::MB(total_memory) << " MB = "
-                          << utility::GB(total_memory) << " GB" << std::endl;
-
-                std::cout << std::endl;
-            }
-
-            /**
-             * @brief Prints memory pool stats for the underlying lists.
-             */
-            void print_memory_pool_stats() const
-            {
-                std::cout << std::endl;
-
-                // vertices memory pool stats
-                std::cout << "Vertices tree memory lists: \n\t";
-                Graph::print_stats();
-
-                // edges and walks memory pool stats
-                std::cout << "Edges & Walks trees memory lists: \n\t";
-                types::CompressedTreesLists::print_stats();
-
-                // compressed lists
-                std::cout << "Pluses & Tails memory lists: \n";
-                compressed_lists::print_stats();
-
-                std::cout << std::endl;
             }
 
         private:
