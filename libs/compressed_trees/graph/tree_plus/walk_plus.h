@@ -14,15 +14,16 @@ namespace walk_plus {
   using AT = lists::array_type;
 
   struct edge_entry {
-    using key_t = uintV;        // the 'head' edge of this node.
-    using val_t = AT*;          // the set of edges stored in this node.
-    static bool comp(const key_t& a, const key_t& b) { return a < b; }
+    using key_t = uintV;        // the 'head' edge of this node.            // K (key type)
+    using val_t = AT*;          // the set of edges stored in this node.    // V (value type)
+    static bool comp(const key_t& a, const key_t& b) { return a < b; }      // < (comparison function on K)
 
     // Walk-tree augmentation
-    using aug_t = uintV;        // num. edges in this subtree
-    static aug_t get_empty() { return 0; }
-    static aug_t from_entry(const key_t& k, const val_t& v) { return 1 + lists::node_size(v); }
-    static aug_t combine(const aug_t& a, const aug_t& b) { return a + b; }
+    using aug_t = uintV;        // largest value of the left-subtree        // A (augmented value)
+    static aug_t get_empty() { return 0; }                                  // I(identity of f)
+    static aug_t from_entry(const key_t& k, const val_t& v) { return 1 + lists::node_size(v); } // g (base function)
+    static aug_t combine(const aug_t& a, const aug_t& b) { return a + b; }  // f (combine function)
+
     using entry_t = std::pair<key_t,val_t>;
     static entry_t copy_entry(const entry_t& e) {
       // TODO: Instead of copying, bump a ref-ct (note that copy_node and
@@ -132,6 +133,125 @@ namespace walk_plus {
       }
       return res;
     }
+
+    /**
+     * Returns true or false depending on whether f(walk-tree element) = true
+     * @tparam F   - Type of the f function
+     * @param src  - id of the walk-tree node
+     * @param lb   - lower bound of the search range
+     * @param ub   - upper bound of the search range
+     * @param f    - function that an elements should satisfy
+     * @return     - true or false if we found the element in the [lb, ub]
+     */
+    template <class F>
+    bool iter_elms_cond_in_range(uintV src, size_t lb, size_t ub, F f) const
+    { //todo: this remains to be done
+    bool res = false;
+
+    // Cases for the plus
+    if (plus)
+    {
+        // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        // Get first and last elements in the plus chunk %%%%%%%%%%%%%%%%%%%%%%%%%%%
+        auto first_and_last = lists::first_and_last_keys(plus, src);
+        uintV plus_min = get<0>(first_and_last);
+        uintV plus_max = get<1>(first_and_last);
+
+        // Case 1: intersection 0
+        if ((plus_max < lb) || (plus_min > ub))
+        {
+            res = false; // not in plus. no need to decode any of its elements
+        }
+        //          // Case 2: intersection <> 0
+        //          else if (lb <= plus_max)
+        //          {
+        //            // Decode until element min(plus_max, ub)
+        //            auto min = lb;
+        //            auto max = std::min(static_cast<uintV>(plus_max), static_cast<uintV>(ub));
+        //            res = lists::iter_elms_cond_FindNextOptimized(plus, src, min, max, f);
+        //          }
+        //          // Case 3: intersection <> 0
+        //          else if (ub >= plus_min)
+        //          {
+        //            // Decode starting from element max(plus_min, lb)
+        //            auto max = ub;
+        //            auto min = std::max(static_cast<uintV>(plus_min), static_cast<uintV>(lb));
+        //            res = lists::iter_elms_cond_FindNextOptimized(plus, src, min, max, f);
+        //          }
+        else
+        {
+            res = lists::iter_elms_cond(plus, src, f);
+            //            std::cerr << "(plus) FUCK. Something is wrong!" << std::endl;
+            //            return false; // never goes through here %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        }
+        // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    }
+
+    //        if (plus)
+    //        {
+    //            res = lists::iter_elms_cond(plus, src, f);
+    //        }
+
+    if (!res && root)
+    {
+        // Lambda function that is going to be called in each tree node
+        auto iter_f = [&] (const Entry& entry) {
+            uintV key = entry.first;
+            if (f(key))
+            {
+                return true;
+            }
+            AT* arr = entry.second;
+
+            // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            // Do the same logic for the chunk of this node (exactly like in the plus chunk)
+            // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            // Get first and last elements in the plus chunk %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            auto first_and_last = lists::first_and_last_keys(arr, src);
+            uintV chunk_min = get<0>(first_and_last);
+            uintV chunk_max = get<1>(first_and_last);
+
+            // Case 1: intersection 0
+            if ((chunk_max < lb) || (chunk_min > ub))
+            {
+                return false; // not in plus. no need to decode any of its elements
+            }
+            //                // Case 2: intersection <> 0
+            //                else if (lb <= plus_max)
+            //                {
+            //                  // Decode until element min(plus_max, ub)
+            //                  auto min = lb;
+            //                  auto max = std::min(static_cast<uintV>(plus_max), static_cast<uintV>(ub));
+            //                  return lists::iter_elms_cond_FindNextOptimized(arr, src, min, max, f);
+            //                }
+            //                // Case 3: intersection <> 0
+            //                else if (ub >= plus_min)
+            //                {
+            //                  // Decode starting from element max(plus_min, lb)
+            //                  auto max = ub;
+            //                  auto min = std::max(static_cast<uintV>(plus_min), static_cast<uintV>(lb));
+            //                  return lists::iter_elms_cond_FindNextOptimized(arr, src, min, max, f);
+            //                }
+            else
+            {
+                return lists::iter_elms_cond(arr, src, f);
+                //                  std::cerr << "(chunk) FUCK. Something is wrong!" << std::endl;
+                //                  return false; // never goes through here %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            }
+            // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+            //                return lists::iter_elms_cond(arr, src, f);
+        };
+
+        auto T = edge_list(); T.root = root; // aug map
+        //            res = T.iter_elms_cond_FindNextOptimized(lb, ub, iter_f);
+        res = T.template iter_elms_cond(iter_f); // Test the times now
+        T.root = nullptr;
+    }
+
+    return res;
+    }
+        
 
 
     template <class F>

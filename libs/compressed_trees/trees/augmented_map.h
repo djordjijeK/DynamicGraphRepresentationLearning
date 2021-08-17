@@ -42,7 +42,8 @@ public:
   A aug_range(const K& key_left, const K& key_right) {
     typename Tree::aug_sum_t a;
     Tree::aug_sum_range(Map::root, key_left, key_right, a);
-    return a.result;}
+    return a.result;
+  }
 
   // just side effecting
   template <class restricted_sum>
@@ -146,6 +147,10 @@ public:
   using Map::get_used_bytes;
   using Map::used_node;
   using Map::node_size;
+  // Makis addition -- inherit these functions for range searching too -- O(blogn + k) (output sensitive algorithm - range tree)
+  using Map::range;
+  using Map::range_number;
+  using Map::range_number_mr;
 };
 
 // creates a key-value pair for the entry, and redefines from_entry

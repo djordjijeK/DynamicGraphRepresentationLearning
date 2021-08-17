@@ -301,8 +301,17 @@ struct map_ops : Seq {
     }
   }
 
-  static node* range_root(node* b, const K& key_left, const K& key_right) {
-    while (b) {
+  /**
+   * Finds the root of the search range
+   * @param b the root of map
+   * @param key_left left bound of the search range
+   * @param key_right right bound of the search range
+   * @return root of the search range in the map
+   */
+  static node* range_root(node* b, const K& key_left, const K& key_right)
+  {
+    while (b)
+    {
       if (Entry::comp(key_right, get_key(b))) { b = b->lc; continue; }
       if (Entry::comp(get_key(b), key_left)) { b = b->rc; continue; }
       break;
@@ -326,9 +335,19 @@ struct map_ops : Seq {
     return Seq::node_join(right(b->lc, e), b->rc, r);
   }
 
-  static node* range(node* b, const K& low, const K& high) {
+  /**
+   * Function that performs range search over the Parallel (Augmented) Map
+   * @param b root of the search range in the map
+   * @param low left bound of the search range
+   * @param high right bound of the search range
+   * @return All entries in the corresponding search range. Or null if not found!
+   * REMARK: The complexity is O(blogn + k) as we have to iterate over all returned results
+   * todo: compare this approach with the custom-written one I did with the tree traversal
+   */
+  static node* range(node* b, const K& low, const K& high)
+  {
     node* r = range_root(b, low, high);
-    if (!r) return NULL;
+    if (!r) return NULL; // returns null if any node with the corresponding id is found
     node* rr = Seq::make_node(Seq::get_entry(r));
     return Seq::node_join(right(r->lc, low), left(r->rc, high), rr);
   }

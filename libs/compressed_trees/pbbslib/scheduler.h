@@ -282,6 +282,9 @@ private:
 template<typename T>
 thread_local int scheduler<T>::thread_id = 0;
 
+/**
+ * Fork-Join Scheduler is used for parallel walk production
+ */
 struct fork_join_scheduler {
 
 public:
@@ -291,20 +294,25 @@ public:
 
   scheduler<Job>* sched;
 
-  fork_join_scheduler() {
+  fork_join_scheduler()
+  {
     sched = new scheduler<Job>;
   }
 
-  ~fork_join_scheduler() {
-    if (sched) {
+  ~fork_join_scheduler()
+  {
+    if (sched)
+    {
       delete sched;
       sched = nullptr;
     }
   }
 
   // Must be called using std::atexit(..) to free resources
-  void destroy() {
-    if (sched) {
+  void destroy()
+  {
+    if (sched)
+    {
       delete sched;
       sched = nullptr;
     }
@@ -316,14 +324,18 @@ public:
 
   // Fork two thunks and wait until they both finish.
   template <typename L, typename R>
-  void pardo(L left, R right, bool conservative=false) {
+  void pardo(L left, R right, bool conservative=false)
+  {
     bool right_done = false;
     Job right_job = [&] () {
       right(); right_done = true;};
     sched->spawn(&right_job);
     left();
-    if (sched->try_pop() != NULL) right();
-    else {
+
+    if (sched->try_pop() != NULL)
+        right();
+    else
+    {
       auto finished = [&] () {return right_done;};
       sched->wait(finished, conservative);
     }
@@ -347,14 +359,19 @@ public:
   }
 
   template <typename F>
-  void parfor(size_t start, size_t end, F f,
-	      size_t granularity = 0,
-	      bool conservative = false) {
-    if (granularity == 0) {
+  void parfor(size_t start,
+              size_t end,
+              F f,
+              size_t granularity = 0,
+              bool conservative = false)
+  {
+    if (granularity == 0)
+    {
       size_t done = get_granularity(start,end, f);
       granularity = std::max(done, (end-start)/(128*sched->num_threads));
       parfor_(start+done, end, f, granularity, conservative);
-    } else parfor_(start, end, f, granularity, conservative);
+    }
+    else parfor_(start, end, f, granularity, conservative);
   }
 
 private:

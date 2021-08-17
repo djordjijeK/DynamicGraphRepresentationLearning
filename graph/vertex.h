@@ -100,7 +100,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             return std::make_pair(entry.first,VertexEntry
                 (
                     types::CompressedEdges(ce_plus, ce_root),
-                    dygrl::CompressedWalks(cw_plus, cw_root),
+                    dygrl::CompressedWalks(cw_plus, cw_root, entry.second.compressed_walks.vnext_min, entry.second.compressed_walks.vnext_max),
                     sampler
                 )
             );

@@ -196,10 +196,14 @@ inline void set_num_workers(int n) {
   fj.set_num_workers(n);
 }
 
+// Fork-Join Scheduler's parallel for
 template <class F>
-inline void parallel_for(long start, long end, F f,
-			 long granularity,
-			 bool conservative) {
+inline void parallel_for(long start,
+                         long end,
+                         F f,
+                         long granularity,
+                         bool conservative)
+{
   fj.parfor(start, end, f, granularity, conservative);
 }
 

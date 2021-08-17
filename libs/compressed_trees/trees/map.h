@@ -415,7 +415,11 @@ public:
     return M(Tree::difference(a.get_root(), b.get_root()));
   }
 
-  static M range(M& a, K kl, K kr) {
+  /**
+   * Function that performs range search over the Parallel (Augmented) Map
+   * */
+  static M range(M& a, K kl, K kr)
+  {
     return M(Tree::range(a.root, kl, kr));
   }
 
