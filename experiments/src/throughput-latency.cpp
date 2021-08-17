@@ -15,6 +15,7 @@ void throughput(commandLine& command_line)
     double paramQ           = command_line.getOptionDoubleValue("-paramQ", config::paramQ);
     string init_strategy    = string(command_line.getOptionValue("-init", "weight"));
     size_t n_trials         = command_line.getOptionLongValue("-trials", 3);
+    double limit            = 5.0;
 
     config::walks_per_vertex = walks_per_vertex;
     config::walk_length      = length_of_walks;
@@ -133,6 +134,8 @@ void throughput(commandLine& command_line)
 
             latency[trial] = (last_insert_time + last_delete_time) / (x.size() + y.size());
 
+            if (insert_timer.get_total() > 2*limit || delete_timer.get_total() > 2*limit) goto endloop;
+
             // free edges
             pbbs::free_array(edges.first);
         }
@@ -166,22 +169,25 @@ void throughput(commandLine& command_line)
         std::cout << "}" << std::endl;
     }
 
-    WharfMH.destroy_index();
-    timer generate_initial_walks("Generate Initial Random Walks", false);
-    for (int i = 0; i < n_trials; i++)
-    {
-        generate_initial_walks.start();
-        WharfMH.generate_initial_random_walks();
-        generate_initial_walks.stop();
+    endloop:
+        std::cout << "Loop ended" << std::endl;
 
-        WharfMH.destroy_index();
-    }
-
-    std::cout << std::endl
-    << "Average time to generate random walks from scratch = "
-    << generate_initial_walks.get_total() / n_trials << std::endl;
-
-    std::cout << std::endl;
+//    WharfMH.destroy_index();
+//    timer generate_initial_walks("Generate Initial Random Walks", false);
+//    for (int i = 0; i < n_trials; i++)
+//    {
+//        generate_initial_walks.start();
+//        WharfMH.generate_initial_random_walks();
+//        generate_initial_walks.stop();
+//
+//        WharfMH.destroy_index();
+//    }
+//
+//    std::cout << std::endl
+//    << "Average time to generate random walks from scratch = "
+//    << generate_initial_walks.get_total() / n_trials << std::endl;
+//
+//    std::cout << std::endl;
 }
 
 int main(int argc, char** argv)
