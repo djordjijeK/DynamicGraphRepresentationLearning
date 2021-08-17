@@ -37,13 +37,9 @@ endif()
 set(CMAKE_CXX_FLAGS "${CFLAGS} ${PFLAGS}")
 
 file(COPY data DESTINATION .)
-#file(COPY bin/SNAPtoAdj DESTINATION .)
-#file(COPY bin/to_word2vec.pl DESTINATION .)
-#file(COPY bin/vertex-classification.py DESTINATION .)
+file(COPY bin/SNAPtoAdj DESTINATION .)
 
 # experiments executables
-#add_executable(throughput-latency src/throughput-latency.cpp)
-#add_executable(memory-footprint src/memory-footprint.cpp)
-#add_executable(vertex-classification src/vertex-classification.cpp)
+add_executable(throughput-latency src/throughput-latency.cpp src/throughput-latency.cpp)
 
 # -------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING WITH METROPOLIS HASTINGS ----------------------------
