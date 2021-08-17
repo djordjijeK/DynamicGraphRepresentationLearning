@@ -40,7 +40,7 @@ namespace types
     using MapOfChanges         = libcuckoo::cuckoohash_map<WalkID, std::tuple<Position, Vertex, bool>>;
 
     // ChangeAccumulator = accumulator of changes for walk updates
-    using ChangeAccumulator    = libcuckoo::cuckoohash_map<WalkID, std::vector<PairedTriplet>>;
+    using ChangeAccumulator    = libcuckoo::cuckoohash_map<Vertex, std::vector<PairedTriplet>>;
 }
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_TYPES_H

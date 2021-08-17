@@ -76,7 +76,7 @@ option(HOMEGROWN  OFF)
 option(DOCK_DEBUG OFF)
 option(SERIAL     OFF)
 
-set(MALIN_DEBUG ON)
+set(WHARFMH_DEBUG ON)
 
 # build variables
 set(OMPFLAGS         "-DOPENMP -fopenmp")
@@ -107,18 +107,18 @@ else()
 endif()
 
 # set compile flags
-if (MALIN_DEBUG)
-    set(CMAKE_CXX_FLAGS "${DOCK_DEBUG_FLAGS} ${PFLAGS} -DMALIN_DEBUG -DMALIN_TIMER -DVERTEXLONG")
+if (WHARFMH_DEBUG)
+    set(CMAKE_CXX_FLAGS "${DOCK_DEBUG_FLAGS} ${PFLAGS} -DWHARFMH_DEBUG -DWHARFMH_TIMER -DVERTEXLONG")
 else()
     set(CMAKE_CXX_FLAGS "${CFLAGS} ${PFLAGS}")
 endif()
 
 # ------------------------------------------------------ TESTS ---------------------------------------------------------
 
-# Dock tests
-add_executable(malin malin.cpp)
-target_link_libraries(malin ${GTEST_LIBRARIES})
-add_test(NAME malin COMMAND malin)
+# WharfMH tests
+add_executable(wharfmh wharfmh.cpp)
+target_link_libraries(wharfmh ${GTEST_LIBRARIES})
+add_test(NAME wharfmh COMMAND wharfmh)
 
 # Pairing function tests
 add_executable(pairings pairings.cpp)
