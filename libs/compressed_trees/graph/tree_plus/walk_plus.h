@@ -145,114 +145,59 @@ namespace walk_plus {
      */
     template <class F>
     bool iter_elms_cond_in_range(uintV src, size_t lb, size_t ub, F f) const
-    { //todo: this remains to be done
-    bool res = false;
-
-    // Cases for the plus
-    if (plus)
     {
-        // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        // Get first and last elements in the plus chunk %%%%%%%%%%%%%%%%%%%%%%%%%%%
-        auto first_and_last = lists::first_and_last_keys(plus, src);
-        uintV plus_min = get<0>(first_and_last);
-        uintV plus_max = get<1>(first_and_last);
+        bool res = false;
 
-        // Case 1: intersection 0
-        if ((plus_max < lb) || (plus_min > ub))
+        // Plus related checks
+        if (plus)
         {
-            res = false; // not in plus. no need to decode any of its elements
-        }
-        //          // Case 2: intersection <> 0
-        //          else if (lb <= plus_max)
-        //          {
-        //            // Decode until element min(plus_max, ub)
-        //            auto min = lb;
-        //            auto max = std::min(static_cast<uintV>(plus_max), static_cast<uintV>(ub));
-        //            res = lists::iter_elms_cond_FindNextOptimized(plus, src, min, max, f);
-        //          }
-        //          // Case 3: intersection <> 0
-        //          else if (ub >= plus_min)
-        //          {
-        //            // Decode starting from element max(plus_min, lb)
-        //            auto max = ub;
-        //            auto min = std::max(static_cast<uintV>(plus_min), static_cast<uintV>(lb));
-        //            res = lists::iter_elms_cond_FindNextOptimized(plus, src, min, max, f);
-        //          }
-        else
-        {
-            res = lists::iter_elms_cond(plus, src, f);
-            //            std::cerr << "(plus) FUCK. Something is wrong!" << std::endl;
-            //            return false; // never goes through here %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        }
-        // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    }
+            // ----------------------------------------------------------------------------
+            // ----------- Get first and last elements in the plus chunk ------------------
+            auto first_and_last = lists::first_and_last_keys(plus, src);
+            uintV plus_min = get<0>(first_and_last);
+            uintV plus_max = get<1>(first_and_last);
 
-    //        if (plus)
-    //        {
-    //            res = lists::iter_elms_cond(plus, src, f);
-    //        }
-
-    if (!res && root)
-    {
-        // Lambda function that is going to be called in each tree node
-        auto iter_f = [&] (const Entry& entry) {
-            uintV key = entry.first;
-            if (f(key))
-            {
-                return true;
-            }
-            AT* arr = entry.second;
-
-            // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            // Do the same logic for the chunk of this node (exactly like in the plus chunk)
-            // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            // Get first and last elements in the plus chunk %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            auto first_and_last = lists::first_and_last_keys(arr, src);
-            uintV chunk_min = get<0>(first_and_last);
-            uintV chunk_max = get<1>(first_and_last);
-
-            // Case 1: intersection 0
-            if ((chunk_max < lb) || (chunk_min > ub))
-            {
-                return false; // not in plus. no need to decode any of its elements
-            }
-            //                // Case 2: intersection <> 0
-            //                else if (lb <= plus_max)
-            //                {
-            //                  // Decode until element min(plus_max, ub)
-            //                  auto min = lb;
-            //                  auto max = std::min(static_cast<uintV>(plus_max), static_cast<uintV>(ub));
-            //                  return lists::iter_elms_cond_FindNextOptimized(arr, src, min, max, f);
-            //                }
-            //                // Case 3: intersection <> 0
-            //                else if (ub >= plus_min)
-            //                {
-            //                  // Decode starting from element max(plus_min, lb)
-            //                  auto max = ub;
-            //                  auto min = std::max(static_cast<uintV>(plus_min), static_cast<uintV>(lb));
-            //                  return lists::iter_elms_cond_FindNextOptimized(arr, src, min, max, f);
-            //                }
+            if ((plus_max < lb) || (plus_min > ub))
+                res = false; // Not in plus, and thus, no need to decode any of its elements
             else
-            {
-                return lists::iter_elms_cond(arr, src, f);
-                //                  std::cerr << "(chunk) FUCK. Something is wrong!" << std::endl;
-                //                  return false; // never goes through here %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            }
-            // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                res = lists::iter_elms_cond(plus, src, f);
+            // -----------------------------------------------------------------------------
+        }
 
-            //                return lists::iter_elms_cond(arr, src, f);
-        };
+        // Tree related checks
+        if (!res && root)
+        {
+            // Lambda function that is going to be called in each tree node
+            auto iter_f = [&] (const Entry& entry) {
+                uintV key = entry.first;
+                if (f(key))
+                {
+                    return true;
+                }
+                AT* arr = entry.second;
 
-        auto T = edge_list(); T.root = root; // aug map
-        //            res = T.iter_elms_cond_FindNextOptimized(lb, ub, iter_f);
-        res = T.template iter_elms_cond(iter_f); // Test the times now
-        T.root = nullptr;
+                // -----------------------------------------------------------------------------
+                // Do the same logic for the chunk of this node (exactly like in the plus chunk)
+                // -----------------------------------------------------------------------------
+                // -------------- Get first and last elements in the plus chunk ----------------
+                auto first_and_last = lists::first_and_last_keys(arr, src);
+                uintV chunk_min = get<0>(first_and_last);
+                uintV chunk_max = get<1>(first_and_last);
+
+                if ((chunk_max < lb) || (chunk_min > ub))
+                    return false; // Not in plus, and thus, no need to decode any of its elements
+                else
+                    return lists::iter_elms_cond(arr, src, f);
+                // ------------------------------------------------------------------------------
+            };
+
+            auto T = edge_list(); T.root = root;     // (Augmented) Map
+            res = T.template iter_elms_cond(iter_f); // This is a function of the Map
+            T.root = nullptr;
+        }
+
+        return res;
     }
-
-    return res;
-    }
-        
-
 
     template <class F>
     void iter_elms(uintV src, F f) const {

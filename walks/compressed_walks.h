@@ -71,8 +71,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 {
                     auto pair = pairings::Szudzik<types::Vertex>::unpair(value);
 
-                    auto this_walk_id  = pair.first / config::walk_length;
-                    auto this_position = pair.first - (this_walk_id * config::walk_length);
+                    auto this_walk_id  = pair.first / config::walk_length;                  // todo: needs floor?
+                    auto this_position = pair.first - (this_walk_id * config::walk_length); // todo: position here starts from 0. verify this one!
                     next_vertex        = pair.second;
 
                     if (this_walk_id == walk_id && this_position == position)
@@ -116,9 +116,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 // Formula for encoding walk_id and position
                 auto formula = walk_id * (config::walk_length) + position;
-                // Low Bound
+                // Bounds of the search range
                 auto lb = pairings::Szudzik<size_t>::pair({formula, this->vnext_min});
-                // High Bound
                 auto ub = pairings::Szudzik<size_t>::pair({formula, this->vnext_max});
 
 //                bool result = this->iter_elms_cond(source, [&](auto value)                    // O(n)
