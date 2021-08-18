@@ -183,9 +183,7 @@ TEST_F(MalinTest, UpdateRandomWalksOnInsertEdges)
 
     // print random walks
     for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-    {
         std::cout << malin.walk(i) << std::endl;
-    }
 
     // geneate edges
     auto edges = utility::generate_batch_of_edges(1000000, malin.number_of_vertices(), false, false);
@@ -195,9 +193,7 @@ TEST_F(MalinTest, UpdateRandomWalksOnInsertEdges)
 
     // print updated random walks
     for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-    {
         std::cout << malin.walk(i) << std::endl;
-    }
 }
 
 TEST_F(MalinTest, UpdateRandomWalksOnDeleteEdges)
@@ -208,9 +204,7 @@ TEST_F(MalinTest, UpdateRandomWalksOnDeleteEdges)
 
     // print random walks
     for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-    {
         std::cout << malin.walk(i) << std::endl;
-    }
 
     // geneate edges
     auto edges = utility::generate_batch_of_edges(1000000, malin.number_of_vertices(), false, false);
@@ -220,9 +214,7 @@ TEST_F(MalinTest, UpdateRandomWalksOnDeleteEdges)
 
     // print updated random walks
     for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-    {
         std::cout << malin.walk(i) << std::endl;
-    }
 }
 
 TEST_F(MalinTest, UpdateRandomWalks)

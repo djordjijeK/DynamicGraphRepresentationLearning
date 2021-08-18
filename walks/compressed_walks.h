@@ -18,7 +18,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              * Caching the current min and max for vnext in each walk-tree for the bounded range search
              */
             types::Vertex vnext_min;
-            types::Vertex vnext_max; // TODO: take min,max into account when calculating space of walk-trees
+            types::Vertex vnext_max; // todo: take min,max into account when calculating space of walk-trees
 
             /**
              * @brief CompressedWalks default constructor.
@@ -121,7 +121,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 auto ub = pairings::Szudzik<size_t>::pair({formula, this->vnext_max});
 
 //                bool result = this->iter_elms_cond(source, [&](auto value)                    // O(n)
-                bool result = this->iter_elms_cond_in_range(source, lb, ub, [&](auto value)  // O(blogn + k)
+                bool result = this->iter_elms_cond_in_range(source, lb, ub, [&](auto value)  // O(blogn + k) output sensitive search
                 {
                     auto pair = pairings::Szudzik<types::Vertex>::unpair(value);
 

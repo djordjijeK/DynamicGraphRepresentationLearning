@@ -153,9 +153,9 @@ namespace walk_plus {
         {
             // ----------------------------------------------------------------------------
             // ----------- Get first and last elements in the plus chunk ------------------
-            auto first_and_last = lists::first_and_last_keys(plus, src);
-            uintV plus_min = get<0>(first_and_last);
-            uintV plus_max = get<1>(first_and_last);
+            auto plus_first_and_last = lists::first_and_last_keys(plus, src);
+            uintV plus_min = get<0>(plus_first_and_last);
+            uintV plus_max = get<1>(plus_first_and_last);
 
             if ((plus_max < lb) || (plus_min > ub))
                 res = false; // Not in plus, and thus, no need to decode any of its elements
@@ -170,19 +170,16 @@ namespace walk_plus {
             // Lambda function that is going to be called in each tree node
             auto iter_f = [&] (const Entry& entry) {
                 uintV key = entry.first;
-                if (f(key))
-                {
-                    return true;
-                }
+                if (f(key)) return true;
                 AT* arr = entry.second;
 
                 // -----------------------------------------------------------------------------
                 // Do the same logic for the chunk of this node (exactly like in the plus chunk)
                 // -----------------------------------------------------------------------------
                 // -------------- Get first and last elements in the plus chunk ----------------
-                auto first_and_last = lists::first_and_last_keys(arr, src);
-                uintV chunk_min = get<0>(first_and_last);
-                uintV chunk_max = get<1>(first_and_last);
+                auto chunk_first_and_last = lists::first_and_last_keys(arr, src);
+                uintV chunk_min = get<0>(chunk_first_and_last);
+                uintV chunk_max = get<1>(chunk_first_and_last);
 
                 if ((chunk_max < lb) || (chunk_min > ub))
                     return false; // Not in plus, and thus, no need to decode any of its elements
