@@ -82,6 +82,7 @@ namespace compressed_lists {
     if (node) {
       auto read_iter = compressed_iter::read_iter(node, src);
       size_t deg = read_iter.deg;
+      // Reads the elements in the chunk one-by-one
       for (size_t i=0; i<deg; i++) {
         if (f(read_iter.next())) return true;
       }

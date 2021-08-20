@@ -115,20 +115,23 @@ namespace walk_plus {
     }
 
     template <class F>
-    bool iter_elms_cond(uintV src, F f) const {
+    bool iter_elms_cond(uintV src, F f) const
+    {
+      // Plus traversal
       bool res = false;
       if (plus) {
         res = lists::iter_elms_cond(plus, src, f);
       }
+      // Tree traversal
       if (!res && root) {
         auto iter_f = [&] (const Entry& entry) {
           uintV key = entry.first;
           if (f(key)) { return true; }
           AT* arr = entry.second;
-          return lists::iter_elms_cond(arr, src, f);
+          return lists::iter_elms_cond(arr, src, f); // Reads all the elements in the tree node's chunk one-by-one
         };
         auto T = edge_list(); T.root = root;
-        res = T.iter_elms_cond(iter_f);
+        res = T.iter_elms_cond(iter_f); // This is the tree map/aug_map function that traverses the tree
         T.root = nullptr;
       }
       return res;

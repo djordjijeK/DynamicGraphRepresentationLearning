@@ -207,7 +207,7 @@ TEST_F(MalinTest, UpdateRandomWalksOnDeleteEdges)
         std::cout << malin.walk(i) << std::endl;
 
     // geneate edges
-    auto edges = utility::generate_batch_of_edges(1000000, malin.number_of_vertices(), false, false);
+    auto edges = utility::generate_batch_of_edges(100, malin.number_of_vertices(), false, false);
 
     // insert batch of edges
     malin.delete_edges_batch(edges.second, edges.first, true, false);

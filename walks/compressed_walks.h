@@ -15,10 +15,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
     {
         public:
             /**
-             * Caching the current min and max for vnext in each walk-tree for the bounded range search
+             * Caching the current {min, max} for vnext in a walk-tree for the search in range optimization
              */
             types::Vertex vnext_min;
-            types::Vertex vnext_max; // todo: take min,max into account when calculating space of walk-trees
+            types::Vertex vnext_max;
 
             /**
              * @brief CompressedWalks default constructor.
@@ -31,11 +31,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              * @param plus - tree plus
              * @param root - tree root
              */
-            CompressedWalks(walk_plus::AT* plus,
-                            walk_plus::treeplus::Node* root,
-                            types::Vertex _vnext_min,
-                            types::Vertex _vnext_max)
-            : walk_plus::treeplus(plus, root), vnext_min(_vnext_min), vnext_max(_vnext_max) {};
+            CompressedWalks(walk_plus::AT* plus, walk_plus::treeplus::Node* root, types::Vertex _vnext_min, types::Vertex _vnext_max)
+                : walk_plus::treeplus(plus, root), vnext_min(_vnext_min), vnext_max(_vnext_max) {};
 
             /**
             * @brief CompressedWalks constructor.
@@ -47,18 +44,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             * @param flag
             */
             template<class Sequence>
-            CompressedWalks(const Sequence &sequence,
-                            types::Vertex source,
-                            types::Vertex _vnext_min,
-                            types::Vertex _vnext_max,
-                            pbbs::flags flag = pbbs::no_flag)
-            : walk_plus::treeplus(sequence, source, flag), vnext_min(_vnext_min), vnext_max(_vnext_max) {};
+            CompressedWalks(const Sequence &sequence, types::Vertex source, types::Vertex _vnext_min, types::Vertex _vnext_max, pbbs::flags flag = pbbs::no_flag)
+                : walk_plus::treeplus(sequence, source, flag), vnext_min(_vnext_min), vnext_max(_vnext_max) {};
 
             /**
             * @brief Finds the next vertex in the walk given walk id and position
             *
             * @param walk_id  - unique walk id
-            * @param position - position in the walk
+            * @param position - position in the walk (starts from 0)
             * @param source   - current walk vertex
             *
             * @return - next vertex in the walk
