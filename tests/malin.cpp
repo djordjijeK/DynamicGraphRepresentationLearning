@@ -15,6 +15,8 @@ class MalinTest : public testing::Test
         uintE* offsets;
         bool mmap = false;
         bool is_symmetric = true;
+//        std::string default_file_path = "data/email-graph";
+//        std::string default_file_path = "data/cora-graph";
         std::string default_file_path = "data/aspen-paper-graph";
 };
 
@@ -231,8 +233,8 @@ TEST_F(MalinTest, UpdateRandomWalks)
 
     for(int i = 0; i < 10; i++)
     {
-        // geneate edges
-        auto edges = utility::generate_batch_of_edges(1000000, malin.number_of_vertices(), false, false);
+        // geneate edges //todo: what happens if I generate a high number of edges?
+        auto edges = utility::generate_batch_of_edges(100, malin.number_of_vertices(), false, false);
 
         malin.insert_edges_batch(edges.second, edges.first, true, false);
         malin.delete_edges_batch(edges.second, edges.first, true, false);
