@@ -101,9 +101,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             * @param low      - lower bound of the
             * @return - next vertex in the walk
             */
-            types::Vertex find_next_in_range(types::WalkID walk_id,
-                                             types::Position position,
-                                             types::Vertex source)
+            types::Vertex find_next_in_range(types::WalkID walk_id, types::Position position, types::Vertex source)
             {
                 types::Vertex next_vertex = -1;
 
@@ -112,6 +110,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // Bounds of the search range
                 auto lb = pairings::Szudzik<size_t>::pair({formula, this->vnext_min});
                 auto ub = pairings::Szudzik<size_t>::pair({formula, this->vnext_max});
+                cout << "wid=" << walk_id << ", pos=" << (int) position << ", source=" << source << " and range [lb=" << lb << ", ub=" << ub << "]"
+                     << ", with formula=" << formula << " vnext_min=" << this->vnext_min << ", and vnext_max=" << this->vnext_max << endl;
 
 //                bool result = this->iter_elms_cond(source, [&](auto value)                    // O(n)
                 bool result = this->iter_elms_cond_in_range(source, lb, ub, [&](auto value)  // O(blogn + k) output sensitive search

@@ -151,6 +151,7 @@ public:
   using Map::range;
   using Map::range_number;
   using Map::range_number_mr;
+  using Map::iter_elms_cond_in_range;
 };
 
 // creates a key-value pair for the entry, and redefines from_entry

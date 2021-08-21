@@ -25,7 +25,7 @@ namespace config
     auto random                = utility::Random(std::time(nullptr));
 
     // use range search when searching in walk-trees
-    auto range_search_mode     = false;
+    auto range_search_mode     = true;
 
     // use mini-batch walk update
     auto mini_batch_mode       = false;

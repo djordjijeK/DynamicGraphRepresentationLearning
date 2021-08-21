@@ -15,7 +15,7 @@ class MalinTest : public testing::Test
         uintE* offsets;
         bool mmap = false;
         bool is_symmetric = true;
-        std::string default_file_path = "data/email-graph";
+        std::string default_file_path = "data/aspen-paper-graph";
 };
 
 void MalinTest::SetUp()
@@ -186,7 +186,7 @@ TEST_F(MalinTest, UpdateRandomWalksOnInsertEdges)
         std::cout << malin.walk(i) << std::endl;
 
     // geneate edges
-    auto edges = utility::generate_batch_of_edges(1000000, malin.number_of_vertices(), false, false);
+    auto edges = utility::generate_batch_of_edges(100, malin.number_of_vertices(), false, false);
 
     // insert batch of edges
     malin.insert_edges_batch(edges.second, edges.first, true, false);

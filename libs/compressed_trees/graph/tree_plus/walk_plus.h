@@ -192,7 +192,7 @@ namespace walk_plus {
             };
 
             auto T = edge_list(); T.root = root;     // (Augmented) Map
-            res = T.template iter_elms_cond(iter_f); // This is a function of the Map
+            res = T.template iter_elms_cond_in_range(lb, ub, iter_f);
             T.root = nullptr;
         }
 

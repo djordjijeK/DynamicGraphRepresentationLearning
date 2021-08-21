@@ -362,6 +362,16 @@ public:
     return Tree::iter_elms_cond(root, f);
   }
 
+  // -------------------------------------------------------------------
+  // F: (entry, i) -> ()
+  template <class F>
+  bool iter_elms_cond_in_range(size_t lb, size_t ub, F f) const
+  {
+  // Starts traversing the tree from the root (in-order). CAUTION: It is a balanced binary search tree
+  return Tree::iter_elms_cond_in_range(root, lb, ub, f);
+  }
+  // -------------------------------------------------------------------
+
   // F: (entry, i) -> ()
   template <class F>
   void iter_elms(F f) const {
