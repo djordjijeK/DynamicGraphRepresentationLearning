@@ -22,8 +22,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
             /**
              * @brief CompressedWalks default constructor.
+             * REMARK: Initialize the (min,max) properly
              */
-            CompressedWalks() : walk_plus::treeplus(), vnext_min(0), vnext_max(0) {};
+            CompressedWalks() : walk_plus::treeplus(), vnext_min(std::numeric_limits<uint32_t>::max()), vnext_max(0) {};
 
             /**
              * @brief CompressedWalks constructor.
@@ -110,9 +111,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // Bounds of the search range
                 auto lb = pairings::Szudzik<size_t>::pair({formula, this->vnext_min});
                 auto ub = pairings::Szudzik<size_t>::pair({formula, this->vnext_max});
-                cout << "wid=" << walk_id << ", pos=" << (int) position << ", source=" << source << " and range [lb=" << lb << ", ub=" << ub << "]"
-                     << ", with formula=" << formula << " vnext_min=" << this->vnext_min << ", and vnext_max=" << this->vnext_max << endl;
 
+//                auto counter = 0;
 //                bool result = this->iter_elms_cond(source, [&](auto value)                    // O(n)
                 bool result = this->iter_elms_cond_in_range(source, lb, ub, [&](auto value)  // O(blogn + k) output sensitive search
                 {
@@ -122,11 +122,18 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     auto this_position = pair.first - (this_walk_id * config::walk_length);
                     next_vertex        = pair.second;
 
+                    // Let's see what is going on
+//                    if (this_walk_id == 1753)
+//                        cout << "counter=" << counter++ << " {wid=" << this_walk_id << ", pos=" << this_position
+//                             << ", nxt=" << next_vertex << "}, i.e., the triplet= " << value << endl;
+
                     if (this_walk_id == walk_id && this_position == position)
                         return true;
                     else
                         return false;
                 });
+
+//                cout << "Checked " << counter << " / " << config::walks_per_vertex * config::walk_length * 6 << endl; // todo: hardcoded num of vertices
 
                 #ifdef MALIN_DEBUG
                 if (!result || next_vertex == -1)

@@ -161,9 +161,15 @@ namespace walk_plus {
             uintV plus_max = get<1>(plus_first_and_last);
 
             if ((plus_max < lb) || (plus_min > ub))
+            {
                 res = false; // Not in plus, and thus, no need to decode any of its elements
+//                cout << "not in P" << endl;
+            }
             else
+            {
                 res = lists::iter_elms_cond(plus, src, f);
+//                cout << "searching in P" << endl;
+            }
             // -----------------------------------------------------------------------------
         }
 
@@ -171,9 +177,13 @@ namespace walk_plus {
         if (!res && root)
         {
             // Lambda function that is going to be called in each tree node
-            auto iter_f = [&] (const Entry& entry) {
+            auto iter_over_a_node = [&] (const Entry& entry) {
                 uintV key = entry.first;
-                if (f(key)) return true;
+
+                if (f(key))
+                    return true;
+
+                // Check the chunk of this node
                 AT* arr = entry.second;
 
                 // -----------------------------------------------------------------------------
@@ -184,6 +194,9 @@ namespace walk_plus {
                 uintV chunk_min = get<0>(chunk_first_and_last);
                 uintV chunk_max = get<1>(chunk_first_and_last);
 
+                assert(chunk_min <= chunk_max);
+//                cout << "key=" << key << " and chunk boundaries [chunk_min=" << chunk_min << ", chunk_max=" << chunk_max << "] -- and seach range [lb=" << lb << ", ub=" << ub << "]" << endl;
+
                 if ((chunk_max < lb) || (chunk_min > ub))
                     return false; // Not in plus, and thus, no need to decode any of its elements
                 else
@@ -191,8 +204,10 @@ namespace walk_plus {
                 // ------------------------------------------------------------------------------
             };
 
-            auto T = edge_list(); T.root = root;     // (Augmented) Map
-            res = T.template iter_elms_cond_in_range(lb, ub, iter_f);
+//            cout << "searching in T" << endl;
+            auto T = edge_list(); T.root = root; // (Augmented) Map
+//            res = T.template iter_elms_cond(iter_over_a_node); // play with the chunks only -- but this will examines all nodes in the T of the C-tree
+            res = T.template iter_elms_cond_in_range(lb, ub, iter_over_a_node);
             T.root = nullptr;
         }
 

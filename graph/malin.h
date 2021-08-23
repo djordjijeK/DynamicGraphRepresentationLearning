@@ -240,31 +240,26 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 auto graph             = this->flatten_graph();
                 auto total_vertices    = this->number_of_vertices();
                 auto walks_to_generate = total_vertices * config::walks_per_vertex;
-                auto cuckoo            = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices);
-                // todo: maybe instead of Vertex is PairedTriplet
+                auto cuckoo            = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices); // todo: maybe PairedTriplet
 
                 using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto vertices       = pbbs::sequence<VertexStruct>(total_vertices);
 
-                // ------- Code for (min, max) of the next of each vertex ------ todo: here we have to do the work even if there is no range search mode
+                // ------- Code for (min, max) of the next of each vertex -------------------------
                 constexpr const size_t array_next_size = 20;
-                types::Vertex next_min_stack[array_next_size];
-                types::Vertex* next_min = next_min_stack;
+                types::Vertex next_min_stack[array_next_size], next_max_stack[array_next_size];
+                types::Vertex* next_min = next_min_stack; types::Vertex* next_max = next_max_stack;
                 if (total_vertices > array_next_size)
+                {
                     next_min = pbbs::new_array<types::Vertex>(total_vertices);
-
-                types::Vertex next_max_stack[array_next_size];
-                types::Vertex* next_max = next_max_stack;
-                if (total_vertices > array_next_size)
                     next_max = pbbs::new_array<types::Vertex>(total_vertices);
+                }
                 // Initialize all mins to max integer 32 bits and all maxs to zero
                 parallel_for(0, total_vertices, [&] (types::Vertex i) {
-                    next_min[i] = std::numeric_limits<uint32_t>::max(); // without the 1
+                    next_min[i] = std::numeric_limits<uint32_t>::max();
                     next_max[i] = 0;
                 });
-                //                pbbs::free_array(next_min);
-                //                pbbs::free_array(next_max);
-                // --------------------------------------------------------------------------------------------------
+                // ---------------------------------------------------------------------------------
 
                 RandomWalkModel* model;
                 switch (config::random_walk_model)
@@ -286,12 +281,19 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     // todo: this is for certain corner cases of node2vec. can stripe it out
                     if (graph[walk_id % total_vertices].degree == 0)
                     {
-                        types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({walk_id*config::walk_length,
-                                                                                            std::numeric_limits<uint32_t>::max() - 1});
+//                        types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({walk_id*config::walk_length,std::numeric_limits<uint32_t>::max() - 1});
+                        types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + 0, walk_id % total_vertices});
                         cuckoo.insert(walk_id % total_vertices, std::vector<types::Vertex>());
                         cuckoo.update_fn(walk_id % total_vertices, [&](auto& vector) {
                             vector.push_back(hash);
                         });
+
+                        // ---------------------------------------------------------------
+                        // Refine the next (min, max) for the current vertex -------------
+                        next_min[walk_id % total_vertices] = std::min(next_min[walk_id % total_vertices], walk_id % total_vertices);
+                        next_max[walk_id % total_vertices] = std::max(next_max[walk_id % total_vertices], walk_id % total_vertices);
+//                        cout << "--- first node with degree zero, next min=" << next_min[walk_id % total_vertices] << " and max=" << next_max[walk_id % total_vertices] << endl;
+                        // ---------------------------------------------------------------
 
                         return;
                     }
@@ -310,30 +312,43 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         if (!cuckoo.contains(state.first))
                             cuckoo.insert(state.first, std::vector<types::Vertex>());
 
-                        // ---------------------------------------------------------------
-                        // Refine the v_next_min and the v_next_max for node sequence[j-1] // todo: this will be fucked up for prelast vertex
-                        next_min[state.first] = std::min(next_min[state.first], new_state.first);
-                        next_max[state.first] = std::max(next_max[state.first], new_state.first);
-//                        if (next_min[state.first] > new_state.first)
-//                            next_min[state.first] = new_state.first;
-//                        if (next_max[state.first] < new_state.first)
-//                            next_max[state.first] = new_state.first;
-//                        cout << "*** next as we walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
-                        // ---------------------------------------------------------------
-
                         types::PairedTriplet hash = (position != config::walk_length - 1) ?
                                 pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, new_state.first}) :
-                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, std::numeric_limits<uint32_t>::max() - 1});
-                        // todo: make sure that you insert the *vertex* next (min, max).
-                        // This end of walk is not ok for range search
+                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, state.first}); // assign the current as next if EOW
+//                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position,std::numeric_limits<uint32_t>::max() - 1});
 
                         cuckoo.update_fn(state.first, [&](auto& vector) {
                             vector.push_back(hash);
                         });
 
+                        // ----------------------------------------------------------------------
+                        // Refine the next (min, max) for the current vertex -------------------- // todo: can make the code more succint
+                        if (position != config::walk_length - 1)
+                        {
+                            next_min[state.first] = std::min(next_min[state.first], new_state.first);
+                            next_max[state.first] = std::max(next_max[state.first], new_state.first);
+//                            cout << "*** next in the walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
+                        }
+                        else
+                        {
+                            next_min[state.first] = std::min(next_min[state.first], state.first);
+                            next_max[state.first] = std::max(next_max[state.first], state.first);
+                            //                            cout << "*** next in the walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
+                        }
+                        // ---------------------------------------------------------------
+
+                        // Assign the new state to the sampler
                         state = new_state;
                     }
                 });
+
+//                #ifdef MALIN_DEBUG
+//                for (auto i = 0; i < this->number_of_vertices(); i++)
+//                {
+//                    cout << "vertex=" << i << " has [lb=" << next_min[i] << ", ub=" << next_max[i] << "]" << endl;
+//                    assert(next_min[i] <= next_max[i]); // lb should always be less than or equal than the upper bound
+//                }
+//                #endif
 
                 // 2. build vertices
                 parallel_for(0, total_vertices, [&](types::Vertex vertex)
@@ -346,22 +361,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         for(auto index = 0; index < triplets.size(); index++)
                             sequence[index] = triplets[index];
 
-//                        auto smallest_triplet_in_sequence = sequence[0];
-//                        auto largest_triplet_in_sequence  = sequence[sequence.size() - 1];
-//                        cout << "seq[first]=" << smallest_triplet_in_sequence << ", seq[last]=" << largest_triplet_in_sequence << endl;
-//                        auto next_of_smallest_triplet = pairings::Szudzik<types::Vertex>::unpair(smallest_triplet_in_sequence).second;
-//                        auto next_of_largest_triplet  = pairings::Szudzik<types::Vertex>::unpair(largest_triplet_in_sequence).second;   // todo: is unpair too costly?
-//                        cout << "vertex=" << vertex << " has next[smallest]=" << next_of_smallest_triplet << ", next[largest]=" << next_of_largest_triplet << endl;
-
-                        cout << "vertex=" << vertex << ", the next (min=" << next_min[vertex] << ", max=" << next_max[vertex] << ")" << endl;
                         pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
-                        vertices[vertex] = std::make_pair(vertex, VertexEntry(types::CompressedEdges(),
-                                                                  dygrl::CompressedWalks(sequence, vertex, next_min[vertex], next_max[vertex]),
-                                                                  new dygrl::SamplerManager(0)));
+                        vertices[vertex] = std::make_pair(vertex, VertexEntry(types::CompressedEdges(), dygrl::CompressedWalks(sequence, vertex, next_min[vertex], next_max[vertex]),new dygrl::SamplerManager(0)));
                     }
                     else
                     {
-                        vertices[vertex] = std::make_pair(vertex, VertexEntry(types::CompressedEdges(), dygrl::CompressedWalks(), new dygrl::SamplerManager(0)));
+                        vertices[vertex] = std::make_pair(vertex, VertexEntry(types::CompressedEdges(), dygrl::CompressedWalks(),new dygrl::SamplerManager(0)));
                     }
                 });
 
@@ -382,7 +387,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(y.compressed_walks.plus);
                     walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
 
-                    // todo: verify that (vnext_min, vnext_max) = (0,0) is correct
                     return VertexEntry(x.compressed_edges,
                                        CompressedWalks(tree_plus.plus, tree_plus.root, y.compressed_walks.vnext_min, y.compressed_walks.vnext_max),
                                        x.sampler_manager);
@@ -390,11 +394,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, vertices.begin(), vertices.size(), replace, true);
                 delete model;
-
-//                // Free the memory for next_min and next_max sequences
-//                pbbs::free_array(next_min);
-//                pbbs::free_array(next_max); // todo: freeing here causing an error
-
             }
 
             /**
@@ -412,7 +411,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 types::Position position = 0;
 
                 // 2. Walk
-                while (current_vertex != std::numeric_limits<uint32_t>::max() - 1)
+                types::Vertex previous_vertex;
+//                while (current_vertex != std::numeric_limits<uint32_t>::max() - 1)
+                while (true)
                 {
                     string_stream << current_vertex << " ";
 
@@ -429,11 +430,63 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         }
                     #endif
 
-                    // todo: for now, just use the innefficient find operation.
-//                    if (config::range_search_mode)
-//                        current_vertex = tree_node.value.compressed_walks.find_next_in_range(walk_id, position++, current_vertex);
-//                    else //todo: use the simple find_next here ONLY.
+                    // Cache the previous current vertex before going to the next
+                    previous_vertex = current_vertex;
+
+                    if (config::range_search_mode)
+                        current_vertex = tree_node.value.compressed_walks.find_next_in_range(walk_id, position++, current_vertex);
+                    else
+                        current_vertex = tree_node.value.compressed_walks.find_next(walk_id, position++, current_vertex);
+
+                    if (current_vertex == previous_vertex)
+                        break; // todo: what if you choose the same vertex? Assumption: The datasets do not have self-loops.
+                }
+
+                return string_stream.str();
+            }
+
+            /**
+             * @brief Walks through the walk given walk id.
+             *
+             * @param walk_id - unique walk ID
+             *
+             * @return - walk string representation
+             */
+            std::string walk_simple_find(types::WalkID walk_id)
+            {
+                // 1. Grab the first vertex in the walk
+                types::Vertex current_vertex = walk_id % this->number_of_vertices();
+                std::stringstream string_stream;
+                types::Position position = 0;
+
+                // 2. Walk
+                types::Vertex previous_vertex;
+//                while (current_vertex != std::numeric_limits<uint32_t>::max() - 1)
+                while (true)
+                {
+                    string_stream << current_vertex << " ";
+
+                    auto tree_node = this->graph_tree.find(current_vertex);
+
+                    #ifdef MALIN_DEBUG
+                        if (!tree_node.valid)
+                        {
+                            std::cerr << "Malin debug error! Malin::Walk::Vertex="
+                                      << current_vertex << " is not found in the vertex tree!"
+                                      << std::endl;
+
+                            std::exit(1);
+                        }
+                    #endif
+
+                    // Cache the previous current vertex before going to the next
+                    previous_vertex = current_vertex;
+
+                    // uses only simple find_next
                     current_vertex = tree_node.value.compressed_walks.find_next(walk_id, position++, current_vertex);
+
+                    if (current_vertex == previous_vertex)
+                        break; // todo: what if you choose the same vertex? There are no self-loops.
                 }
 
                 return string_stream.str();
@@ -598,9 +651,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 if (apply_walk_updates)
                 {
-                    if (config::mini_batch_mode)
-                        this->mini_batch_walk_update(rewalk_points, affected_walks);
-                    else
+//                    if (config::mini_batch_mode)
+//                        this->mini_batch_walk_update(rewalk_points, affected_walks);
+//                    else
                         this->batch_walk_update(rewalk_points, affected_walks);
                 }
                 walk_update_time_on_insert.stop();
@@ -757,9 +810,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 if (apply_walk_updates)
                 {
-                    if (config::mini_batch_mode)
-                        this->mini_batch_walk_update(rewalk_points, affected_walks);
-                    else
+//                    if (config::mini_batch_mode)
+//                        this->mini_batch_walk_update(rewalk_points, affected_walks);
+//                    else
                         this->batch_walk_update(rewalk_points, affected_walks);
                 }
                 walk_update_time_on_delete.stop();
@@ -871,7 +924,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     {
                         if (graph[current_vertex_new_walk].degree == 0)
                         {
-                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length, std::numeric_limits<uint32_t>::max() - 1});
+//                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length, std::numeric_limits<uint32_t>::max() - 1});
+                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length, current_vertex_new_walk});
 
                             if (!inserts.contains(current_vertex_new_walk))
                                 inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
@@ -899,11 +953,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             }
 
                             state = graph[state.first].samplers->find(state.second).sample(state, model);
+                            auto cached_current_vertex = state.first;
                             state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
 
                             types::PairedTriplet hash = (position != config::walk_length - 1) ?
-                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, state.first}) :
-                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, std::numeric_limits<uint32_t>::max() - 1});
+                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, state.first}) : // new next
+                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, cached_current_vertex});
+//                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, std::numeric_limits<uint32_t>::max() - 1});
                                 // todo: CAUTION CAUTION CAUTION pairing the max again CAUTION CAUTION CAUTION CAUTION!!!
 
                             if (!inserts.contains(current_vertex_new_walk))
@@ -928,7 +984,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     {
                         types::Position position = current_position;
 
-                        while (current_vertex_old_walk != std::numeric_limits<uint32_t>::max() - 1)
+                        types::Vertex cached_current_vertex;
+//                        while (current_vertex_old_walk != std::numeric_limits<uint32_t>::max() - 1)
+                        while (true) // todo: verify that this is correct
                         {
                             auto vertex = this->graph_tree.find(current_vertex_old_walk);
 
@@ -951,6 +1009,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             next_min_wtree_D[current_vertex_old_walk] = std::min(next_min_wtree_D[current_vertex_old_walk], next_old_walk);
                             next_max_wtree_D[current_vertex_old_walk] = std::max(next_min_wtree_D[current_vertex_old_walk], next_old_walk);
                             // -------------------------------------------------------------------------
+
+                            // break the loop
+                            if (current_vertex_old_walk == next_old_walk)
+                                break;
 
                             // Then, transition to the next vertex in the old walk
                             position++;
@@ -1337,170 +1399,170 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //            } // End of batch walk update procedure
 
 
-            /**
-             * Updates the walk corpus in a streamlined mini-batch fashion
-             *
-             * @param rewalk_points  - rewalking points
-             * @param affected_walks - affected walk ids
-             */
-            void mini_batch_walk_update(types::MapOfChanges& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks)
-            {
-                // TODO: Verify that it is fine to apply Dpart and Ipart, or streamline the deletions only
-                // todo: and apply the Union(Ipart) in the end
-                // CAUTION: Without any range search capabilities for now. todo: implement after the mini-batch is implemented
-
-                types::MiniBatchAccumulator mini_deletes  = types::MiniBatchAccumulator();
-                types::MiniBatchAccumulator mini_inserts  = types::MiniBatchAccumulator();
-                types::ChangeAccumulator mini_acc_deletes = types::ChangeAccumulator();
-                types::ChangeAccumulator mini_acc_inserts = types::ChangeAccumulator();
-                // Let's calculate the total number of walk triplets to be deleted (and also new ones to subsequently added)
-                uint64_t total_number_triplets_to_delete = 0; // up to total number of paired triplets (x2)
-
-                uintV index = 0;
-                for(auto& entry : rewalk_points.lock_table())
-                {
-                    affected_walks[index++] = entry.first;
-                    // Calculate the total number of paired triplets to change todo: do all walks have full length?
-                    auto current_position        = std::get<0>(entry.second);
-                    cout << "cur_position of vertex " << entry.first << " is : " << (int) current_position << endl;
-                    auto change_for_this_walk = (config::walk_length - 1) - current_position;
-                    total_number_triplets_to_delete += /*2 * */ change_for_this_walk;
-                }
-                cout << "Total #triplets_to_change = " << total_number_triplets_to_delete
-                     << " / " << config::walk_length * config::walks_per_vertex * this->number_of_vertices()
-                     << " BUT in the end it is 2x = " << 2 * total_number_triplets_to_delete << endl;
-//                exit(0);
-
-                auto graph = this->flatten_graph();
-                RandomWalkModel* model;
-
-                switch (config::random_walk_model)
-                {
-                    case types::DEEPWALK:
-                        model = new DeepWalk(&graph);
-                        break;
-                    case types::NODE2VEC:
-                        model = new Node2Vec(&graph, config::paramP, config::paramQ);
-                        break;
-                    default:
-                        std::cerr << "Unrecognized random walking model!" << std::endl;
-                        std::exit(1);
-                }
-
-                parallel_for(0, affected_walks.size(), [&](auto index)
-                {
-                    auto entry = rewalk_points.template find(affected_walks[index]);
-
-                    auto current_position        = std::get<0>(entry);
-                    auto current_vertex_old_walk = std::get<1>(entry);
-                    auto should_reset            = std::get<2>(entry);
-
-                    auto current_vertex_new_walk = current_vertex_old_walk;
-
-                    if (should_reset)
-                    {
-                        current_position = 0;
-                        current_vertex_new_walk = current_vertex_old_walk = affected_walks[index] % this->number_of_vertices();
-                    }
-
-                    fork_join_scheduler::Job delete_job = [&] () {
-                        types::Position position = current_position;
-
-                        while (current_vertex_old_walk != std::numeric_limits<uint32_t>::max() - 1)
-                        {
-                            auto vertex = this->graph_tree.find(current_vertex_old_walk);
-
-                            types::Vertex next_old_walk;
-                            if (config::range_search_mode)
-                                next_old_walk = vertex.value.compressed_walks.find_next_in_range(affected_walks[index], position, current_vertex_old_walk);
-                            else
-                                next_old_walk = vertex.value.compressed_walks.find_next(affected_walks[index], position, current_vertex_old_walk);
-
-                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, next_old_walk});
-
-                            // Populate the mini-batch delete queue with a single element at a time
-                            mini_deletes.enqueue(std::make_pair(current_vertex_old_walk, hash)); // (current_vertex, triplet)
-                            // ----------------------------------------------------------------------------------------------
-
-                            // Then, transition to the next vertex in the old walk
-                            position++;
-                            current_vertex_old_walk = next_old_walk;
-                        }
-                    }; delete_job();
-
-                    // Apply a mini-batch job
-                    fork_join_scheduler::Job apply_delete_mini_batch_job = [&] () {
-
-                        // Apply some changes on the fly -- it is mini-batch mode after all
-                        // If the delete queue is full enough (approx count) todo: can count it accurately (check the game loop)
-                        if (mini_deletes.size_approx() > config::mini_batch_size * total_number_triplets_to_delete)
-                        {
-                            cout << "Thread " << fj.worker_id() << " - entered this part to apply the mini-batch" << endl;
-//                                exit(0);s
-
-                            // try and buld dequeue all elements
-                            types::VertexTripletPair items_to_delete_dequeue[mini_deletes.size_approx()]; // todo: change this. need exact count
-                            auto items_actually_dequeued = mini_deletes.template try_dequeue_bulk(items_to_delete_dequeue, mini_deletes.size_approx());
-                            cout << "Actually dequeued : " << items_actually_dequeued
-                                 << " out of (estimate for mini_deletes queue size) : " << mini_deletes.size_approx() << endl;
-
-                            // todo: need exact count actually
-                            using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
-                            auto delete_walks  = pbbs::sequence<VertexStruct>(mini_deletes.size_approx()); // todo: what if size smaller?
-
-                            // Accumulate all paired triplets per vertex id
-                            for (auto i = 0 ; i < items_actually_dequeued - 1 ; i++)
-                            {
-                                if (!mini_acc_deletes.template contains(items_to_delete_dequeue->first))
-                                    mini_acc_deletes.template insert(items_to_delete_dequeue->first, std::vector<types::PairedTriplet>());
-                                mini_acc_deletes.template update_fn(items_to_delete_dequeue->first, [&](auto& vector) {
-                                   vector.push_back(items_to_delete_dequeue->second); // gather all the hashes for one vertex in a batch
-                                });
-                            }
-
-                            // Now, sort the hashes of each distinct vertex id (inner level sorting)
-                            auto ind = 0;
-                            for(auto& item : mini_acc_deletes.lock_table())
-                            {
-                                auto sequence = pbbs::sequence<types::Vertex>(item.second.size());
-
-                                for (auto i = 0; i < item.second.size(); i++)
-                                    sequence[i] = item.second[i];
-
-                                pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
-                                delete_walks[ind++] = std::make_pair(item.first, VertexEntry(types::CompressedEdges(), dygrl::CompressedWalks(sequence, item.first, 666, 666), new dygrl::SamplerManager(0)));
-                            }
-
-                            // Now, sort the vertex ids (outer level sorting)
-                            pbbs::sample_sort_inplace(pbbs::make_range(delete_walks.begin(), delete_walks.end()), [&](auto& x, auto& y) {
-                                return x.first < y.first;
-                            });
-
-                            auto replaceD = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
-                            {
-                                auto tree_plus = walk_plus::difference(y.compressed_walks, x.compressed_walks, src); // x - y
-
-                                // deallocate the memory
-                                lists::deallocate(x.compressed_walks.plus);
-                                walk_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
-                                lists::deallocate(y.compressed_walks.plus);
-                                walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
-
-                                return VertexEntry(x.compressed_edges, dygrl::CompressedWalks(tree_plus.plus, tree_plus.root, 666, 666), x.sampler_manager);
-                            };
-
-                            // First, apply the batch deletions
-                            this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, delete_walks.begin(), delete_walks.size(), replaceD, true);
-                        }
-                    }; apply_delete_mini_batch_job();
-
-
-                });
-
-
-
-
-            }
+//            /**
+//             * Updates the walk corpus in a streamlined mini-batch fashion
+//             *
+//             * @param rewalk_points  - rewalking points
+//             * @param affected_walks - affected walk ids
+//             */
+//            void mini_batch_walk_update(types::MapOfChanges& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks)
+//            {
+//                // TODO: Verify that it is fine to apply Dpart and Ipart, or streamline the deletions only
+//                // todo: and apply the Union(Ipart) in the end
+//                // CAUTION: Without any range search capabilities for now. todo: implement after the mini-batch is implemented
+//
+//                types::MiniBatchAccumulator mini_deletes  = types::MiniBatchAccumulator();
+//                types::MiniBatchAccumulator mini_inserts  = types::MiniBatchAccumulator();
+//                types::ChangeAccumulator mini_acc_deletes = types::ChangeAccumulator();
+//                types::ChangeAccumulator mini_acc_inserts = types::ChangeAccumulator();
+//                // Let's calculate the total number of walk triplets to be deleted (and also new ones to subsequently added)
+//                uint64_t total_number_triplets_to_delete = 0; // up to total number of paired triplets (x2)
+//
+//                uintV index = 0;
+//                for(auto& entry : rewalk_points.lock_table())
+//                {
+//                    affected_walks[index++] = entry.first;
+//                    // Calculate the total number of paired triplets to change todo: do all walks have full length?
+//                    auto current_position        = std::get<0>(entry.second);
+//                    cout << "cur_position of vertex " << entry.first << " is : " << (int) current_position << endl;
+//                    auto change_for_this_walk = (config::walk_length - 1) - current_position;
+//                    total_number_triplets_to_delete += /*2 * */ change_for_this_walk;
+//                }
+//                cout << "Total #triplets_to_change = " << total_number_triplets_to_delete
+//                     << " / " << config::walk_length * config::walks_per_vertex * this->number_of_vertices()
+//                     << " BUT in the end it is 2x = " << 2 * total_number_triplets_to_delete << endl;
+////                exit(0);
+//
+//                auto graph = this->flatten_graph();
+//                RandomWalkModel* model;
+//
+//                switch (config::random_walk_model)
+//                {
+//                    case types::DEEPWALK:
+//                        model = new DeepWalk(&graph);
+//                        break;
+//                    case types::NODE2VEC:
+//                        model = new Node2Vec(&graph, config::paramP, config::paramQ);
+//                        break;
+//                    default:
+//                        std::cerr << "Unrecognized random walking model!" << std::endl;
+//                        std::exit(1);
+//                }
+//
+//                parallel_for(0, affected_walks.size(), [&](auto index)
+//                {
+//                    auto entry = rewalk_points.template find(affected_walks[index]);
+//
+//                    auto current_position        = std::get<0>(entry);
+//                    auto current_vertex_old_walk = std::get<1>(entry);
+//                    auto should_reset            = std::get<2>(entry);
+//
+//                    auto current_vertex_new_walk = current_vertex_old_walk;
+//
+//                    if (should_reset)
+//                    {
+//                        current_position = 0;
+//                        current_vertex_new_walk = current_vertex_old_walk = affected_walks[index] % this->number_of_vertices();
+//                    }
+//
+//                    fork_join_scheduler::Job delete_job = [&] () {
+//                        types::Position position = current_position;
+//
+//                        while (current_vertex_old_walk != std::numeric_limits<uint32_t>::max() - 1)
+//                        {
+//                            auto vertex = this->graph_tree.find(current_vertex_old_walk);
+//
+//                            types::Vertex next_old_walk;
+//                            if (config::range_search_mode)
+//                                next_old_walk = vertex.value.compressed_walks.find_next_in_range(affected_walks[index], position, current_vertex_old_walk);
+//                            else
+//                                next_old_walk = vertex.value.compressed_walks.find_next(affected_walks[index], position, current_vertex_old_walk);
+//
+//                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, next_old_walk});
+//
+//                            // Populate the mini-batch delete queue with a single element at a time
+//                            mini_deletes.enqueue(std::make_pair(current_vertex_old_walk, hash)); // (current_vertex, triplet)
+//                            // ----------------------------------------------------------------------------------------------
+//
+//                            // Then, transition to the next vertex in the old walk
+//                            position++;
+//                            current_vertex_old_walk = next_old_walk;
+//                        }
+//                    }; delete_job();
+//
+//                    // Apply a mini-batch job
+//                    fork_join_scheduler::Job apply_delete_mini_batch_job = [&] () {
+//
+//                        // Apply some changes on the fly -- it is mini-batch mode after all
+//                        // If the delete queue is full enough (approx count) todo: can count it accurately (check the game loop)
+//                        if (mini_deletes.size_approx() > config::mini_batch_size * total_number_triplets_to_delete)
+//                        {
+//                            cout << "Thread " << fj.worker_id() << " - entered this part to apply the mini-batch" << endl;
+////                                exit(0);s
+//
+//                            // try and buld dequeue all elements
+//                            types::VertexTripletPair items_to_delete_dequeue[mini_deletes.size_approx()]; // todo: change this. need exact count
+//                            auto items_actually_dequeued = mini_deletes.template try_dequeue_bulk(items_to_delete_dequeue, mini_deletes.size_approx());
+//                            cout << "Actually dequeued : " << items_actually_dequeued
+//                                 << " out of (estimate for mini_deletes queue size) : " << mini_deletes.size_approx() << endl;
+//
+//                            // todo: need exact count actually
+//                            using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
+//                            auto delete_walks  = pbbs::sequence<VertexStruct>(mini_deletes.size_approx()); // todo: what if size smaller?
+//
+//                            // Accumulate all paired triplets per vertex id
+//                            for (auto i = 0 ; i < items_actually_dequeued - 1 ; i++)
+//                            {
+//                                if (!mini_acc_deletes.template contains(items_to_delete_dequeue->first))
+//                                    mini_acc_deletes.template insert(items_to_delete_dequeue->first, std::vector<types::PairedTriplet>());
+//                                mini_acc_deletes.template update_fn(items_to_delete_dequeue->first, [&](auto& vector) {
+//                                   vector.push_back(items_to_delete_dequeue->second); // gather all the hashes for one vertex in a batch
+//                                });
+//                            }
+//
+//                            // Now, sort the hashes of each distinct vertex id (inner level sorting)
+//                            auto ind = 0;
+//                            for(auto& item : mini_acc_deletes.lock_table())
+//                            {
+//                                auto sequence = pbbs::sequence<types::Vertex>(item.second.size());
+//
+//                                for (auto i = 0; i < item.second.size(); i++)
+//                                    sequence[i] = item.second[i];
+//
+//                                pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
+//                                delete_walks[ind++] = std::make_pair(item.first, VertexEntry(types::CompressedEdges(), dygrl::CompressedWalks(sequence, item.first, 666, 666), new dygrl::SamplerManager(0)));
+//                            }
+//
+//                            // Now, sort the vertex ids (outer level sorting)
+//                            pbbs::sample_sort_inplace(pbbs::make_range(delete_walks.begin(), delete_walks.end()), [&](auto& x, auto& y) {
+//                                return x.first < y.first;
+//                            });
+//
+//                            auto replaceD = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
+//                            {
+//                                auto tree_plus = walk_plus::difference(y.compressed_walks, x.compressed_walks, src); // x - y
+//
+//                                // deallocate the memory
+//                                lists::deallocate(x.compressed_walks.plus);
+//                                walk_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
+//                                lists::deallocate(y.compressed_walks.plus);
+//                                walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
+//
+//                                return VertexEntry(x.compressed_edges, dygrl::CompressedWalks(tree_plus.plus, tree_plus.root, 666, 666), x.sampler_manager);
+//                            };
+//
+//                            // First, apply the batch deletions
+//                            this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, delete_walks.begin(), delete_walks.size(), replaceD, true);
+//                        }
+//                    }; apply_delete_mini_batch_job();
+//
+//
+//                });
+//
+//
+//
+//
+//            }
 
 
             /**

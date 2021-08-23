@@ -107,9 +107,11 @@ struct sequence_ops : Tree {
 
   // The original function for iterating the tree part of a C-tree
   template<typename F>
-  static bool iter_elms_cond(node* a, const F& f) {
+  static bool iter_elms_cond(node* a, const F& f)
+  {
     if (!a) return false;
-    if (!iter_elms_cond(a->lc, f) && !f(Tree::get_entry(a))) {
+    if (!iter_elms_cond(a->lc, f) && !f(Tree::get_entry(a)))
+    {
       return iter_elms_cond(a->rc, f);
     }
     return true;
@@ -128,20 +130,23 @@ struct sequence_ops : Tree {
 
       // Check the root first before you go traversing the left subtree. For this, you need to have [lb, ub]
       auto key_root   = Tree::get_entry(a).first;  //get<0>(Tree::get_entry(a));
-      auto chunk_root = Tree::get_entry(a).second; //get<1>(Tree::get_entry(a));
+//      auto chunk_root = Tree::get_entry(a).second; //get<1>(Tree::get_entry(a));
 
       // Logic w.r.t. goes from "left" to "right"
 
       // If the key_root left of the interval [lb, ub] then the whole left subtree can be skipped
-      if (key_root <= lb)
+//      if (key_root <= lb)
+      if (key_root < lb)
       {
-          if (!f(Tree::get_entry(a))) // TODO: The check at the root is not needed always. Depends on whether we have = or not in the condition above
+//          cout << "TT: key of the current root=" << key_root << " < lb=" << lb << endl;
+        if (!f(Tree::get_entry(a))) // TODO: The check at the root is not needed always. Depends on whether we have = or not in the condition above
             return iter_elms_cond_in_range(a->rc, lb, ub, f);
-          // return true;
+            // return true;
       }
       // If the key_root inside the interval [lb, ub] then we should traverse more both left and right subtrees
       else if ((key_root >= lb) && (key_root <= ub))
       {
+//          cout << "TT: key of the current root=" << key_root << " belongs to [lb=" << lb << ", ub=" << ub << "]" << endl;
           // Check everything, namely, root, left and right subtree
           if (!iter_elms_cond_in_range(a->lc, lb, ub, f) && !f(Tree::get_entry(a))) // TODO: The check at the root is not needed always. Depends on whether we have = or not
             return iter_elms_cond_in_range(a->rc, lb, ub, f);
@@ -150,15 +155,14 @@ struct sequence_ops : Tree {
       // If the key_root right of the interval [lb, ub] then the whole right subtree can be skipped
       else // (key_root > ub)
       {
-          if (!f(Tree::get_entry(a))) // TODO: The check at the root is not needed always. Depends on whether we have = or not
+//        cout << "TT: key of the current root=" << key_root << " > ub=" << ub << endl;
+        if (!f(Tree::get_entry(a))) // TODO: The check at the root is not needed always. Depends on whether we have = or not
             return iter_elms_cond_in_range(a->lc, lb, ub, f);
-          // return true;
+            // return true;
       }
 
-      //      if (!iter_elms_cond_FindNextOptimized(a->lc, lb, ub, f) && !f(Tree::get_entry(a)))
-      //      {
-      //          return iter_elms_cond_FindNextOptimized(a->rc, lb, ub, f);
-      //      }
+//      cout << "lakamas" << endl;
+
       return true;
   } // ---------------------------------------------------------------------------------------------------------------------------
   // -----------------------------------------------------------------------------------------------------------------------------
