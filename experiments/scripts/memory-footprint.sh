@@ -9,8 +9,8 @@ paramP=0.5                                          # node2vec's paramP
 paramQ=2.0                                          # node2vec's paramQ
 sampler_init_strategy="random"                      # random | burnin | weight
 declare -a graphs=("email-graph" "facebook-graph")  # array of graphs
-declare -a walks_per_vertex=(10 15)               # walks per vertex to generate
-declare -a walk_length=(40 80)                   # length of one walk
+declare -a walks_per_vertex=(10 15)                 # walks per vertex to generate
+declare -a walk_length=(40 80)                      # length of one walk
 
 # 1. convert graphs in adjacency graph format if necessary
 for graph in "${graphs[@]}"; do

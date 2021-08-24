@@ -328,8 +328,10 @@ public:
   {
     bool right_done = false;
     Job right_job = [&] () {
-      right(); right_done = true;};
-    sched->spawn(&right_job);
+      right();
+      right_done = true;
+    };
+    sched->spawn(&right_job); // this pushes to the scheduler
     left();
 
     if (sched->try_pop() != NULL)

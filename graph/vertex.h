@@ -44,9 +44,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
      */
     struct Vertex
     {
-        using key_t = types::Vertex;   // key: vertex id
-        using val_t = VertexEntry;     // value: compressed edges, compressed walks and metropolis hastings samplers
-        using aug_t = types::Degree;   // augmentation: vertex degree
+        using key_t = types::Vertex;              // key: vertex id
+        using val_t = VertexEntry;                // value: compressed edges, compressed walks and metropolis hastings samplers
+        using aug_t = types::Degree;              // augmentation: vertex degree
 
         using entry_t = std::pair<key_t, val_t>;  // vertex - <vertex id, {compressed-edges, compressed-walks, MH samplers}>
 
@@ -92,8 +92,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 sampler->insert(table_entry.first, table_entry.second);
             }
 
+            // Copy the (min, max) range as well
+            auto vnext_min = entry.second.compressed_walks.vnext_min;
+            auto vnext_max = entry.second.compressed_walks.vnext_max;
+
             return std::make_pair(entry.first,VertexEntry(types::CompressedEdges(ce_plus, ce_root),
-                    dygrl::CompressedWalks(cw_plus, cw_root, entry.second.compressed_walks.vnext_min, entry.second.compressed_walks.vnext_max),
+                    dygrl::CompressedWalks(cw_plus, cw_root, vnext_min, vnext_max),
                     sampler)
             );
         }

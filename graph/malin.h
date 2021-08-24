@@ -309,6 +309,15 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         auto new_state = graph[state.first].samplers->find(state.second).sample(state, model);
                         new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
 
+                        // todo: check the neighbours here
+                        if (state.first == new_state.first)
+                        {
+                            cout << "MYMY - wid=" << walk_id
+                            << ", next_vertex=" << new_state.first
+                            << " current_vertex=" << state.first
+                            << "with triplet to encode {wid=" << walk_id << ", pos=" << (int) position << ", nxt=" << new_state.first << "}" << endl;
+                        }
+
                         if (!cuckoo.contains(state.first))
                             cuckoo.insert(state.first, std::vector<types::Vertex>());
 
@@ -411,9 +420,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 types::Position position = 0;
 
                 // 2. Walk
-                types::Vertex previous_vertex;
+                types::Vertex previous_vertex = -1;
 //                while (current_vertex != std::numeric_limits<uint32_t>::max() - 1)
-                while (true)
+                while (previous_vertex != current_vertex)
+//                while (true)
                 {
                     string_stream << current_vertex << " ";
 
@@ -438,8 +448,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     else
                         current_vertex = tree_node.value.compressed_walks.find_next(walk_id, position++, current_vertex);
 
-                    if (current_vertex == previous_vertex)
-                        break; // todo: what if you choose the same vertex? Assumption: The datasets do not have self-loops.
+//                    if (current_vertex == previous_vertex)
+//                        break; //Assumption: The datasets do not have self-loops.
                 }
 
                 return string_stream.str();
@@ -447,7 +457,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
             /**
              * @brief Walks through the walk given walk id.
-             *
+             * todo: remove this function in the end
              * @param walk_id - unique walk ID
              *
              * @return - walk string representation
@@ -486,7 +496,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     current_vertex = tree_node.value.compressed_walks.find_next(walk_id, position++, current_vertex);
 
                     if (current_vertex == previous_vertex)
-                        break; // todo: what if you choose the same vertex? There are no self-loops.
+                        break;
                 }
 
                 return string_stream.str();
@@ -514,10 +524,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         }
                     #endif
 
-                    // todo: for now, use only the inefficient find operation. also this is used only in NODE2VEC. which is for the next paper
-//                    if (config::range_search_mode)
-//                        current_vertex = tree_node.value.compressed_walks.find_next_in_range(walk_id, pos, current_vertex);
-//                    else // todo: THIS IS ONLY FOR NODE2VEC which is out of our scope. Use the simple operation for now
+                    if (config::range_search_mode)
+                        current_vertex = tree_node.value.compressed_walks.find_next_in_range(walk_id, pos, current_vertex);
+                    else
                         current_vertex = tree_node.value.compressed_walks.find_next(walk_id, pos, current_vertex);
                 }
 
@@ -640,7 +649,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         }
                     });
 
-                    return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager);
+                    return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager!
                 };
 
                 graph_update_time_on_insert.start();
@@ -854,28 +863,24 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 types::ChangeAccumulator deletes = types::ChangeAccumulator();
                 types::ChangeAccumulator inserts = types::ChangeAccumulator();
 
-                // todo: this takes time now even though we might not be using search range mode
                 // --------------  Range Search Code Part  --------------------------------------------------
-                // Maintain a (min,max) for each walk-tree. In total there are #vertices walk-trees
                 constexpr const size_t array_next_size = 20;
                 types::Vertex next_min_D_stack[array_next_size], next_max_D_stack[array_next_size], next_min_I_stack[array_next_size], next_max_I_stack[array_next_size];
                 types::Vertex* next_min_wtree_D = next_min_D_stack;
                 types::Vertex* next_max_wtree_D = next_max_D_stack;
                 types::Vertex* next_min_wtree_I = next_min_I_stack;
                 types::Vertex* next_max_wtree_I = next_max_I_stack;
-
                 if (this->number_of_vertices() > array_next_size)
                 {
                     next_min_wtree_D = pbbs::new_array<types::Vertex>(this->number_of_vertices());
                     next_max_wtree_D = pbbs::new_array<types::Vertex>(this->number_of_vertices());
                     next_min_wtree_I = pbbs::new_array<types::Vertex>(this->number_of_vertices());
                     next_max_wtree_I = pbbs::new_array<types::Vertex>(this->number_of_vertices());
-                } // ---------------------------------------------------------------------------------------
-                // Initialize all mins to max integer 32 bits and all maxs to zero
+                }
                 parallel_for(0, this->number_of_vertices(), [&] (types::Vertex i) {
-                    next_min_wtree_D[i] = std::numeric_limits<uint32_t>::max(); // without the 1
+                    next_min_wtree_D[i] = std::numeric_limits<uint32_t>::max();
                     next_max_wtree_D[i] = 0;
-                    next_min_wtree_I[i] = std::numeric_limits<uint32_t>::max(); // without the 1
+                    next_min_wtree_I[i] = std::numeric_limits<uint32_t>::max();
                     next_max_wtree_I[i] = 0;
                 });
                 // -----------------------------------------------------------------------------------------
@@ -911,10 +916,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     auto current_position        = std::get<0>(entry);
                     auto current_vertex_old_walk = std::get<1>(entry);
                     auto should_reset            = std::get<2>(entry);
+//                    cout << "--- worker-" << worker_id() << " operates on walk-" << index << " from pos=" << (int) current_position << " and vertex=" << current_vertex_old_walk << endl;
 
                     auto current_vertex_new_walk = current_vertex_old_walk;
 
-                    if (should_reset)
+                    if (should_reset) // todo: clear out if this is needed
                     {
                         current_position = 0;
                         current_vertex_new_walk = current_vertex_old_walk = affected_walks[index] % this->number_of_vertices();
@@ -925,22 +931,29 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         if (graph[current_vertex_new_walk].degree == 0)
                         {
 //                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length, std::numeric_limits<uint32_t>::max() - 1});
-                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length, current_vertex_new_walk});
+                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
 
-                            if (!inserts.contains(current_vertex_new_walk))
-                                inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
+                            if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
                             inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
                                 vector.push_back(hash);
                             });
 
+                            // ------------------------- Search In Range Code -----------------------------------------------------------------------
+                            // Refine the (min, max) I for the walk-tree of current_vertex_new_walk -------------------------------------------------
+                            next_min_wtree_I[current_vertex_new_walk] = std::min(next_min_wtree_I[current_vertex_new_walk], current_vertex_new_walk);
+                            next_max_wtree_I[current_vertex_new_walk] = std::max(next_max_wtree_I[current_vertex_new_walk], current_vertex_new_walk);
+                            // ----------------------------------------------------------------------------------------------------------------------
+
                             return;
                         }
 
-                        auto random = utility::Random(affected_walks[index] / this->number_of_vertices());
+                        // todo: this creates deterministic walk updates. Parameterize this in globals along with the other appearances
+                        auto random = utility::Random(affected_walks[index] / this->number_of_vertices()); // todo: comment this line out when no determinism
                         auto state = model->initial_state(current_vertex_new_walk);
 
                         if (config::random_walk_model == types::NODE2VEC && current_position > 0)
                         {
+                            cout << "******** NEVER HERE ********" << endl;
                             state.first  = current_vertex_new_walk;
                             state.second = this->vertex_at_walk(affected_walks[index], current_position - 1); // todo: inefficient
                         }
@@ -948,45 +961,71 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         for (types::Position position = current_position; position < config::walk_length; position++)
                         {
                             if (!graph[state.first].samplers->contains(state.second))
-                            {
                                 graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
-                            }
 
+                            auto cached_current_vertex = state.first; // todo: cache the current vertex
                             state = graph[state.first].samplers->find(state.second).sample(state, model);
-                            auto cached_current_vertex = state.first;
-                            state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+//                            state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+                            state = model->new_state(state, graph[cached_current_vertex].neighbors[random.irand(graph[cached_current_vertex].degree)]);
+
+////                            cout << "worker-" << worker_id() << " wid-" << affected_walks[index] << " current-" << current_vertex_new_walk << " next-" << state.first << endl;
+//                            // todo: check the neighbours here
+//                            if (state.first == current_vertex_new_walk)
+//                            {
+//                                // ----------------------------------------------------------
+//                                cout << "vertex=" << cached_current_vertex << "-- ";
+//                                for(auto i = 0; i < graph[cached_current_vertex].degree; i++)
+//                                    cout << " " << graph[cached_current_vertex].neighbors[i];
+//                                cout << endl;
+//                                // ----------------------------------------------------------
+//
+//                                cout << "HEY - wid=" << affected_walks[index]
+//                                     << ", state.first=" << state.first
+//                                     << " cached_current_vertex=" << current_vertex_new_walk
+//                                     << " with triplet to encode {wid=" << affected_walks[index] << ", pos=" << (int) position << ", nxt=" << state.first << "}" << endl;
+//                            }
+//                            assert(state.first != current_vertex_new_walk);
+////                            // --------------------------------------------
 
                             types::PairedTriplet hash = (position != config::walk_length - 1) ?
-                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, state.first}) : // new next
-                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, cached_current_vertex});
+                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
+                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, current_vertex_new_walk});
 //                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, std::numeric_limits<uint32_t>::max() - 1});
-                                // todo: CAUTION CAUTION CAUTION pairing the max again CAUTION CAUTION CAUTION CAUTION!!!
+//                            cout << "Insertion wid=" << index << ", pos=" << (int) position << ", next=" << ((position != config::walk_length - 1) ? state.first : cached_current_vertex) << " ===> pairedTriplet=" << hash << endl;
 
-                            if (!inserts.contains(current_vertex_new_walk))
-                                inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
+                            if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
                             inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
                                 vector.push_back(hash);
                             });
 
                             // ------------------------- Search In Range Code ----- todo: ensure correctness!
                             // Refine the (min, max) I for the walk-tree of current_vertex_new_walk
-                            next_min_wtree_I[current_vertex_new_walk] = std::min(next_min_wtree_I[current_vertex_new_walk], state.first);
-                            next_max_wtree_I[current_vertex_new_walk] = std::max(next_max_wtree_I[current_vertex_new_walk], state.first);
+                            if (position != config::walk_length - 1)
+                            {
+                                next_min_wtree_I[current_vertex_new_walk] = std::min(next_min_wtree_I[current_vertex_new_walk], state.first);
+                                next_max_wtree_I[current_vertex_new_walk] = std::max(next_max_wtree_I[current_vertex_new_walk], state.first);
+                            }
+                            else
+                            {
+                                next_min_wtree_I[current_vertex_new_walk] = std::min(next_min_wtree_I[current_vertex_new_walk], current_vertex_new_walk);
+                                next_max_wtree_I[current_vertex_new_walk] = std::max(next_max_wtree_I[current_vertex_new_walk], current_vertex_new_walk);
+//                                cout << "NEW wid=" << affected_walks[index] << " inserted last paired triplet" << endl;
+                            }
                             // -------------------------------------------------------------------------
 
                             // Then, change the current vertex in the new walk
                             current_vertex_new_walk = state.first;
                         }
 
-                    }; insert_job(); //todo: figure out how to actually push the job to the scheduler.
+                    }; insert_job(); //todo: figure out how to actually push the job to the scheduler
 
                     fork_join_scheduler::Job delete_job = [&] ()
                     {
                         types::Position position = current_position;
 
-                        types::Vertex cached_current_vertex;
+                        types::Vertex cached_current_vertex = -1;
 //                        while (current_vertex_old_walk != std::numeric_limits<uint32_t>::max() - 1)
-                        while (true) // todo: verify that this is correct
+                        while (current_vertex_old_walk != cached_current_vertex)
                         {
                             auto vertex = this->graph_tree.find(current_vertex_old_walk);
 
@@ -996,10 +1035,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             else
                                 next_old_walk = vertex.value.compressed_walks.find_next(affected_walks[index], position, current_vertex_old_walk);
 
-                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, next_old_walk});
+                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, next_old_walk});
+//                            cout << "Deletion wid=" << index << ", pos=" << (int) position << ", next=" << next_old_walk << " ===> pairedTriplet=" << hash << endl;
 
-                            if (!deletes.contains(current_vertex_old_walk))
-                                deletes.insert(current_vertex_old_walk, std::vector<types::PairedTriplet>());
+                            if (!deletes.contains(current_vertex_old_walk)) deletes.insert(current_vertex_old_walk, std::vector<types::PairedTriplet>());
                             deletes.update_fn(current_vertex_old_walk, [&](auto& vector) {
                                 vector.push_back(hash);
                             });
@@ -1010,16 +1049,51 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             next_max_wtree_D[current_vertex_old_walk] = std::max(next_min_wtree_D[current_vertex_old_walk], next_old_walk);
                             // -------------------------------------------------------------------------
 
-                            // break the loop
-                            if (current_vertex_old_walk == next_old_walk)
-                                break;
+                            // break the loop, after inserting the last triplet to the deletion accumulator
+//                            if (current_vertex_old_walk == next_old_walk)
+//                                break;
 
                             // Then, transition to the next vertex in the old walk
                             position++;
+                            cached_current_vertex   = current_vertex_old_walk; // cache the current vertex
                             current_vertex_old_walk = next_old_walk;
+
+//                            if (cached_current_vertex == current_vertex_old_walk)
+//                                cout << "OLD wid=" << affected_walks[index] << " deleted last paired triplet" << endl;
                         }
                     }; delete_job();
+
+                    // Execute the jobs, first the delete and then the insert one
+//                    delete_job();
+//                    insert_job(); // todo: figure out how to actually push the job to the scheduler
                 });
+
+
+
+                // --------------------------------------------------------- todo: debug the freaking accumulator production
+                // print out the ranges in the delete and insert batches
+//                for (auto i = 0; i < this->number_of_vertices(); i++)
+//                {
+//                    cout << "vertex " << i << ", next I_min=" << next_min_wtree_I[i] << ", I_max=" << next_max_wtree_I[i] << endl;
+//                    cout << "vertex " << i << ", next D_min=" << next_min_wtree_I[i] << ", D_max=" << next_max_wtree_D[i] << endl;
+//                }
+
+                // ------------------------------------------------------------ todo: comment this out when done with debugging
+                auto totalItriplets = 0;
+                auto totalDtriplets = 0;
+                auto inserts_vertices = pbbs::sequence<types::Vertex>(inserts.size());
+                for (auto& item : inserts.lock_table())
+                    totalItriplets += item.second.size();
+                auto deletes_vertices = pbbs::sequence<types::Vertex>(deletes.size());
+                for (auto& item : deletes.lock_table())
+                    totalDtriplets += item.second.size();
+                cout << "Total #tripletsD=" << totalDtriplets << " and total #tripletsI=" << totalItriplets << endl;
+                assert(totalDtriplets == totalItriplets);
+                // --------------------------------------------------------------------------------------------------
+
+
+//                return; // todo: remove this one after debugging
+
 
                 using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto insert_walks  = pbbs::sequence<VertexStruct>(inserts.size());
@@ -1055,7 +1129,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             sequence[i] = item.second[i];
 
                         pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
-                        // todo: verify that (vnext_min, vnext_max) = (0,0) is correct
                         delete_walks[ind++] = std::make_pair(item.first, VertexEntry(types::CompressedEdges(),
                             dygrl::CompressedWalks(sequence, item.first, next_min_wtree_D[item.first], next_max_wtree_D[item.first]),
                             new dygrl::SamplerManager(0)));
@@ -1084,13 +1157,16 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(y.compressed_walks.plus);
                     walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
 
-                    // -------- Search Range Code --------------------------------------------------
-                    // Logic for ranges of next ids difference i.e., [x_min, x_max] - [y_min, y_max]
-                    // The initial range of nexts i.e., [x_min, x_max] should stay the same
-                    // because [y_min, y_max] is a subset of [x_min, x_max]
-                    auto new_next_min = x.compressed_walks.vnext_min;
-                    auto new_next_max = x.compressed_walks.vnext_max;
-                    // -----------------------------------------------------------------------------
+                    // --------- Search Range Code ------------------------------------------------------------
+                    // Logic for ranges of next ids difference i.e., [x_min, x_max] + [y_min, y_max]
+                    types::Vertex new_next_min = x.compressed_walks.vnext_min; // std::min(x.compressed_walks.vnext_min, y.compressed_walks.vnext_min);
+                    types::Vertex new_next_max = x.compressed_walks.vnext_max; // std::max(x.compressed_walks.vnext_max, y.compressed_walks.vnext_max);
+                    // ----------------------------------------------------------------------------------------
+
+//                    cout << "vertex=" << src
+//                    << " old walk-tree next range [lb=" << x.compressed_walks.vnext_min << ", ub=" << x.compressed_walks.vnext_max << "]"
+//                    << " and next range of the edges to be deleted [lbD=" << y.compressed_walks.vnext_min << ", ubD=" << y.compressed_walks.vnext_max << "]"
+//                    << " and final range is [lb'=" << new_next_min << ", ub'=" << new_next_max << "]" << endl;
 
                     return VertexEntry(x.compressed_edges, dygrl::CompressedWalks(tree_plus.plus, tree_plus.root, new_next_min, new_next_max), x.sampler_manager);
                 };
@@ -1110,16 +1186,26 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     // --------- Search Range Code ------------------------------------------------------------
                     // Logic for ranges of next ids difference i.e., [x_min, x_max] + [y_min, y_max]
-                    auto new_next_min = std::min(x.compressed_walks.vnext_min, y.compressed_walks.vnext_min);
-                    auto new_next_max = std::max(x.compressed_walks.vnext_max, y.compressed_walks.vnext_max);
+                    types::Vertex new_next_min = std::min(x.compressed_walks.vnext_min, y.compressed_walks.vnext_min);
+                    types::Vertex new_next_max = std::max(x.compressed_walks.vnext_max, y.compressed_walks.vnext_max);
                     // ----------------------------------------------------------------------------------------
+
+//                    cout << "vertex=" << src
+//                    << " old walk-tree next range [lb=" << x.compressed_walks.vnext_min << ", ub=" << x.compressed_walks.vnext_max << "]"
+//                    << " and next range of the edges to be inserted [lbI=" << y.compressed_walks.vnext_min << ", ubI=" << y.compressed_walks.vnext_max << "]"
+//                    << " and final range is [lb'=" << new_next_min << ", ub'=" << new_next_max << "]" << endl;
 
                     return VertexEntry(x.compressed_edges, dygrl::CompressedWalks(tree_plus.plus, tree_plus.root, new_next_min, new_next_max), x.sampler_manager);
                 };
 
                 // Then, apply the batch insertions
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, insert_walks.begin(), insert_walks.size(), replaceI, true);
+
             } // End of batch walk update procedure
+
+
+
+
 
 //            /**
 //             * @brief Updates affected walks in batch mode. (VERSION 2)

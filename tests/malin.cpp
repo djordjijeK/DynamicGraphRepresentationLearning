@@ -16,8 +16,8 @@ class MalinTest : public testing::Test
         bool mmap = false;
         bool is_symmetric = true;
 //        std::string default_file_path = "data/email-graph";
-        std::string default_file_path = "data/cora-graph";
-//        std::string default_file_path = "data/aspena-paper-graph";
+//        std::string default_file_path = "data/cora-graph";
+        std::string default_file_path = "data/aspen-paper-graph";
 };
 
 void MalinTest::SetUp()
@@ -258,35 +258,47 @@ TEST_F(MalinTest, GenerateAndPrintInitialRW)
     walk_printing_timer.start();
     // for debugging purposes - uses simple find_next only
     for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-//        if (i == 1753)
-            std::cout << "simple - id=" << i << ":\t" << malin.walk_simple_find(i) << std::endl;
+        std::cout << "simple - id=" << i << ":\t" << malin.walk_simple_find(i) << std::endl;
     time_simple = walk_printing_timer.get_total();
-
 
     cout << "-- now print out the walks with the find_in_range operation" << endl;
 
     walk_printing_timer.reset(); walk_printing_timer.start();
     // print random walks
     for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-//        if (i == 1753)
-            std::cout << "range - id=" << i << ":\t" << malin.walk(i) << std::endl;
+        std::cout << "range - id=" << i << ":\t" << malin.walk(i) << std::endl;
     time_range = walk_printing_timer.get_total();
 
     cout << "Time to print all walk corpus with simple find: " << time_simple << endl
          << " and to print all walk corpus with range  find: " << time_range  << endl;
+}
 
-//    for(int i = 0; i < 10; i++)
-//    {
-//        // geneate edges //todo: what happens if I generate a high number of edges?
-//        auto edges = utility::generate_batch_of_edges(100, malin.number_of_vertices(), false, false);
-//
-//        malin.insert_edges_batch(edges.second, edges.first, true, false);
-//        malin.delete_edges_batch(edges.second, edges.first, true, false);
-//    }
-//
-//    // print random walks
+// -----------------------------------
+// -----------------------------------
+
+TEST_F(MalinTest, UpdateRandomWalksWithRangeSearch)
+{
+    // create graph and walks
+    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+    malin.generate_initial_random_walks();
+
+    // print random walks before batch insertion
+    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+        std::cout << "id=" << i << ":\t" << malin.walk(i) << std::endl;
+
+    // geneate edges
+    auto edges = utility::generate_batch_of_edges(1000, malin.number_of_vertices(), false, false);
+//    for (auto i = 0; i < edges.second; i++)
+//        cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+    // insert batch of edges
+    malin.insert_edges_batch(edges.second, edges.first, true, false);
+
+    // print random walks after batch insertion
+    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+        std::cout << "id=" << i << ":\t" << malin.walk(i) << std::endl;
+
+//    cout << "and now with simple find" << endl;
+//    // print random walks after batch insertion
 //    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-//    {
-//        std::cout << malin.walk(i) << std::endl;
-//    }
+//        std::cout << "id=" << i << ":\t" << malin.walk_simple_find(i) << std::endl;
 }
