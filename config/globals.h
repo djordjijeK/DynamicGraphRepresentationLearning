@@ -7,7 +7,7 @@ namespace config
     uint8_t walks_per_vertex   = 1;
 
     // determines the length of one random walk
-    uint8_t walk_length        = 10;
+    uint8_t walk_length        = 5;
 
     // determines the type of random walk model to use
     auto random_walk_model     = types::RandomWalkModelType::DEEPWALK;
@@ -25,11 +25,11 @@ namespace config
     auto random                = utility::Random(std::time(nullptr));
 
     // use range search when searching in walk-trees
-    auto range_search_mode     = false;
+    auto range_search_mode     = true;
 
     // use mini-batch walk update
-    auto mini_batch_mode       = false;
-    float mini_batch_size      = 0.2;  // 20% of the total amount of triplets need to be deleted. The same threshold holds for the new triplets that need to be added
+//    auto mini_batch_mode       = false;
+//    float mini_batch_size      = 0.2;  // 20% of the total amount of triplets need to be deleted. The same threshold holds for the new triplets that need to be added
 }
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_GLOBALS_H
