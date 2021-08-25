@@ -27,6 +27,9 @@ namespace config
     // use range search when searching in walk-trees
     auto range_search_mode     = true;
 
+    // determines whether to produce and update the walks in a deterministic way
+    auto deterministic_mode    = false;
+
     // use mini-batch walk update
 //    auto mini_batch_mode       = false;
 //    float mini_batch_size      = 0.2;  // 20% of the total amount of triplets need to be deleted. The same threshold holds for the new triplets that need to be added

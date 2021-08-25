@@ -15,6 +15,9 @@ void memory_footprint(commandLine& command_line)
     double paramQ           = command_line.getOptionDoubleValue("-paramQ", config::paramQ);
     string init_strategy    = string(command_line.getOptionValue("-init", "weight"));
 
+    string determinism      = string(command_line.getOptionValue("-d", "false"));
+    string range_search     = string(command_line.getOptionValue("-rs", "true"));
+
     config::walks_per_vertex = walks_per_vertex;
     config::walk_length      = length_of_walks;
 
@@ -64,6 +67,19 @@ void memory_footprint(commandLine& command_line)
         std::cerr << "Unrecognized sampler init strategy" << std::endl;
         std::exit(1);
     }
+
+    // Set up the range search mode ------
+    if (range_search == "true")
+        config::range_search_mode = true;
+    else
+        config::range_search_mode = false;
+
+    // Set up the deterministic mode
+    if (determinism == "true")
+        config::deterministic_mode = true;
+    else
+        config::deterministic_mode = false;
+    // ------------------------------------
 
     size_t n;
     size_t m;
