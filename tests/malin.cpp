@@ -243,8 +243,9 @@ TEST_F(MalinTest, UpdateRandomWalks)
         std::cout << malin.walk(i) << std::endl;
 }
 
-// -------------------------------
-// ------------------------------- todo: tests for range search
+// -------------------------------//
+// ---- tests for range search ---//
+// -------------------------------//
 
 TEST_F(MalinTest, GenerateAndPrintInitialRW)
 {

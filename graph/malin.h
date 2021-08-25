@@ -240,7 +240,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 auto graph             = this->flatten_graph();
                 auto total_vertices    = this->number_of_vertices();
                 auto walks_to_generate = total_vertices * config::walks_per_vertex;
-                auto cuckoo            = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices); // todo: maybe PairedTriplet
+                auto cuckoo            = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices);
 
                 using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto vertices       = pbbs::sequence<VertexStruct>(total_vertices);
@@ -278,7 +278,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // 1. walk in parallel
                 parallel_for(0, walks_to_generate, [&](types::WalkID walk_id)
                 {
-                    // todo: this is for certain corner cases of node2vec. can stripe it out
                     if (graph[walk_id % total_vertices].degree == 0)
                     {
 //                        types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({walk_id*config::walk_length,std::numeric_limits<uint32_t>::max() - 1});
@@ -333,7 +332,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         });
 
                         // ----------------------------------------------------------------------
-                        // Refine the next (min, max) for the current vertex -------------------- // todo: can make the code more succint
+                        // Refine the next (min, max) for the current vertex --------------------
                         if (position != config::walk_length - 1)
                         {
                             next_min[state.first] = std::min(next_min[state.first], new_state.first);
@@ -459,7 +458,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
             /**
              * @brief Walks through the walk given walk id.
-             * todo: remove this function in the end
+             *
              * @param walk_id - unique walk ID
              *
              * @return - walk string representation
@@ -651,7 +650,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         }
                     });
 
-                    return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager!
+                    return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager
                 };
 
                 graph_update_time_on_insert.start();
@@ -977,25 +976,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                            state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
                             state = model->new_state(state, graph[cached_current_vertex].neighbors[random.irand(graph[cached_current_vertex].degree)]);
 
-////                            cout << "worker-" << worker_id() << " wid-" << affected_walks[index] << " current-" << current_vertex_new_walk << " next-" << state.first << endl;
-//                            // todo: check the neighbours here
-//                            if (state.first == current_vertex_new_walk)
-//                            {
-//                                // ----------------------------------------------------------
-//                                cout << "vertex=" << cached_current_vertex << "-- ";
-//                                for(auto i = 0; i < graph[cached_current_vertex].degree; i++)
-//                                    cout << " " << graph[cached_current_vertex].neighbors[i];
-//                                cout << endl;
-//                                // ----------------------------------------------------------
-//
-//                                cout << "HEY - wid=" << affected_walks[index]
-//                                     << ", state.first=" << state.first
-//                                     << " cached_current_vertex=" << current_vertex_new_walk
-//                                     << " with triplet to encode {wid=" << affected_walks[index] << ", pos=" << (int) position << ", nxt=" << state.first << "}" << endl;
-//                            }
-//                            assert(state.first != current_vertex_new_walk);
-////                            // --------------------------------------------
-
                             types::PairedTriplet hash = (position != config::walk_length - 1) ?
                                 pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
                                 pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, current_vertex_new_walk});
@@ -1008,7 +988,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             });
 
                             // ------------------------- Search In Range Code ----- todo: ensure correctness!
-                            // Refine the (min, max) I for the walk-tree of current_vertex_new_walk
                             if (position != config::walk_length - 1)
                             {
                                 next_min_wtree_I[current_vertex_new_walk] = std::min(next_min_wtree_I[current_vertex_new_walk], state.first);
@@ -1026,7 +1005,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             current_vertex_new_walk = state.first;
                         }
 
-                    }; insert_job(); //todo: figure out how to actually push the job to the scheduler
+                    }; insert_job();
 
                     fork_join_scheduler::Job delete_job = [&] ()
                     {
@@ -1052,31 +1031,21 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                                 vector.push_back(hash);
                             });
 
-                            // ---- Search in Range Code ---- todo: This may be skipped as (min_D, max_D) subset of (min_CW, max_CW)
-                            // Refine the (min, max) for node current_vertex_old_walk
+                            // ---- Search in Range Code ---- REMARK: this may be skipped as (min_D, max_D) subset of (min_CW, max_CW)
                             next_min_wtree_D[current_vertex_old_walk] = std::min(next_min_wtree_D[current_vertex_old_walk], next_old_walk);
                             next_max_wtree_D[current_vertex_old_walk] = std::max(next_min_wtree_D[current_vertex_old_walk], next_old_walk);
                             // -------------------------------------------------------------------------
-
-                            // break the loop, after inserting the last triplet to the deletion accumulator
-//                            if (current_vertex_old_walk == next_old_walk)
-//                                break;
 
                             // Then, transition to the next vertex in the old walk
                             position++;
                             cached_current_vertex   = current_vertex_old_walk; // cache the current vertex
                             current_vertex_old_walk = next_old_walk;
-
-//                            if (cached_current_vertex == current_vertex_old_walk)
-//                                cout << "OLD wid=" << affected_walks[index] << " deleted last paired triplet" << endl;
                         }
                     }; delete_job();
 
                 });
 
-
-
-                // --------------------------------------------------------- todo: debug the freaking accumulator production
+                // ----------------------- For debugging purposes ---------------------------------------------------
                 // print out the ranges in the delete and insert batches
 //                for (auto i = 0; i < this->number_of_vertices(); i++)
 //                {
@@ -1162,7 +1131,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
 
                     // --------- Search Range Code ------------------------------------------------------------
-                    // Logic for ranges of next ids difference i.e., [x_min, x_max] + [y_min, y_max]
                     types::Vertex new_next_min = x.compressed_walks.vnext_min; // std::min(x.compressed_walks.vnext_min, y.compressed_walks.vnext_min);
                     types::Vertex new_next_max = x.compressed_walks.vnext_max; // std::max(x.compressed_walks.vnext_max, y.compressed_walks.vnext_max);
                     // ----------------------------------------------------------------------------------------
@@ -1189,7 +1157,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
 
                     // --------- Search Range Code ------------------------------------------------------------
-                    // Logic for ranges of next ids difference i.e., [x_min, x_max] + [y_min, y_max]
                     types::Vertex new_next_min = std::min(x.compressed_walks.vnext_min, y.compressed_walks.vnext_min);
                     types::Vertex new_next_max = std::max(x.compressed_walks.vnext_max, y.compressed_walks.vnext_max);
                     // ----------------------------------------------------------------------------------------
@@ -1206,7 +1173,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, insert_walks.begin(), insert_walks.size(), replaceI, true);
 
             } // End of batch walk update procedure
-
 
 
             /**

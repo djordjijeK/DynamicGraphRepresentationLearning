@@ -25,7 +25,7 @@ namespace config
     auto random                = utility::Random(std::time(nullptr));
 
     // use range search when searching in walk-trees
-    auto range_search_mode     = true;
+    auto range_search_mode     = false;
 
     // determines whether to produce and update the walks in a deterministic way
     auto deterministic_mode    = false;

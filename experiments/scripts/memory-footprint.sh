@@ -10,7 +10,7 @@ paramQ=2.0                                          # node2vec's paramQ
 sampler_init_strategy="random"                      # random | burnin | weight
 declare -a graphs=("email-graph" "facebook-graph")  # array of graphs
 declare -a walks_per_vertex=(10)                    # walks per vertex to generate
-declare -a walk_length=(40)                         # length of one walk
+declare -a walk_length=(80)                         # length of one walk
 range_search="true"                                 # range search mode
 determinism="false"                                 # determinism
 
