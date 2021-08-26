@@ -43,8 +43,8 @@ namespace types
     using ChangeAccumulator    = libcuckoo::cuckoohash_map<Vertex, std::vector<PairedTriplet>>; // WalkID made to Vertex
 
     // Mini-Batch ChangeAccumulator
-    using VertexTripletPair    = std::pair<types::Vertex, PairedTriplet>;
-    using MiniBatchAccumulator = moodycamel::ConcurrentQueue<VertexTripletPair>;
+    //using VertexTripletPair    = std::pair<types::Vertex, PairedTriplet>;
+    //using MiniBatchAccumulator = moodycamel::ConcurrentQueue<VertexTripletPair>;
 
 }
 

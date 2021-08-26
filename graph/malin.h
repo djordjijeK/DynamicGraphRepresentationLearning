@@ -3,7 +3,7 @@
 
 #include <graph/api.h>
 #include <cuckoohash_map.hh>
-#include <concurrentqueue.h>
+//#include <concurrentqueue.h>
 
 #include <config.h>
 #include <pairings.h>
