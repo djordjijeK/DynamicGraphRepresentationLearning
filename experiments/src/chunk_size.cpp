@@ -103,16 +103,16 @@ void chunk_size(commandLine& command_line)
     // Print the memory requirements to store the produced walk corpus
     malin.memory_footprint();
 
-    auto traverse_walk_corpus = timer("WalkCorpusTraversal", false); traverse_walk_corpus.start();
-    // print random walks
-    cout << "k=" << compressed_lists::head_frequency << " walk corpus traversal started..." << endl;
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        malin.traverse_walk(i) ;
-    auto walk_corpus_traversal_time = traverse_walk_corpus.get_total();
-    cout << "k=" << compressed_lists::head_frequency << " walk corpus traversal finished..." << endl;
+//    auto traverse_walk_corpus = timer("WalkCorpusTraversal", false); traverse_walk_corpus.start();
+//    // print random walks
+//    cout << "k=" << compressed_lists::head_frequency << " walk corpus traversal started..." << endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        malin.traverse_walk(i) ;
+//    auto walk_corpus_traversal_time = traverse_walk_corpus.get_total();
+//    cout << "k=" << compressed_lists::head_frequency << " walk corpus traversal finished..." << endl;
 
-    cout << "Time to produce the walk  corpus: " << walk_corpus_production_time << endl
-         << "Time to traverse the walk corpus: " << walk_corpus_traversal_time  << endl;
+    cout << "Time to produce the walk  corpus: " << walk_corpus_production_time << endl;
+//         << "Time to traverse the walk corpus: " << walk_corpus_traversal_time  << endl;
 
 }
 
