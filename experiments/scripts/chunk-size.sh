@@ -15,6 +15,9 @@ declare -a sizes=(1 2 3 4 5 6 7 8 9 10 11 12)       # exponent of the head frequ
 range_search="true"                                 # range search mode
 determinism="true"                                  # determinism
 
+# create the data dir
+mkdir -p data/chunk_sizes/
+
 # 1. convert graphs in adjacency graph format if necessary
 for graph in "${graphs[@]}"; do
   FILE=../data/"${graph}".adj
@@ -41,7 +44,7 @@ for wpv in "${walks_per_vertex[@]}"; do
             for hf in "${sizes[@]}"; do
                 printf "\n"
                 printf "Graph: ${graph}\n"
-                ./chunk-size -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" -hf "${hf}"
+                ./chunk-size -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" -hf "${hf}" > data/chunk_sizes/${graph}-${sizes}.dat
             done
         done
     done
