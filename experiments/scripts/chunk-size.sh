@@ -44,7 +44,7 @@ for wpv in "${walks_per_vertex[@]}"; do
             for hf in "${sizes[@]}"; do
                 printf "\n"
                 printf "Graph: ${graph}\n"
-                ./chunk-size -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" -hf "${hf}" > data/chunk_sizes/${graph}-${sizes}.dat
+                ./chunk-size -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" -hf "${hf}" | tee data/chunk_sizes/${graph}-${sizes}.dat
             done
         done
     done
