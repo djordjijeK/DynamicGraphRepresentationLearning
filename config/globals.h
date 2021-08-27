@@ -33,6 +33,8 @@ namespace config
     // use mini-batch walk update
 //    auto mini_batch_mode       = false;
 //    float mini_batch_size      = 0.2;  // 20% of the total amount of triplets need to be deleted. The same threshold holds for the new triplets that need to be added
+
+//    size_t head_frequency         = 8;
 }
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_GLOBALS_H

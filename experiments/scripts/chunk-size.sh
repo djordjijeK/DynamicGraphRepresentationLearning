@@ -8,9 +8,10 @@ walk_model="deepwalk"                               # deepwalk | node2vec
 paramP=0.5                                          # node2vec's paramP
 paramQ=2.0                                          # node2vec's paramQ
 sampler_init_strategy="random"                      # random | burnin | weight
-declare -a graphs=("livejournal-graph")             # array of graphs
-declare -a walks_per_vertex=(10 20)                 # walks per vertex to generate
-declare -a walk_length=(40 80 120)                  # length of one walk
+declare -a graphs=("livejournal-graph" "orkut-graph")             # array of graphs
+declare -a walks_per_vertex=(10)                    # walks per vertex to generate
+declare -a walk_length=(80)                         # length of one walk
+declare -a sizes=(1 2 3 4 5 6 7 8 9 10 11 12)       # exponent of the head frequency
 range_search="true"                                 # range search mode
 determinism="true"                                  # determinism
 
@@ -31,15 +32,17 @@ mkdir -p ../../build;
 cd ../../build;
 cmake -DCMAKE_BUILD_TYPE=Release ..;
 cd experiments;
-make memory-footprint
+make chunk-size
 
 # 3. execute experiments
 for wpv in "${walks_per_vertex[@]}"; do
     for wl in "${walk_length[@]}"; do
         for graph in "${graphs[@]}"; do
-            printf "\n"
-            printf "Graph: ${graph}\n"
-            ./memory-footprint -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}"
+            for hf in "${sizes[@]}"; do
+                printf "\n"
+                printf "Graph: ${graph}\n"
+                ./chunk-size -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" -hf "${hf}"
+            done
         done
     done
 done

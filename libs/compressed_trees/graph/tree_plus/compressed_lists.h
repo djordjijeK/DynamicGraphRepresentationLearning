@@ -19,8 +19,8 @@ namespace compressed_lists {
   // select a head with probability 1/2^{head_frequency}
   // expected list size is equal to 2^{head_frequency}
 
-  static constexpr const size_t head_frequency = 8;
-  static constexpr const size_t head_mask = (1 << head_frequency) - 1;
+  /*static constexpr const*/ size_t head_frequency = 8; // Head mask is not static
+  static /*constexpr const*/ size_t head_mask = (1 << head_frequency) - 1; // todo: tune the head frequency here
 
     #ifdef VERTEXLONG
         static bool is_head(const uintV& vtx_id) {

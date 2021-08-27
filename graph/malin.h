@@ -407,6 +407,56 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             }
 
             /**
+             * @brief Walks through the walk given walk id WITHOUT PRINTING IT.
+             *
+             * @param walk_id - unique walk ID
+             *
+             * @return - walk string representation
+             */
+            std::string traverse_walk(types::WalkID walk_id)
+            {
+                // 1. Grab the first vertex in the walk
+                types::Vertex current_vertex = walk_id % this->number_of_vertices();
+                std::stringstream string_stream;
+                types::Position position = 0;
+
+                // 2. Walk
+                types::Vertex previous_vertex = -1;
+//                while (current_vertex != std::numeric_limits<uint32_t>::max() - 1)
+                while (previous_vertex != current_vertex)
+//                while (true)
+                {
+//                    string_stream << current_vertex << " "; // DO NOT PRINT ANYTHING
+
+                    auto tree_node = this->graph_tree.find(current_vertex);
+
+                    #ifdef MALIN_DEBUG
+                        if (!tree_node.valid)
+                        {
+                            std::cerr << "Malin debug error! Malin::Walk::Vertex="
+                                      << current_vertex << " is not found in the vertex tree!"
+                                      << std::endl;
+
+                            std::exit(1);
+                        }
+                    #endif
+
+                    // Cache the previous current vertex before going to the next
+                    previous_vertex = current_vertex;
+
+                    if (config::range_search_mode)
+                        current_vertex = tree_node.value.compressed_walks.find_next_in_range(walk_id, position++, current_vertex);
+                    else
+                        current_vertex = tree_node.value.compressed_walks.find_next(walk_id, position++, current_vertex);
+
+//                    if (current_vertex == previous_vertex)
+//                        break; //Assumption: The datasets do not have self-loops.
+                }
+
+                return string_stream.str();
+            }
+
+            /**
              * @brief Walks through the walk given walk id.
              *
              * @param walk_id - unique walk ID
