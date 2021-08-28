@@ -5,7 +5,7 @@ project(dynamic_graph_representation_learning_with_metropolis_hastings)
 # libraries
 include_directories(libs/libcuckoo)
 include_directories(libs/compressed_trees)
-include_directories(libs/concurrentqueue)
+#include_directories(libs/concurrentqueue)
 
 # include paths
 include_directories(graph)
