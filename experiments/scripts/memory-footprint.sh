@@ -8,9 +8,9 @@ walk_model="deepwalk"                               # deepwalk | node2vec
 paramP=0.5                                          # node2vec's paramP
 paramQ=2.0                                          # node2vec's paramQ
 sampler_init_strategy="random"                      # random | burnin | weight
-declare -a graphs=("livejournal-graph")             # array of graphs
-declare -a walks_per_vertex=(10 20)                 # walks per vertex to generate
-declare -a walk_length=(40 80 120)                  # length of one walk
+declare -a graphs=("cora-graph")             # array of graphs
+declare -a walks_per_vertex=(10)                 # walks per vertex to generate
+declare -a walk_length=(80)                  # length of one walk
 range_search="true"                                 # range search mode
 determinism="true"                                  # determinism
 

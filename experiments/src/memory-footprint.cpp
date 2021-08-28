@@ -87,9 +87,29 @@ void memory_footprint(commandLine& command_line)
     uintV* edges;
     std::tie(n, m, offsets, edges) = read_unweighted_graph(fname.c_str(), is_symmetric, mmap);
 
+    // Assign the head frequency we read
+//    compressed_lists::head_frequency = (size_t) head_frequency;
+    cout << endl << "*** Head frequency is " << compressed_lists::head_frequency << ", and thus, chunk size is " << compressed_lists::head_mask << endl;
+    // ---------------------------------
+
     dygrl::Malin malin = dygrl::Malin(n, m, offsets, edges);
+
+    auto produce_initial_walk_corpus = timer("WalkCorpusProduction", false); produce_initial_walk_corpus.start();
     malin.generate_initial_random_walks();
+    auto walk_corpus_production_time =  produce_initial_walk_corpus.get_total();
+
     malin.memory_footprint();
+
+    //    auto traverse_walk_corpus = timer("WalkCorpusTraversal", false); traverse_walk_corpus.start();
+//    // print random walks
+//    cout << "k=" << compressed_lists::head_frequency << " walk corpus traversal started..." << endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        malin.traverse_walk(i) ;
+//    auto walk_corpus_traversal_time = traverse_walk_corpus.get_total();
+//    cout << "k=" << compressed_lists::head_frequency << " walk corpus traversal finished..." << endl;
+
+    cout << "===> Time to produce the walk  corpus: " << walk_corpus_production_time << endl;
+//         << "Time to traverse the walk corpus: " << walk_corpus_traversal_time  << endl;
 }
 
 

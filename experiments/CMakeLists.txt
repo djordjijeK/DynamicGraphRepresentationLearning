@@ -4,7 +4,8 @@ option(CLANG     OFF)
 option(CILK      OFF)
 option(OPENMP    OFF)
 option(HOMEGROWN OFF)
-option(SERIAL    OFF)
+#option(SERIAL    OFF)
+option(SERIAL    ON)
 
 # compile flags options
 set(OMPFLAGS     "-DOPENMP -fopenmp")
