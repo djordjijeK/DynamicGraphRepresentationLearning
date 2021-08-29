@@ -89,7 +89,11 @@ void throughput(commandLine& command_line)
     std::tie(n, m, offsets, edges) = read_unweighted_graph(fname.c_str(), is_symmetric, mmap);
 
     dygrl::Malin malin = dygrl::Malin(n, m, offsets, edges);
+
+    timer initial_walks_from_scratch_timer("GenerateInitialWalksFromScratch", false); initial_walks_from_scratch_timer.reset(); initial_walks_from_scratch_timer.start();
     malin.generate_initial_random_walks();
+    auto time_form_scratch_initial_walks = initial_walks_from_scratch_timer.get_total();
+    cout << "===> Total time (seconds) for generating *initial* walks from scratch: " << time_form_scratch_initial_walks << endl;
 
     // ----------------------------------------
     // Store the (min, max) bounds of each walk-tree in the initial walk corpus to reassign them after each run

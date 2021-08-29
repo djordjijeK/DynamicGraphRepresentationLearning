@@ -14,6 +14,9 @@ declare -a walk_length=(80)
 range_search="true"               # range search mode
 determinism="true"                # determinism
 
+# create the data dir
+mkdir -p data/latency_throughput/
+
 # 1. convert graphs in adjacency graph format if necessary
 for graph in "${graphs[@]}"; do
   FILE=../data/"${graph}".adj
@@ -39,7 +42,7 @@ for wpv in "${walks_per_node[@]}"; do
         for graph in "${graphs[@]}"; do
             printf "\n"
             printf "Graph: ${graph} \n"
-            ./throughput-latency -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}"
+            ./throughput-latency -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" | tee data/latency_throughput/${graph}-${walk_model}.txt
         done
     done
 done
