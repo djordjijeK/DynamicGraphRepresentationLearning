@@ -112,12 +112,12 @@ void throughput(commandLine& command_line)
     });
     // -------------------------------------
 
-    auto batch_sizes = pbbs::sequence<size_t>(6);
+    auto batch_sizes = pbbs::sequence<size_t>(5);
     batch_sizes[0] = 5;
     batch_sizes[1] = 50;
     batch_sizes[2] = 500;
     batch_sizes[3] = 5000;
-    batch_sizes[4] = 50000;
+    batch_sizes[4] = 50000; // up to 10^5 edges per batch
 //    batch_sizes[5] = 500000; // we produce undirected edges, and thus, we generate both directions for an edge in each batch
 
     for (short int i = 0; i < batch_sizes.size(); i++)
