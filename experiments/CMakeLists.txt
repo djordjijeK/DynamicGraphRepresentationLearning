@@ -47,6 +47,6 @@ add_executable(throughput-latency src/throughput-latency.cpp)
 add_executable(memory-footprint src/memory-footprint.cpp)
 add_executable(vertex-classification src/vertex-classification.cpp)
 add_executable(chunk-size src/chunk_size.cpp)
-add_executable(self-speedup src/self_speedup.cpp)
+#add_executable(self-speedup src/self_speedup.cpp)
 
 # -------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING WITH METROPOLIS HASTINGS ----------------------------

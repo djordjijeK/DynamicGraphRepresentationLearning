@@ -18,7 +18,6 @@ void self_speedup(commandLine& command_line)
     string determinism      = string(command_line.getOptionValue("-d", "false"));
     string range_search     = string(command_line.getOptionValue("-rs", "true"));
 //    int head_frequency      = command_line.getOptionIntValue("-hf", 8); // chunk size is 2^8 = 256 (slightly bigger than 128. aspen's machine cachelinesizes)
-    string parallelism      = string(command_line.getOptionValue("-p", "parallel"));
 
     config::walks_per_vertex = walks_per_vertex;
     config::walk_length      = length_of_walks;
@@ -83,11 +82,6 @@ void self_speedup(commandLine& command_line)
         config::deterministic_mode = false;
     // ------------------------------------
 
-    if (parallelism == "parallel")
-        cout << "PARALLEL MODE (48 THREADS)" << endl;
-    else if (parallelism == "serial")
-        cout << "SERIAL MODE (1 THREAD)" << endl;
-
     // Assign the head frequency we read
 //    compressed_lists::head_frequency = (size_t) head_frequency;
     cout << endl << "*** Head frequency is " << compressed_lists::head_frequency << ", and thus, chunk size is " << compressed_lists::head_mask << endl;
@@ -100,14 +94,24 @@ void self_speedup(commandLine& command_line)
     std::tie(n, m, offsets, edges) = read_unweighted_graph(fname.c_str(), is_symmetric, mmap);
 
     dygrl::Malin malin = dygrl::Malin(n, m, offsets, edges);
+    dygrl::Malin malin_2 = dygrl::Malin(n, m, offsets, edges);
 
-    auto produce_initial_walk_corpus = timer("WalkCorpusProduction", false); produce_initial_walk_corpus.start();
-    // Produce the initial random walk corpus
+    // -------------------------------------------------------------------
+    // Produce initial walks corpus with all threads -- full parallel mode
+    auto fully_parallel_timer = timer("WalkCorpusParallel", false); fully_parallel_timer.start();
     malin.generate_initial_random_walks();
-    auto walk_corpus_production_time =  produce_initial_walk_corpus.get_total();
+    auto corpus_parallel_time =  fully_parallel_timer.get_total();
+    // -------------------------------------------------------------------
+
+    // -------------------------------------------------------------------
+    // Produce initial walks corpus with one thread -- one thread mode
+    auto single_thread_timer = timer("WalkCorpusSingleThread", false); single_thread_timer.start();
+    malin_2.generate_initial_random_walks_sequential();
+    auto corpus_single_thread_time =  single_thread_timer.get_total();
+    // -------------------------------------------------------------------
 
     // Print the memory requirements to store the produced walk corpus
-    malin.memory_footprint();
+//    malin.memory_footprint();
 
 //    auto traverse_walk_corpus = timer("WalkCorpusTraversal", false); traverse_walk_corpus.start();
 //    // print random walks
@@ -117,8 +121,9 @@ void self_speedup(commandLine& command_line)
 //    auto walk_corpus_traversal_time = traverse_walk_corpus.get_total();
 //    cout << "k=" << compressed_lists::head_frequency << " walk corpus traversal finished..." << endl;
 
-    cout << "Time to produce the walk  corpus: " << walk_corpus_production_time << endl;
-//         << "Time to traverse the walk corpus: " << walk_corpus_traversal_time  << endl;
+    cout << "Time to produce the walk  corpus (fully parallel): " << corpus_parallel_time << endl
+         << "Time to produce the walk corpus   (single thread): " << corpus_single_thread_time << endl
+         << "Self speed-up (SU): " << corpus_single_thread_time / corpus_parallel_time << endl;
 
 }
 

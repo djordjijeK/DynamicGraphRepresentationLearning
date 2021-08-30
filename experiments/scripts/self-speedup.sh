@@ -8,14 +8,12 @@ walk_model="deepwalk"                               # deepwalk | node2vec
 paramP=0.5                                          # node2vec's paramP
 paramQ=2.0                                          # node2vec's paramQ
 sampler_init_strategy="random"                      # random | burnin | weight
-declare -a graphs=("youtube-graph") # "livejournal-graph" "orkut-graph") # array of graphs
+declare -a graphs=("aspen-paper-graph") # "livejournal-graph" "orkut-graph") # array of graphs
 declare -a walks_per_vertex=(10)                    # walks per vertex to generate
 declare -a walk_length=(80)                         # length of one walk
 #declare -a sizes=(1 2 3 4 5 6 7 8 9 10 11 12)       # exponent of the head frequency
 range_search="true"                                 # range search mode
 determinism="true"                                  # determinism
-# todo: Manually set the SERIAL OPTION to TRUE before running
-parallelism="parallel"                                # serial | parallel
 
 # create the data dir
 mkdir -p data/self-speedup/
@@ -46,7 +44,7 @@ for wpv in "${walks_per_vertex[@]}"; do
             for hf in "${sizes[@]}"; do
                 printf "\n"
                 printf "Graph: ${graph}\n"
-                ./self-speedup -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" -p "${parallelism}" | tee data/self_speedup/${graph}-${parallelism}.dat
+                ./self-speedup -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" #| tee data/self_speedup/${graph}.dat
             done
         done
     done

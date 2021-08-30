@@ -406,6 +406,230 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 delete model;
             }
 
+
+
+            /**
+            * @brief Creates initial set of random walks. Sequential version for self-speedup experiment
+            */
+            void generate_initial_random_walks_sequential()
+            {
+                auto graph             = this->flatten_graph();
+                auto total_vertices    = this->number_of_vertices();
+                auto walks_to_generate = total_vertices * config::walks_per_vertex;
+                auto cuckoo            = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices);
+
+                using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
+                auto vertices       = pbbs::sequence<VertexStruct>(total_vertices);
+
+                // ------- Code for (min, max) of the next of each vertex -------------------------
+                constexpr const size_t array_next_size = 20;
+                types::Vertex next_min_stack[array_next_size], next_max_stack[array_next_size];
+                types::Vertex* next_min = next_min_stack; types::Vertex* next_max = next_max_stack;
+                if (total_vertices > array_next_size)
+                {
+                    next_min = pbbs::new_array<types::Vertex>(total_vertices);
+                    next_max = pbbs::new_array<types::Vertex>(total_vertices);
+                }
+                // Initialize all mins to max integer 32 bits and all maxs to zero
+//                parallel_for(0, total_vertices, [&] (types::Vertex i) {
+                for(auto i = 0; i < total_vertices; i++)
+                {
+                    next_min[i] = std::numeric_limits<uint32_t>::max();
+                    next_max[i] = 0;
+                }
+//                });
+                // ---------------------------------------------------------------------------------
+
+                RandomWalkModel* model;
+                switch (config::random_walk_model)
+                {
+                    case types::DEEPWALK:
+                        model = new DeepWalk(&graph);
+                        break;
+                    case types::NODE2VEC:
+                        model = new Node2Vec(&graph, config::paramP, config::paramQ);
+                        break;
+                    default:
+                        std::cerr << "Unrecognized random walking model" << std::endl;
+                        std::exit(1);
+                }
+
+                // 1. walk in parallel
+//                parallel_for(0, walks_to_generate, [&](types::WalkID walk_id) {
+                for (auto walk_id = 0; walk_id < walks_to_generate; walk_id++)
+                {
+                  if (graph[walk_id % total_vertices].degree == 0)
+                  {
+//                        types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({walk_id*config::walk_length,std::numeric_limits<uint32_t>::max() - 1});
+                      types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair(
+                          {walk_id * config::walk_length + 0,
+                           walk_id % total_vertices});
+                      cuckoo.insert(walk_id % total_vertices,
+                                    std::vector<types::Vertex>());
+                      cuckoo.update_fn(walk_id % total_vertices,
+                                       [&](auto &vector) {
+                                         vector.push_back(hash);
+                                       });
+
+                      // ---------------------------------------------------------------
+                      // Refine the next (min, max) for the current vertex -------------
+                      next_min[walk_id % total_vertices] = std::min(
+                          next_min[walk_id % total_vertices],
+                          walk_id % total_vertices);
+                      next_max[walk_id % total_vertices] = std::max(
+                          next_max[walk_id % total_vertices],
+                          walk_id % total_vertices);
+//                        cout << "--- first node with degree zero, next min=" << next_min[walk_id % total_vertices] << " and max=" << next_max[walk_id % total_vertices] << endl;
+                      // ---------------------------------------------------------------
+
+                      return;
+                  }
+
+                  auto random = config::random; // By default random initialization
+                  if (config::deterministic_mode)
+                      random = utility::Random(walk_id / total_vertices);
+                  types::State state = model->initial_state(
+                      walk_id % total_vertices);
+
+                  for (types::Position position = 0;
+                       position < config::walk_length; position++) {
+                      if (!graph[state.first].samplers->contains(state.second))
+                          graph[state.first].samplers->insert(state.second,
+                                                              MetropolisHastingsSampler(
+                                                                  state,
+                                                                  model));
+
+                      auto new_state = graph[state.first].samplers->find(
+                          state.second).sample(state, model);
+                      new_state = model->new_state(state,
+                                                   graph[state.first].neighbors[random.irand(
+                                                       graph[state.first].degree)]);
+
+                      // todo: check the neighbours here
+                      if (state.first == new_state.first) {
+                          cout << "MYMY - wid=" << walk_id
+                               << ", next_vertex=" << new_state.first
+                               << " current_vertex=" << state.first
+                               << "with triplet to encode {wid=" << walk_id
+                               << ", pos=" << (int) position << ", nxt="
+                               << new_state.first << "}" << endl;
+                      }
+
+                      if (!cuckoo.contains(state.first))
+                          cuckoo.insert(state.first,
+                                        std::vector<types::Vertex>());
+
+                      types::PairedTriplet hash = (position !=
+                                                   config::walk_length - 1) ?
+                                                  pairings::Szudzik<types::Vertex>::pair(
+                                                      {walk_id *
+                                                       config::walk_length +
+                                                       position,
+                                                       new_state.first}) :
+                                                  pairings::Szudzik<types::Vertex>::pair(
+                                                      {walk_id *
+                                                       config::walk_length +
+                                                       position,
+                                                       state.first}); // assign the current as next if EOW
+//                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position,std::numeric_limits<uint32_t>::max() - 1});
+
+                      cuckoo.update_fn(state.first, [&](auto &vector) {
+                        vector.push_back(hash);
+                      });
+
+                      // ----------------------------------------------------------------------
+                      // Refine the next (min, max) for the current vertex --------------------
+                      if (position != config::walk_length - 1) {
+                          next_min[state.first] = std::min(
+                              next_min[state.first], new_state.first);
+                          next_max[state.first] = std::max(
+                              next_max[state.first], new_state.first);
+//                            cout << "*** next in the walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
+                      } else {
+                          next_min[state.first] = std::min(
+                              next_min[state.first], state.first);
+                          next_max[state.first] = std::max(
+                              next_max[state.first], state.first);
+                          //                            cout << "*** next in the walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
+                      }
+                      // ---------------------------------------------------------------
+
+                      // Assign the new state to the sampler
+                      state = new_state;
+                  }
+                }
+//                });
+
+//                #ifdef MALIN_DEBUG
+//                for (auto i = 0; i < this->number_of_vertices(); i++)
+//                {
+//                    cout << "vertex=" << i << " has [lb=" << next_min[i] << ", ub=" << next_max[i] << "]" << endl;
+//                    assert(next_min[i] <= next_max[i]); // lb should always be less than or equal than the upper bound
+//                }
+//                #endif
+
+                // 2. build vertices
+//                parallel_for(0, total_vertices, [&](types::Vertex vertex)
+                for (auto vertex = 0; vertex < total_vertices; vertex++)
+                {
+                    if (cuckoo.contains(vertex)) {
+                        auto triplets = cuckoo.find(vertex);
+                        auto sequence = pbbs::sequence<types::Vertex>(
+                            triplets.size());
+
+                        for (auto index = 0; index < triplets.size(); index++)
+                            sequence[index] = triplets[index];
+
+                        pbbs::sample_sort_inplace(
+                            pbbs::make_range(sequence.begin(), sequence.end()),
+                            std::less<>());
+                        vertices[vertex] = std::make_pair(vertex, VertexEntry(
+                            types::CompressedEdges(),
+                            dygrl::CompressedWalks(sequence, vertex,
+                                                   next_min[vertex],
+                                                   next_max[vertex]),
+                            new dygrl::SamplerManager(0)));
+                    } else {
+                        vertices[vertex] = std::make_pair(vertex, VertexEntry(
+                            types::CompressedEdges(), dygrl::CompressedWalks(),
+                            new dygrl::SamplerManager(0)));
+                    }
+                }
+//                });
+
+//                for(auto& e : vertices)
+//                {
+//                    std::cout << e.first << " ";
+//                }
+//
+//                std::cout << std::endl;
+
+                auto replace = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
+                {
+                    auto tree_plus = walk_plus::uniont(x.compressed_walks, y.compressed_walks, src);
+
+                    // deallocate the memory
+                    lists::deallocate(x.compressed_walks.plus);
+                    walk_plus::Tree_GC::decrement_recursive(x.compressed_walks.root);
+                    lists::deallocate(y.compressed_walks.plus);
+                    walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.root);
+
+                    return VertexEntry(x.compressed_edges,
+                                       CompressedWalks(tree_plus.plus, tree_plus.root, y.compressed_walks.vnext_min, y.compressed_walks.vnext_max),
+                                       x.sampler_manager);
+                };
+
+                this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root,
+                                                                                vertices.begin(),
+                                                                                vertices.size(), replace,
+                                                                                true,
+                                                                                true); // todo: verify that this runs with 1-thread indeed
+                delete model;
+            }
+
+
+
+
             /**
              * @brief Walks through the walk given walk id WITHOUT PRINTING IT.
              *
