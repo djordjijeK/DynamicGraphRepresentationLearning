@@ -308,7 +308,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
 
                         auto new_state = graph[state.first].samplers->find(state.second).sample(state, model);
-                        new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+                        // Bypass the sampling to choose a neighbor "randomly" for deterministic walks
+                        if (config::deterministic_mode)
+                            new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+                        // ---------------------------------------------------------------------------
 
                         // todo: check the neighbours here
                         if (state.first == new_state.first)
@@ -1247,8 +1250,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                             auto cached_current_vertex = state.first; // important for the correct access of the graph vertex
                             state = graph[state.first].samplers->find(state.second).sample(state, model);
-//                            state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
-                            state = model->new_state(state, graph[cached_current_vertex].neighbors[random.irand(graph[cached_current_vertex].degree)]);
+                            if (config::deterministic_mode)
+                                state = model->new_state(state, graph[cached_current_vertex].neighbors[random.irand(graph[cached_current_vertex].degree)]);
+//                                state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
 
                             types::PairedTriplet hash = (position != config::walk_length - 1) ?
                                 pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next

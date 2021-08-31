@@ -28,7 +28,7 @@ namespace config
     auto range_search_mode     = false;
 
     // determines whether to produce and update the walks in a deterministic way
-    auto deterministic_mode    = false;
+    auto deterministic_mode    = true;
 
     // use mini-batch walk update
 //    auto mini_batch_mode       = false;
