@@ -11,6 +11,7 @@ sampler_init_strategy="weight"    # random | burnin | weight
 declare -a graphs=("cora-graph")
 declare -a walks_per_node=(10)
 declare -a walk_length=(80)
+determinism="true"                # for producing deterministic walks
 
 # 1. convert graphs in adjacency graph format if necessary
 for graph in "${graphs[@]}"; do
@@ -37,7 +38,7 @@ for wpv in "${walks_per_node[@]}"; do
         for graph in "${graphs[@]}"; do
             printf "\n"
             printf "Graph: ${graph} \n"
-            ./throughput-latency -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}"
+            ./throughput-latency -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -det "${determinism}"
         done
     done
 done
@@ -46,5 +47,5 @@ done
 if [ "$clean_build" = True ] ; then
     cd ../../;
     rm -rf build;
-    rm experiments/data/*.adj
+#    rm experiments/data/*.adj
 fi

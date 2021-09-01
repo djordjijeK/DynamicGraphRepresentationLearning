@@ -71,7 +71,7 @@ namespace utility
         using Edge = std::tuple<uintV, uintV>;  // (vertex1, vertex2)
 
         // 1. Set up for the edge generation
-        auto rand              = pbbs::random(0);
+        auto rand              = pbbs::random(0); // the seed should be the same in all branches for determinism
 //        auto rand              = pbbs::random(std::time(nullptr));
         size_t graph_size_pow2 = 1 << (pbbs::log2_up(vertices_number) - 1);
         auto rmat              = rMat<uintV>(graph_size_pow2, rand.ith_rand(0), a, b, c);

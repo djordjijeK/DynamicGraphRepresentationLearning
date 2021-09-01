@@ -16,6 +16,7 @@ void throughput(commandLine& command_line)
     string init_strategy    = string(command_line.getOptionValue("-init", "weight"));
     size_t n_trials         = command_line.getOptionLongValue("-trials", 3);
     double limit            = 5.0;
+    string determinism      = string(command_line.getOptionValue("-det", "true"));
 
     config::walks_per_vertex = walks_per_vertex;
     config::walk_length      = length_of_walks;
@@ -67,6 +68,11 @@ void throughput(commandLine& command_line)
         std::exit(1);
     }
 
+    if (determinism == "true")
+        config::deterministic_mode = true;
+    else
+        config::deterministic_mode = false;
+
     size_t n;
     size_t m;
     uintE* offsets;
@@ -76,13 +82,13 @@ void throughput(commandLine& command_line)
     dygrl::WharfMH WharfMH = dygrl::WharfMH(n, m, offsets, edges);
     WharfMH.generate_initial_random_walks();
 
-    auto batch_sizes = pbbs::sequence<size_t>(6);
+    auto batch_sizes = pbbs::sequence<size_t>(3);
     batch_sizes[0] = 5;
     batch_sizes[1] = 50;
     batch_sizes[2] = 500;
-    batch_sizes[3] = 5000;
-    batch_sizes[4] = 50000;
-    batch_sizes[5] = 500000;
+//    batch_sizes[3] = 5000;
+//    batch_sizes[4] = 50000;
+//    batch_sizes[5] = 500000;
 
     for (short int i = 0; i < batch_sizes.size(); i++)
     {
@@ -134,7 +140,7 @@ void throughput(commandLine& command_line)
 
             latency[trial] = (last_insert_time + last_delete_time) / (x.size() + y.size());
 
-            if (insert_timer.get_total() > 2*limit || delete_timer.get_total() > 2*limit) goto endloop;
+//            if (insert_timer.get_total() > 2*limit || delete_timer.get_total() > 2*limit) goto endloop;
 
             // free edges
             pbbs::free_array(edges.first);

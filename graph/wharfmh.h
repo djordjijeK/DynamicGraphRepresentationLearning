@@ -302,7 +302,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         return;
                     }
 
-                    auto random = utility::Random(walk_id / total_vertices);
+                    auto random = config::random;
+                    if (config::deterministic_mode)
+                        random = utility::Random(walk_id / total_vertices);
                     types::State state  = model->initial_state(walk_id % total_vertices);
 
                     for(types::Position position = 0; position < config::walk_length; position++)
@@ -313,7 +315,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         }
 
                         auto new_state = graph[state.first].samplers->find(state.second).sample(state, model);
-                        new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+                        if (config::deterministic_mode)
+                            new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
 
                         if (!cuckoo.contains(state.first))
                             cuckoo.insert(state.first, std::vector<types::Vertex>());
@@ -808,7 +811,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             return;
                         }
 
-                        auto random = utility::Random(affected_walks[index] / this->number_of_vertices());
+                        auto random = config::random;
+                        if (config::deterministic_mode)
+                            random = utility::Random(affected_walks[index] / this->number_of_vertices());
                         auto state = model->initial_state(current_vertex_new_walk);
 
                         if (config::random_walk_model == types::NODE2VEC && current_position > 0)
@@ -825,7 +830,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             }
 
                             state = graph[state.first].samplers->find(state.second).sample(state, model);
-                            state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+                            if (config::deterministic_mode)
+                                state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
 
                             types::PairedTriplet hash = (position != config::walk_length - 1) ?
                                                         pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, state.first}) :
