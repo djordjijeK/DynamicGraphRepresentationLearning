@@ -829,7 +829,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                                 graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
                             }
 
-                            state = graph[state.first].samplers->find(state.second).sample(state, model);
+//                            state = graph[state.first].samplers->find(state.second).sample(state, model); // todo: quick fix. set determinism properly
                             if (config::deterministic_mode)
                                 state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
 
