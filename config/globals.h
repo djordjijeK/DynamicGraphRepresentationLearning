@@ -19,7 +19,7 @@ namespace config
     float paramQ               = 0.3;
 
     // determines the initialization strategy for metropolis hastings samplers
-    auto sampler_init_strategy = types::SamplerInitStartegy::BURNIN;
+    auto sampler_init_strategy = types::SamplerInitStartegy::WEIGHT;
 
     // random number generator
     auto random                = utility::Random(std::time(nullptr));

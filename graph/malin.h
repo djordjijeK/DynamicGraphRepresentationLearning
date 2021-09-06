@@ -313,14 +313,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
                         // ---------------------------------------------------------------------------
 
-                        // todo: check the neighbours here
-                        if (state.first == new_state.first)
-                        {
-                            cout << "MYMY - wid=" << walk_id
-                            << ", next_vertex=" << new_state.first
-                            << " current_vertex=" << state.first
-                            << "with triplet to encode {wid=" << walk_id << ", pos=" << (int) position << ", nxt=" << new_state.first << "}" << endl;
-                        }
+//                        // todo: check the neighbours here
+//                        if (state.first == new_state.first)
+//                        {
+//                            cout << "MYMY - wid=" << walk_id
+//                            << ", next_vertex=" << new_state.first
+//                            << " current_vertex=" << state.first
+//                            << "with triplet to encode {wid=" << walk_id << ", pos=" << (int) position << ", nxt=" << new_state.first << "}" << endl;
+//                        }
 
                         if (!cuckoo.contains(state.first))
                             cuckoo.insert(state.first, std::vector<types::Vertex>());
@@ -1248,13 +1248,20 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             if (!graph[state.first].samplers->contains(state.second))
                                 graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
 
-                            auto cached_current_vertex = state.first; // important for the correct access of the graph vertex
+//                            auto cached_current_vertex = state.first; // important for the correct access of the graph vertex
                             auto temp_state = graph[state.first].samplers->find(state.second).sample(state, model);
                             if (config::deterministic_mode)
+                                if (position != config::walk_length - 1) // todo: check determinism
+                                {
 //                                state = model->new_state(state, graph[cached_current_vertex].neighbors[random.irand(graph[cached_current_vertex].degree)]);
-                                state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+                                    state = model->new_state(state,
+                                                             graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+                                }
                             else
-                                state = temp_state;
+                                if (position != config::walk_length - 1) // todo: check determinism
+                                {
+                                    state = temp_state;
+                                }
 
                             types::PairedTriplet hash = (position != config::walk_length - 1) ?
                                 pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
