@@ -232,7 +232,7 @@ TEST_F(MalinTest, UpdateRandomWalks)
     for(int i = 0; i < 10; i++)
     {
         // geneate edges //todo: what happens if I generate a high number of edges?
-        auto edges = utility::generate_batch_of_edges(100, malin.number_of_vertices(), false, false);
+        auto edges = utility::generate_batch_of_edges(1000, malin.number_of_vertices(), false, false);
 
         malin.insert_edges_batch(edges.second, edges.first, true, false);
         malin.delete_edges_batch(edges.second, edges.first, true, false);
