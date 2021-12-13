@@ -10,6 +10,7 @@
 
 #include <models/deepwalk.h>
 #include <models/node2vec.h>
+#include <set>
 
 namespace dynamic_graph_representation_learning_with_metropolis_hastings
 {
@@ -22,6 +23,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
         public:
             using Graph       = aug_map<dygrl::Vertex>;
             using WalkStorage = libcuckoo::cuckoohash_map<types::WalkID, std::vector<types::Vertex>>;
+						using WalkIndex   = libcuckoo::cuckoohash_map<types::Vertex, std::set<types::WalkID>>;
 
             /**
              * @brief WharfMH constructor.
@@ -204,6 +206,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             void destroy_walks()
             {
                 this->walk_storage.clear();
+								// destroy the index too
+								this->walk_index.clear();
             }
 
             /**
@@ -211,7 +215,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              */
             void generate_initial_random_walks()
             {
-                auto graph          = this->flatten_graph();
+                auto graph            = this->flatten_graph();
                 auto total_vertices = this->number_of_vertices();
                 auto walks          = total_vertices * config::walks_per_vertex;
                 auto cuckoo         = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices);
@@ -249,7 +253,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
 
-                    auto random = utility::Random(walk_id / total_vertices);
+                    auto random = utility::Random(walk_id / total_vertices); // disable this if you need pure randomness
                     types::State state = model->initial_state(walk_id % total_vertices);
 
                     for(types::Position position = 0; position < config::walk_length; position++)
@@ -266,6 +270,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         {
                             vector.push_back(state.first);
                         });
+
+												// update the walk index as well
+												this->walk_index.update_fn(state.first, [&](auto& set)
+												{
+														set.insert(walk_id);
+												});
 
                         state = new_state;
                     }
@@ -672,6 +682,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
         private:
             Graph graph_tree;
             WalkStorage walk_storage;
+						WalkIndex   walk_index;  // simplistic inverted index structure {nid, set of wids}
 
             /**
             * Initializes memory pools for underlying lists.
