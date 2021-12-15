@@ -133,7 +133,7 @@ void throughput(commandLine& command_line)
 
             latency[trial] = (double) (last_insert_time + last_delete_time) / (x + y);
 
-            if (insert_timer.get_total() > 2*limit || delete_timer.get_total() > 2*limit) goto endloop;
+//            if (insert_timer.get_total() > 2*limit || delete_timer.get_total() > 2*limit) goto endloop;
 
             // free edges
             pbbs::free_array(edges.first);

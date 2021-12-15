@@ -23,6 +23,8 @@ namespace config
 
     // random number generator
     auto random                = utility::Random(std::time(nullptr));
+
+		auto determinism           = true;
 }
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_GLOBALS_H

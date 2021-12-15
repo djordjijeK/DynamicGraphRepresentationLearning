@@ -218,7 +218,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 auto graph            = this->flatten_graph();
                 auto total_vertices = this->number_of_vertices();
                 auto walks          = total_vertices * config::walks_per_vertex;
-                auto cuckoo         = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices);
+//                auto cuckoo         = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices);
 
                 using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto vertices       = pbbs::sequence<VertexStruct>(total_vertices);
@@ -248,12 +248,22 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             vector.push_back(walk_id % total_vertices);
                         });
 
+												// update the inverted index -----------------------------------------------------
+												this->walk_index.insert(walk_id % total_vertices, std::set<types::Vertex>());
+												this->walk_index.update_fn(walk_id % total_vertices,  [&](auto& set)
+												{
+														set.insert(walk_id);
+												}); // todo
+												// -------------------------------------------------------------------------------
+
                         return;
                     }
 
                     this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
 
-                    auto random = utility::Random(walk_id / total_vertices); // disable this if you need pure randomness
+                    auto random = config::random;
+										if (config::determinism)
+												random = utility::Random(walk_id / total_vertices); // disable this if you need pure randomness
                     types::State state = model->initial_state(walk_id % total_vertices);
 
                     for(types::Position position = 0; position < config::walk_length; position++)
@@ -264,18 +274,22 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         }
 
                         auto new_state = graph[state.first].samplers->find(state.second).sample(state, model);
-                        new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
+		                    if (config::determinism)
+                            new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
 
                         this->walk_storage.update_fn(walk_id, [&](auto& vector)
                         {
                             vector.push_back(state.first);
                         });
 
-												// update the walk index as well
+												// update the walk index as well --------------------------------
+												if (position == 0)
+														this->walk_index.insert(state.first, std::set<types::Vertex>()); // todo: check if this is correct
 												this->walk_index.update_fn(state.first, [&](auto& set)
 												{
 														set.insert(walk_id);
 												});
+												// --------------------------------------------------------------
 
                         state = new_state;
                     }
@@ -397,6 +411,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(b.compressed_edges.plus);
                     tree_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
+										walk_update_time_on_insert.start();
                     for(auto& element : this->walk_storage.lock_table())
                     {
                         for (types::Position position = 0; position < element.second.size(); position++)
@@ -418,6 +433,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             }
                         }
                     }
+										walk_update_time_on_insert.stop();
 
                     return VertexEntry(union_edge_tree, a.sampler_manager);
                 };
@@ -436,7 +452,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_update_time.start();
                 #endif
 
-//                if (apply_walk_updates) this->update_walks(rewalk_points);
+								walk_update_time_on_insert.start();
+                if (apply_walk_updates) this->update_walks(rewalk_points);
+								walk_update_time_on_insert.stop();
 
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
@@ -560,6 +578,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(b.compressed_edges.plus);
                     tree_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
+										walk_update_time_on_delete.start();
                     for(auto& element : this->walk_storage.lock_table())
                     {
                         for (types::Position position = 0; position < element.second.size(); position++)
@@ -581,6 +600,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             }
                         }
                     }
+										walk_update_time_on_delete.stop();
 
                     return VertexEntry(difference_edge_tree, a.sampler_manager);
                 };
@@ -599,7 +619,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_update_time.start();
                 #endif
 
-//                if (apply_walk_updates) this->update_walks(rewalk_points);
+								walk_update_time_on_delete.start();
+                if (apply_walk_updates) this->update_walks(rewalk_points);
+								walk_update_time_on_delete.stop();
 
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
