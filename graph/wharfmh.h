@@ -237,6 +237,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         std::exit(1);
                 }
 
+				// initialize the inverted index. Create an entry for each nid ----------
+				parallel_for(0, total_vertices, [&](types::Vertex nid)
+	            {
+                    this->walk_index.insert(nid, std::set<types::Vertex>()); // todo: check if this is correct
+	            });
+				// ----------------------------------------------------------------------
+
                 parallel_for(0, walks, [&](types::WalkID walk_id)
                 {
                     if (graph[walk_id % total_vertices].degrees == 0)
@@ -248,22 +255,24 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             vector.push_back(walk_id % total_vertices);
                         });
 
-												// update the inverted index -----------------------------------------------------
-												this->walk_index.insert(walk_id % total_vertices, std::set<types::Vertex>());
-												this->walk_index.update_fn(walk_id % total_vertices,  [&](auto& set)
-												{
-														set.insert(walk_id);
-												}); // todo
-												// -------------------------------------------------------------------------------
+						// update the inverted index -----------------------------------------------------
+						this->walk_index.insert(walk_id % total_vertices, std::set<types::Vertex>());
+						this->walk_index.update_fn(walk_id % total_vertices,  [&](auto& set)
+						{
+								set.insert(walk_id);
+						}); // todo
+						// -------------------------------------------------------------------------------
 
                         return;
                     }
 
-                    this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
+//                    this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length)); // do not initialize like this because it inserts zeros
+					this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
+
 
                     auto random = config::random;
-										if (config::determinism)
-												random = utility::Random(walk_id / total_vertices); // disable this if you need pure randomness
+					if (config::determinism)
+						random = utility::Random(walk_id / total_vertices); // disable this if you need pure randomness
                     types::State state = model->initial_state(walk_id % total_vertices);
 
                     for(types::Position position = 0; position < config::walk_length; position++)
@@ -282,20 +291,69 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             vector.push_back(state.first);
                         });
 
-												// update the walk index as well --------------------------------
-												if (position == 0)
-														this->walk_index.insert(state.first, std::set<types::Vertex>()); // todo: check if this is correct
-												this->walk_index.update_fn(state.first, [&](auto& set)
-												{
-														set.insert(walk_id);
-												});
-												// --------------------------------------------------------------
+						// update the walk index as well --------------------------------
+//						if (position == 0)
+//								this->walk_index.insert(state.first, std::set<types::Vertex>()); // todo: check if this is correct
+						this->walk_index.update_fn(state.first, [&](auto& set)
+						{
+								set.insert(walk_id);
+						});
+						// --------------------------------------------------------------
 
                         state = new_state;
                     }
                 });
 
                 delete model;
+            }
+
+			/**
+			 * @brief Prints inverted index {nid, set(wid)}
+			 *
+			 * @param no parameters
+			 *
+			 * @return - inverted index for the walk corpus maintained
+			 */
+			 void walk_index_print()
+			{
+			    auto lt = this->walk_index.lock_table();
+				for (const auto& it : lt)
+				{
+					cout << "nid: " << it.first << "- {";
+					for (const auto& wid : it.second)
+					{
+						cout << wid << " ";
+					}
+					cout << "}" << endl;
+				}
+			}
+
+
+            /**
+             * @brief Walks through the walk given walk id.
+             *
+             * @param walk_id - unique walk ID
+             *
+             * @return - walk string representation
+             */
+            void walk_cout(types::WalkID walk_id)
+            {
+//                std::stringstream string_stream;
+                if (!this->walk_storage.contains(walk_id))
+                {
+										cout << "No walk with id " << walk_id << endl;
+										return;
+								}
+
+                for(auto& item : this->walk_storage.find(walk_id))
+                {
+//                    string_stream << item << " ";
+										cout << item << " ";
+                }
+								cout << endl;
+
+//                return string_stream.str();
+								return;
             }
 
             /**

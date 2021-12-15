@@ -58,7 +58,17 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
 
     double limit = 5.5;
 
-//		WharfMH.walk(1);
+//		WharfMH.walk_cout(1);
+//		cout << WharfMH.walk(1);
+//		WharfMH.walk_cout(13);
+
+		cout << "WALKS" << endl;
+		for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+				cout << WharfMH.walk(i) << endl;
+
+		cout << "INV INDEX" << endl;
+		WharfMH.walk_index_print();
+
 
 		exit(1);
 
