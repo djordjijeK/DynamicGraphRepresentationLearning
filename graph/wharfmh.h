@@ -471,7 +471,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 					// --------------------------------------------------------------
 					walk_update_time_on_insert.start();
-
 					// use the inverted index somehow here
 					if (this->walk_index.contains(v))
 					{
@@ -772,37 +771,38 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     auto current_position = rewalk_points.template find(affected_walks[index]);
                     auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
 
-					auto prefix_set = set<types::Vertex>();
-					for (types::Position position = 0/*current_position*/; position < config::walk_length; position++)
+					// Delete all entries of the walk from the walk index
+					for (types::Position position = 0; position < config::walk_length; position++)
+					{
+						auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
+						this->walk_index.update_fn(cur_vertex, [&](auto &set) {
+                             set.erase(affected_walks[index]);
+//							 cout << "erased wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
+						});
+					}
+
+					// Insert all entries of the walk into the walk index
+					for (types::Position position = 0; position < config::walk_length; position++)
                     {
-						if (position <= current_position)
+						if (position < current_position)
 						{
 							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
-							prefix_set.insert(cur_vertex);
-//							cout << "wid=" << index << " has vertex " << cur_vertex << " at position " << (int)position << endl;
+							this->walk_index.update_fn(cur_vertex, [&](auto &set) {
+							  set.insert(affected_walks[index]);
+//							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
+							});
 						}
 						else // position >= current_position
 						{
-							// -------
-							// update the walk index accordingly
-							// -------
-							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
-//							if (position == 0)                 // ************
-//								prefix_set.insert(cur_vertex); // special case
-							if (prefix_set.find(cur_vertex) == prefix_set.end()) // vertex does not appear in the prefix of the walk. we can erase it from inv. index
-							{
-								this->walk_index.update_fn(cur_vertex, [&](auto& set)
-								{
-									set.erase(affected_walks[index]);
-									assert(set.find(affected_walks[index]) == set.end());
-//									cout << "assertion passed" << endl;
-								});
-							}
-							// ------
-
 							this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
 							{
 							  vector[position] = state.first;
+							});
+
+							this->walk_index.update_fn(state.first, [&](auto& set)
+							{
+							  set.insert(affected_walks[index]);
+//							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << state.first << endl;
 							});
 
 							if (!graph[state.first].samplers->contains(state.second))
@@ -810,18 +810,69 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 								graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
 							}
 
-							// ----
-							// update the walk index accordingly after the re-sampling
-							cur_vertex = this->walk_storage.find(affected_walks[index])[position]; // take again the new vertex value
-							this->walk_index.update_fn(cur_vertex, [&](auto& set)
-							{
-							  set.insert(affected_walks[index]);
-							});
-							// ---
-
 							state = graph[state.first].samplers->find(state.second).sample(state, model);
 						}
                     }
+
+
+
+//					for (types::Position position = 0/*current_position*/; position < config::walk_length; position++)
+//                    {
+//						if (position < current_position)
+//						{
+//							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
+//							if (affected_walks[index] == 1)
+//								cout << "(PRE)(wid-1)current vertex= " << cur_vertex << endl;
+//							prefix_set.insert(cur_vertex);
+////							cout << "wid=" << index << " has vertex " << cur_vertex << " at position " << (int)position << endl;
+//						}
+//						else // position >= current_position
+//						{
+//							// -------
+//							// update the walk index accordingly
+//							// -------
+////							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
+////							if (affected_walks[index] == 1)
+////								cout << "(UPD)(wid-1)current vertex= " << cur_vertex << endl;
+//////							if (position == 0)                 // ************
+//////								prefix_set.insert(cur_vertex); // special case
+////							if (prefix_set.find(cur_vertex) == prefix_set.end()) // vertex does not appear in the prefix of the walk. we can erase it from inv. index
+////							{
+////								this->walk_index.update_fn(cur_vertex, [&](auto& set)
+////								{
+////									set.erase(affected_walks[index]);
+////									assert(set.find(affected_walks[index]) == set.end());
+//////									cout << "assertion passed" << endl;
+////								});
+////							}
+//							// ------
+//
+//							this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
+//							{
+//							  vector[position] = state.first;
+//							});
+//
+//							if (affected_walks[index] == 1)
+//								cout << "(UPD-NEW)(wid-1)current vertex= " << state.first << endl;
+//
+//							// ----
+//							// update the walk index accordingly after the re-sampling
+////							cur_vertex = this->walk_storage.find(affected_walks[index])[position]; // take again the new vertex value
+//							// cur_vertex is state.first!
+//							this->walk_index.update_fn(state.first, [&](auto& set)
+//							{
+//							  set.insert(affected_walks[index]);
+//							});
+//							// ---
+//
+//							if (!graph[state.first].samplers->contains(state.second))
+//							{
+//								graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
+//							}
+//
+//							state = graph[state.first].samplers->find(state.second).sample(state, model);
+//						}
+//                    }
 
 
 //                    for (types::Position position = current_position; position < config::walk_length; position++)
