@@ -540,9 +540,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_update_time.start();
                 #endif
 
-								walk_update_time_on_insert.start();
+				walk_update_time_on_insert.start();
                 if (apply_walk_updates) this->update_walks(rewalk_points);
-								walk_update_time_on_insert.stop();
+				walk_update_time_on_insert.stop();
 
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
@@ -707,9 +707,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_update_time.start();
                 #endif
 
-								walk_update_time_on_delete.start();
+				walk_update_time_on_delete.start();
                 if (apply_walk_updates) this->update_walks(rewalk_points);
-								walk_update_time_on_delete.stop();
+				walk_update_time_on_delete.stop();
 
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
@@ -772,27 +772,79 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     auto current_position = rewalk_points.template find(affected_walks[index]);
                     auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
 
-                    for (types::Position position = current_position; position < config::walk_length; position++)
+					auto prefix_set = set<types::Vertex>();
+					for (types::Position position = 0/*current_position*/; position < config::walk_length; position++)
                     {
-                        this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
-                        {
-                            vector[position] = state.first;
-                        });
+						if (position <= current_position)
+						{
+							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
+							prefix_set.insert(cur_vertex);
+//							cout << "wid=" << index << " has vertex " << cur_vertex << " at position " << (int)position << endl;
+						}
+						else // position >= current_position
+						{
+							// -------
+							// update the walk index accordingly
+							// -------
+							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
+//							if (position == 0)                 // ************
+//								prefix_set.insert(cur_vertex); // special case
+							if (prefix_set.find(cur_vertex) == prefix_set.end()) // vertex does not appear in the prefix of the walk. we can erase it from inv. index
+							{
+								this->walk_index.update_fn(cur_vertex, [&](auto& set)
+								{
+									set.erase(affected_walks[index]);
+									assert(set.find(affected_walks[index]) == set.end());
+//									cout << "assertion passed" << endl;
+								});
+							}
+							// ------
 
-                        if (!graph[state.first].samplers->contains(state.second))
-                        {
-                            graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
-                        }
+							this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
+							{
+							  vector[position] = state.first;
+							});
 
-                        state = graph[state.first].samplers->find(state.second).sample(state, model);
+							if (!graph[state.first].samplers->contains(state.second))
+							{
+								graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
+							}
+
+							// ----
+							// update the walk index accordingly after the re-sampling
+							cur_vertex = this->walk_storage.find(affected_walks[index])[position]; // take again the new vertex value
+							this->walk_index.update_fn(cur_vertex, [&](auto& set)
+							{
+							  set.insert(affected_walks[index]);
+							});
+							// ---
+
+							state = graph[state.first].samplers->find(state.second).sample(state, model);
+						}
                     }
+
+
+//                    for (types::Position position = current_position; position < config::walk_length; position++)
+//                    {
+//                        this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
+//                        {
+//                            vector[position] = state.first;
+//                        });
+//
+//                        if (!graph[state.first].samplers->contains(state.second))
+//                        {
+//                            graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
+//                        }
+//
+//                        state = graph[state.first].samplers->find(state.second).sample(state, model);
+//                    }
                 });
             }
 
         private:
             Graph graph_tree;
             WalkStorage walk_storage;
-						WalkIndex   walk_index;  // simplistic inverted index structure {nid, set of wids}
+			WalkIndex   walk_index;  // simplistic inverted index structure {nid, set of wids}
 
             /**
             * Initializes memory pools for underlying lists.

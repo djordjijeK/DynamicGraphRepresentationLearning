@@ -62,12 +62,14 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
 //		cout << WharfMH.walk(1);
 //		WharfMH.walk_cout(13);
 
+// ----------------------------------------------
 		cout << "WALKS" << endl;
 		for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
 				cout << WharfMH.walk(i) << endl;
 
 		cout << "INV INDEX" << endl;
 		WharfMH.walk_index_print();
+// ----------------------------------------------
 
 
 //		exit(1);
@@ -181,6 +183,15 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
         }
         std::cout << "}" << std::endl;
     }
+
+// ----------------------------------------------
+	cout << "(NEW) WALKS" << endl;
+	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+		cout << WharfMH.walk(i) << endl;
+
+	cout << "(NEW) INV INDEX" << endl;
+	WharfMH.walk_index_print();
+// ----------------------------------------------
 
     endloop:
         std::cout << "Loop ended" << std::endl;
