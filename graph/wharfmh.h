@@ -469,29 +469,59 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(b.compressed_edges.plus);
                     tree_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
-										walk_update_time_on_insert.start();
-                    for(auto& element : this->walk_storage.lock_table())
-                    {
-                        for (types::Position position = 0; position < element.second.size(); position++)
-                        {
-                            if (element.second[position] != v) continue;
+					// --------------------------------------------------------------
+					walk_update_time_on_insert.start();
 
-                            if (!rewalk_points.contains(element.first))
-                            {
-                                rewalk_points.insert(element.first, position);
-                            }
-                            else
-                            {
-                                types::Position current_min_pos = rewalk_points.find(element.first);
+					// use the inverted index somehow here
+					if (this->walk_index.contains(v))
+					{
+						auto set_wids = this->walk_index.find(v);
+						cout << "set of " << v << " has " << set_wids.size() << " elements." << endl;
 
-                                if (current_min_pos > position)
-                                {
-                                    rewalk_points.update(element.first, position);
-                                }
-                            }
-                        }
-                    }
-										walk_update_time_on_insert.stop();
+						// Go and visit only the wids in the inverted index to construct the MAV
+						for (auto& wid : set_wids)
+						{
+							auto cur_walk = this->walk_storage.find(wid);
+							for (types::Position position = 0; position < cur_walk.size(); position++)
+							{
+								if (cur_walk[position] != v) continue;
+
+								if (!rewalk_points.contains(wid))
+									rewalk_points.insert(wid, position);
+								else
+								{
+									types::Position current_min_pos = rewalk_points.find(wid);
+
+	                                if (current_min_pos > position)
+	                                    rewalk_points.update(wid, position);
+								}
+							}
+						}
+					}
+
+//                    for(auto& element : this->walk_storage.lock_table())
+//                    {
+//                        for (types::Position position = 0; position < element.second.size(); position++)
+//                        {
+//                            if (element.second[position] != v) continue;
+//
+//                            if (!rewalk_points.contains(element.first))
+//                            {
+//                                rewalk_points.insert(element.first, position);
+//                            }
+//                            else
+//                            {
+//                                types::Position current_min_pos = rewalk_points.find(element.first);
+//
+//                                if (current_min_pos > position)
+//                                {
+//                                    rewalk_points.update(element.first, position);
+//                                }
+//                            }
+//                        }
+//                    }
+					walk_update_time_on_insert.stop();
+					// -------------------------------------------------------------
 
                     return VertexEntry(union_edge_tree, a.sampler_manager);
                 };
