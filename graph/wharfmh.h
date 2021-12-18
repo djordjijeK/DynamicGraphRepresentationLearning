@@ -475,7 +475,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					if (this->walk_index.contains(v))
 					{
 						auto set_wids = this->walk_index.find(v);
-						cout << "set of " << v << " has " << set_wids.size() << " elements." << endl;
+//						cout << "set of " << v << " has " << set_wids.size() << " elements." << endl;
 
 						// Go and visit only the wids in the inverted index to construct the MAV
 						for (auto& wid : set_wids)
