@@ -16,8 +16,8 @@ class MalinTest : public testing::Test
         bool mmap = false;
         bool is_symmetric = true;
 //        std::string default_file_path = "data/email-graph";
-//        std::string default_file_path = "data/cora-graph";
-        std::string default_file_path = "data/aspen-paper-graph";
+        std::string default_file_path = "data/flickr-graph";
+//        std::string default_file_path = "data/aspen-paper-graph";
 };
 
 void MalinTest::SetUp()
@@ -302,4 +302,186 @@ TEST_F(MalinTest, UpdateRandomWalksWithRangeSearch)
 //    // print random walks after batch insertion
 //    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
 //        std::cout << "id=" << i << ":\t" << malin.walk_simple_find(i) << std::endl;
+}
+
+
+TEST_F(MalinTest, MalinThroughputLatency)
+{
+	dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+	malin.generate_initial_random_walks();
+	int n_trials = 1; //3;
+
+	cout << "total vertices: " << total_vertices << endl;
+	cout << "total edges:    " << total_edges << endl;
+
+	double limit = 5.5;
+
+//		WharfMH.walk_cout(1);
+//		cout << WharfMH.walk(1);
+//		WharfMH.walk_cout(13);
+
+// ----------------------------------------------
+//		cout << "WALKS" << endl;
+//		for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+//				cout << WharfMH.walk(i) << endl;
+//
+//		cout << "INV INDEX" << endl;
+//		WharfMH.walk_index_print();
+// ----------------------------------------------
+
+
+//		exit(1);
+
+	// ----------------------------------------
+	// Store the (min, max) bounds of each walk-tree in the initial walk corpus to reassign them after each run
+	using minMaxPair = std::pair<types::Vertex, types::Vertex>;
+	auto initial_minmax_bounds = pbbs::sequence<minMaxPair>(total_vertices);
+
+	// construct a flat snapshot of a graph
+	auto flat_snapshot = malin.flatten_vertex_tree();
+
+	// Cache the initial ranges
+	parallel_for(0, total_vertices, [&] (auto i) {
+	  auto min = flat_snapshot[i].compressed_walks.vnext_min;
+	  auto max = flat_snapshot[i].compressed_walks.vnext_max;
+	  initial_minmax_bounds[i] = std::make_pair(min, max);
+//        cout << "vertex=" << i << " {min=" << min << ", max=" << max << "}" << endl;
+	});
+	// -------------------------------------
+
+
+	auto batch_sizes = pbbs::sequence<size_t>(5);
+	batch_sizes[0] = 5; //5;
+	batch_sizes[1] = 50;
+	batch_sizes[2] = 500;
+	batch_sizes[3] = 5000;
+	batch_sizes[4] = 50000;
+//    batch_sizes[5] = 500000;
+
+	for (short int i = 0; i < batch_sizes.size(); i++)
+	{
+		timer insert_timer("InsertTimer");
+		timer delete_timer("DeleteTimer");
+
+		graph_update_time_on_insert.reset();
+		walk_update_time_on_insert.reset();
+		graph_update_time_on_delete.reset();
+		walk_update_time_on_delete.reset();
+
+		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
+
+		double last_insert_time = 0;
+		double last_delete_time = 0;
+
+		auto latency_insert = pbbs::sequence<double>(n_trials);
+		auto latency_delete = pbbs::sequence<double>(n_trials);
+		auto latency        = pbbs::sequence<double>(n_trials);
+
+		double total_insert_walks_affected = 0;
+		double total_delete_walks_affected = 0;
+
+		for (short int trial = 0; trial < n_trials; trial++)
+		{
+			// Check whether the bound for min and max are correctly resetted
+			parallel_for(0, total_vertices, [&] (auto i) {
+			  assert(flat_snapshot[i].compressed_walks.vnext_min == get<0>(initial_minmax_bounds[i]));
+			  assert(flat_snapshot[i].compressed_walks.vnext_max == get<1>(initial_minmax_bounds[i]));
+			});
+
+			size_t graph_size_pow2 = 1 << (pbbs::log2_up(total_vertices) - 1);
+//			cout << "batch size: " << batch_sizes[i] << endl;
+//			cout << "total V: " << total_vertices << endl;
+			auto edges = utility::generate_batch_of_edges(batch_sizes[i], total_vertices, false, false);
+
+//			pair<tuple<unsigned int, unsigned int>*, unsigned long> edges = {{2, 4}, 1};
+
+			// ----
+			// Print the edges that you generated
+//			cout << "edges generated are..." << endl;
+//			for (auto i = 0; i < edges.second; i++)
+//			{
+//				cout << get<0>(edges.first[i]) << "," << get<1>(edges.first[i]) << endl;
+//			}
+			// ----
+
+			std::cout << edges.second << " ";
+
+			insert_timer.start();
+			auto x = malin.insert_edges_batch(edges.second, edges.first, false, true, graph_size_pow2);
+			insert_timer.stop();
+
+			total_insert_walks_affected += x.size();
+
+			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
+			latency_insert[trial] = (double) last_insert_time / x.size();
+
+//            delete_timer.start();
+//            auto y = WharfMH.delete_edges_batch(edges.second, edges.first, false, true, graph_size_pow2);
+//            delete_timer.stop();
+//
+//            total_delete_walks_affected += y;
+//
+//            last_delete_time = walk_update_time_on_delete.get_total() - last_delete_time;
+//            latency_delete[trial] = (double) last_delete_time / y;
+
+//            latency[trial] = (double) (last_insert_time + last_delete_time) / (x + y);
+			latency[trial] = latency_insert[trial]; // todo: for now latency insert trial only
+
+//            if (insert_timer.get_total() > 2*limit || delete_timer.get_total() > 2*limit) goto endloop;
+
+			// free edges
+			pbbs::free_array(edges.first);
+
+			// Reset the initial corpus next vertex bounds
+			parallel_for(0, total_vertices, [&] (auto i) {
+			  flat_snapshot[i].compressed_walks.vnext_min = get<0>(initial_minmax_bounds[i]);
+			  flat_snapshot[i].compressed_walks.vnext_max = get<1>(initial_minmax_bounds[i]);
+			});
+		}
+
+		std::cout << std::endl;
+
+		std::cout << "Average insert time = " << insert_timer.get_total() / n_trials << std::endl;
+		std::cout << "Average graph update insert time = " << graph_update_time_on_insert.get_total() / n_trials << std::endl;
+		std::cout << "Average walk update insert time = " << walk_update_time_on_insert.get_total() / n_trials
+		          << ", average walk affected = " << total_insert_walks_affected / n_trials << std::endl;
+
+//        std::cout << "Average delete time = " << delete_timer.get_total() / n_trials << std::endl;
+//        std::cout << "Average graph update delete time = " << graph_update_time_on_delete.get_total() / n_trials << std::endl;
+//        std::cout << "Average walk update delete time = " << walk_update_time_on_delete.get_total() / n_trials
+//                  << ", average walk affected = " << total_delete_walks_affected / n_trials << std::endl;
+
+		std::cout << "Average walk insert latency = { ";
+		for(int i = 0; i < n_trials; i++)
+		{
+			std::cout << latency_insert[i] << " ";
+		}
+		std::cout << "}" << std::endl;
+
+//        std::cout << "Average walk delete latency = { ";
+//        for(int i = 0; i < n_trials; i++)
+//        {
+//            std::cout << latency_delete[i] << " ";
+//        }
+//        std::cout << "}" << std::endl;
+
+		std::cout << "Average walk update latency = { ";
+		for(int i = 0; i < n_trials; i++)
+		{
+			std::cout << latency[i] << " ";
+		}
+		std::cout << "}" << std::endl;
+	}
+
+// ----------------------------------------------
+//	cout << "(NEW) WALKS" << endl;
+//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+//		cout << WharfMH.walk(i) << endl;
+//
+//	cout << "(NEW) INV INDEX" << endl;
+//	WharfMH.walk_index_print();
+// ----------------------------------------------
+
+	endloop:
+	std::cout << "Loop ended" << std::endl;
 }
