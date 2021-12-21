@@ -1251,9 +1251,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                            auto cached_current_vertex = state.first; // important for the correct access of the graph vertex
                             auto temp_state = graph[state.first].samplers->find(state.second).sample(state, model);
                             if (config::deterministic_mode)
-//                                state = model->new_state(state, graph[cached_current_vertex].neighbors[random.irand(graph[cached_current_vertex].degree)]);
-                                    state = model->new_state(state, graph[state.first].neighbors[0]);
-//                                    state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+//                              state = model->new_state(state, graph[cached_current_vertex].neighbors[random.irand(graph[cached_current_vertex].degree)]);
+                                state = model->new_state(state, graph[state.first].neighbors[0]);
+//                              state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
                             else
                                 state = temp_state;
 
