@@ -106,7 +106,7 @@ void chunk_size(commandLine& command_line)
     // -------------------------------------------------------------------
     // Produce initial walks corpus with one thread -- one thread mode
     auto single_thread_timer = timer("WalkCorpusSingleThread", false); single_thread_timer.start();
-    malin_2.generate_initial_random_walks_sequential();
+    malin_2.generate_initial_random_walks(); // generate_initial_random_walks_sequential();
     auto corpus_single_thread_time =  single_thread_timer.get_total();
     // -------------------------------------------------------------------
 
