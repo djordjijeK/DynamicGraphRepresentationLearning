@@ -283,7 +283,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         }
 
                         auto new_state = graph[state.first].samplers->find(state.second).sample(state, model);
-		                    if (config::determinism)
+	                    if (config::determinism)
                             new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
 
                         this->walk_storage.update_fn(walk_id, [&](auto& vector)
@@ -810,7 +810,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 								graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
 							}
 
-							state = graph[state.first].samplers->find(state.second).sample(state, model);
+							// Deterministic walks or not?
+							if (config::determinism)
+//								state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
+								state = model->new_state(state, graph[state.first].neighbors[0]);
+							else
+								state = graph[state.first].samplers->find(state.second).sample(state, model);
 						}
                     }
 

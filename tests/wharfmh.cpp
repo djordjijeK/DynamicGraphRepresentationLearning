@@ -15,7 +15,7 @@ class WharfMHTest : public testing::Test
         uintE* offsets;
         bool mmap = false;
         bool is_symmetric = true;
-        std::string default_file_path = "data/flickr-graph";
+        std::string default_file_path = "data/aspen-paper-graph";
 };
 
 void WharfMHTest::SetUp()
@@ -63,24 +63,24 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
 //		WharfMH.walk_cout(13);
 
 // ----------------------------------------------
-//		cout << "WALKS" << endl;
-//		for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-//				cout << WharfMH.walk(i) << endl;
-//
-//		cout << "INV INDEX" << endl;
-//		WharfMH.walk_index_print();
+		cout << "WALKS" << endl;
+		for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+				cout << WharfMH.walk(i) << endl;
+
+		cout << "INV INDEX" << endl;
+		WharfMH.walk_index_print();
 // ----------------------------------------------
 
 
 //		exit(1);
 
 
-    auto batch_sizes = pbbs::sequence<size_t>(5);
+    auto batch_sizes = pbbs::sequence<size_t>(1);
     batch_sizes[0] = 5; //5;
-    batch_sizes[1] = 50;
-    batch_sizes[2] = 500;
-    batch_sizes[3] = 5000;
-    batch_sizes[4] = 50000;
+//    batch_sizes[1] = 50;
+//    batch_sizes[2] = 500;
+//    batch_sizes[3] = 5000;
+//    batch_sizes[4] = 50000;
 //    batch_sizes[5] = 500000;
 
     for (short int i = 0; i < batch_sizes.size(); i++)
@@ -185,12 +185,12 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
     }
 
 // ----------------------------------------------
-//	cout << "(NEW) WALKS" << endl;
-//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-//		cout << WharfMH.walk(i) << endl;
-//
-//	cout << "(NEW) INV INDEX" << endl;
-//	WharfMH.walk_index_print();
+	cout << "(NEW) WALKS" << endl;
+	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+		cout << WharfMH.walk(i) << endl;
+
+	cout << "(NEW) INV INDEX" << endl;
+	WharfMH.walk_index_print();
 // ----------------------------------------------
 
     endloop:
