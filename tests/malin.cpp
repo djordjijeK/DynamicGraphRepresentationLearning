@@ -348,7 +348,7 @@ TEST_F(MalinTest, MalinThroughputLatency)
 
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 10; //5;
+	batch_sizes[0] = 5; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -386,11 +386,11 @@ TEST_F(MalinTest, MalinThroughputLatency)
 			});
 
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(total_vertices) - 1);
-//			cout << "batch size: " << batch_sizes[i] << endl;
-//			cout << "total V: " << total_vertices << endl;
+			cout << "graph size pow: " << graph_size_pow2 << endl;
+			cout << "batch size: " << batch_sizes[i] << endl;
+			cout << "total V: " << total_vertices << endl;
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], total_vertices, false, false);
-
-//			pair<tuple<unsigned int, unsigned int>*, unsigned long> edges = {{2, 4}, 1};
+			// ---
 		    for (auto i = 0; i < edges.second; i++)
 		        cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
