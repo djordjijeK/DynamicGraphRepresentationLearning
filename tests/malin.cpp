@@ -348,7 +348,7 @@ TEST_F(MalinTest, MalinThroughputLatency)
 
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 5; //5;
+	batch_sizes[0] = 10; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -391,6 +391,8 @@ TEST_F(MalinTest, MalinThroughputLatency)
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], total_vertices, false, false);
 
 //			pair<tuple<unsigned int, unsigned int>*, unsigned long> edges = {{2, 4}, 1};
+		    for (auto i = 0; i < edges.second; i++)
+		        cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
 			// ----
 			// Print the edges that you generated
