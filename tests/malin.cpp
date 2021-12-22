@@ -394,6 +394,14 @@ TEST_F(MalinTest, MalinThroughputLatency)
 		    for (auto i = 0; i < edges.second; i++)
 		        cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
+			// hack to veify if with the same batch we update the walks in the same way
+//			edges.first[2] = make_pair(1, 3);
+//			edges.first[3] = make_pair(3, 1);
+//			// ---
+//			cout << "after adding two more edge (1,3) and (3,1)" << endl;
+//			for (auto i = 0; i < 4; i++)
+//				cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+
 			// ----
 			// Print the edges that you generated
 //			cout << "edges generated are..." << endl;
