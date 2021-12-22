@@ -75,8 +75,9 @@ namespace utility
 //        auto rand              = pbbs::random(std::time(nullptr));
         size_t graph_size_pow2 = 1 << (pbbs::log2_up(vertices_number) - 1);
 		cout << "ith rand: " << rand.ith_rand(0) << endl;
-        auto rmat              = rMat<uintV>(graph_size_pow2, rand.ith_rand(0), a, b, c);
-        auto edges             = (directed) ? pbbs::new_array<Edge>(edges_number) : pbbs::new_array<Edge>(2 * edges_number);
+        auto rmat              = rMat<unsigned int>(graph_size_pow2, rand.ith_rand(0), a, b, c); // wharf uses unsigned long as uintV so generator produces different results. use unsigned int
+//	    auto rmat              = rMat<uintV>(graph_size_pow2, rand.ith_rand(0), a, b, c); //
+	    auto edges             = (directed) ? pbbs::new_array<Edge>(edges_number) : pbbs::new_array<Edge>(2 * edges_number);
 
         // 2. Generate edges in parallel
         parallel_for(0, edges_number, [&] (size_t i)
