@@ -786,7 +786,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                        random = utility::Random(walk_id / total_vertices);
 						random = utility::Random(affected_walks[index] / number_of_vertices());
 //                    types::State state  = model->initial_state(walk_id % total_vertices);
-                    types::State state  = model->initial_state(affected_walks[index] % number_of_vertices());
+//                    types::State state  = model->initial_state(affected_walks[index] % number_of_vertices());
+//					         auto state = model->initial_state(current_vertex_new_walk);
+                    auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
 
 					// Insert all entries of the walk into the walk index
 					for (types::Position position = 0; position < config::walk_length; position++)
