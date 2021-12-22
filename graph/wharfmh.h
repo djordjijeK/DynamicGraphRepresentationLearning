@@ -769,7 +769,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 parallel_for(0, affected_walks.size(), [&](auto index)
                 {
                     auto current_position = rewalk_points.template find(affected_walks[index]);
-                    auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
+//                    auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
 
 					// Delete all entries of the walk from the walk index
 					for (types::Position position = 0; position < config::walk_length; position++)
@@ -780,6 +780,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //							 cout << "erased wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
 						});
 					}
+
+                    auto random = config::random; // By default random initialization
+                    if (config::determinism)
+//                        random = utility::Random(walk_id / total_vertices);
+						random = utility::Random(affected_walks[index] / number_of_vertices());
+//                    types::State state  = model->initial_state(walk_id % total_vertices);
+                    types::State state  = model->initial_state(affected_walks[index] % number_of_vertices());
 
 					// Insert all entries of the walk into the walk index
 					for (types::Position position = 0; position < config::walk_length; position++)
@@ -812,8 +819,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 							// Deterministic walks or not?
 							if (config::determinism)
-//								state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
-								state = model->new_state(state, graph[state.first].neighbors[0]);
+								state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
+//								state = model->new_state(state, graph[state.first].neighbors[0]); // todo: do not use this one
 							else
 								state = graph[state.first].samplers->find(state.second).sample(state, model);
 						}
