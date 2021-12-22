@@ -74,7 +74,8 @@ namespace utility
         auto rand              = pbbs::random(0);
 //        auto rand              = pbbs::random(std::time(nullptr));
         size_t graph_size_pow2 = 1 << (pbbs::log2_up(vertices_number) - 1);
-        auto rmat              = rMat<uintV>(graph_size_pow2, rand.ith_rand(0), a, b, c);
+//        auto rmat              = rMat<uintV>(graph_size_pow2, rand.ith_rand(0), a, b, c);
+        auto rmat              = rMat<unsigned int>(graph_size_pow2, rand.ith_rand(0), a, b, c);
         auto edges             = (directed) ? pbbs::new_array<Edge>(edges_number) : pbbs::new_array<Edge>(2 * edges_number);
 
         // 2. Generate edges in parallel

@@ -76,7 +76,7 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
 
 
     auto batch_sizes = pbbs::sequence<size_t>(1);
-    batch_sizes[0] = 5; //5;
+    batch_sizes[0] = 10; //5;
 //    batch_sizes[1] = 50;
 //    batch_sizes[2] = 500;
 //    batch_sizes[3] = 5000;
@@ -201,4 +201,22 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
 
     endloop:
         std::cout << "Loop ended" << std::endl;
+}
+
+TEST_F(WharfMHTest, BatchGenerator)
+{
+	cout << "first batch" << endl;
+	auto edges = utility::generate_batch_of_edges(10, 6, false, false);
+	for (auto i = 0; i < edges.second; i++)
+		cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+
+	cout << "second batch" << endl;
+	edges = utility::generate_batch_of_edges(10, 6, false, false);
+	for (auto i = 0; i < edges.second; i++)
+		cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+
+	cout << "third batch" << endl;
+	edges = utility::generate_batch_of_edges(10, 6, false, false);
+	for (auto i = 0; i < edges.second; i++)
+		cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 }
