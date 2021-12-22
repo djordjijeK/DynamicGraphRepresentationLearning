@@ -489,3 +489,21 @@ TEST_F(MalinTest, MalinThroughputLatency)
 	endloop:
 	std::cout << "Loop ended" << std::endl;
 }
+
+TEST_F(MalinTest, BatchGenerator)
+{
+	cout << "first batch" << endl;
+	auto edges = utility::generate_batch_of_edges(10, 6, false, false);
+	for (auto i = 0; i < edges.second; i++)
+		cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+
+	cout << "second batch" << endl;
+	edges = utility::generate_batch_of_edges(10, 6, false, false);
+	for (auto i = 0; i < edges.second; i++)
+		cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+
+	cout << "third batch" << endl;
+	edges = utility::generate_batch_of_edges(10, 6, false, false);
+	for (auto i = 0; i < edges.second; i++)
+		cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+}
