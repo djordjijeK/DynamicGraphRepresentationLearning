@@ -59,7 +59,7 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
     double limit = 5.5;
 
 //		WharfMH.walk_cout(1);
-//		cout << WharfMH.walk(1);
+//		cout << WharfMH.walk(1);    
 //		WharfMH.walk_cout(13);
 
 // ----------------------------------------------
