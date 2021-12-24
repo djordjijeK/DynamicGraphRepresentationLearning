@@ -1196,11 +1196,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // Parallel Update of Affected Walks
                 parallel_for(0, affected_walks.size(), [&](auto index)
                 {
-
-                    auto random = config::random; // By default random initialization
-                    if (config::deterministic_mode)
-                        auto random = utility::Random(affected_walks[index] / this->number_of_vertices());
-
                     auto entry = rewalk_points.template find(affected_walks[index]);
 
                     auto current_position        = std::get<0>(entry);
@@ -1237,9 +1232,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             return;
                         }
 
-//                        auto random = config::random; // By default random initialization
-//                        if (config::deterministic_mode)
-//                            auto random = utility::Random(affected_walks[index] / this->number_of_vertices());
+                        auto random = config::random; // By default random initialization
+                        if (config::deterministic_mode)
+                            random = utility::Random(affected_walks[index] / this->number_of_vertices());
                         auto state = model->initial_state(current_vertex_new_walk);
 //						cout << "---> wid-" << affected_walks[index] << " rewalked from nid-" << state.first << endl;
 
