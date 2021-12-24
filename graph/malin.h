@@ -1196,6 +1196,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // Parallel Update of Affected Walks
                 parallel_for(0, affected_walks.size(), [&](auto index)
                 {
+
+                    auto random = config::random; // By default random initialization
+                    if (config::deterministic_mode)
+                        auto random = utility::Random(affected_walks[index] / this->number_of_vertices());
+
                     auto entry = rewalk_points.template find(affected_walks[index]);
 
                     auto current_position        = std::get<0>(entry);
@@ -1232,10 +1237,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             return;
                         }
 
-                        auto random = config::random; // By default random initialization
-                        if (config::deterministic_mode)
-                            auto random = utility::Random(affected_walks[index] / this->number_of_vertices());
+//                        auto random = config::random; // By default random initialization
+//                        if (config::deterministic_mode)
+//                            auto random = utility::Random(affected_walks[index] / this->number_of_vertices());
                         auto state = model->initial_state(current_vertex_new_walk);
+//						cout << "---> wid-" << affected_walks[index] << " rewalked from nid-" << state.first << endl;
 
                         if (config::random_walk_model == types::NODE2VEC && current_position > 0)
                         {
@@ -1251,11 +1257,16 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                            auto cached_current_vertex = state.first; // important for the correct access of the graph vertex
                             auto temp_state = graph[state.first].samplers->find(state.second).sample(state, model);
                             if (config::deterministic_mode)
+							{
 //                              state = model->new_state(state, graph[cached_current_vertex].neighbors[random.irand(graph[cached_current_vertex].degree)]);
 //                                state = model->new_state(state, graph[state.first].neighbors[0]); // todo: do not use this one
-								state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+	                            auto temporary_state_2 = state;
+	                            state = model->new_state(temporary_state_2, graph[temporary_state_2.first].neighbors[random.irand(graph[temporary_state_2.first].degree)]);
+//	                            state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
 //	                                    model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
-                            else
+//								cout << "chose this one" << endl;
+                            }
+							else
                                 state = temp_state;
 
                             types::PairedTriplet hash = (position != config::walk_length - 1) ?
