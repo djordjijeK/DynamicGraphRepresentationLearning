@@ -10,8 +10,8 @@ namespace config
     uint8_t walk_length        = 15;
 
     // determines the type of random walk model to use
-//    auto random_walk_model     = types::RandomWalkModelType::DEEPWALK;
-    auto random_walk_model     = types::RandomWalkModelType::NODE2VEC;
+    auto random_walk_model     = types::RandomWalkModelType::DEEPWALK;
+//    auto random_walk_model     = types::RandomWalkModelType::NODE2VEC;
 
     // determines parameter P for node2vec model
     float paramP               = 4.0;
