@@ -93,9 +93,6 @@ void throughput(commandLine& command_line)
 
 	exit(666);
 
-
-
-
     auto batch_sizes = pbbs::sequence<size_t>(3);
     batch_sizes[0] = 5;
     batch_sizes[1] = 50;
@@ -126,10 +123,15 @@ void throughput(commandLine& command_line)
         double total_insert_walks_affected = 0;
         double total_delete_walks_affected = 0;
 
-        for (short int trial = 0; trial < n_trials; trial++)
-        {
+	    int batch_seed[n_trials];
+	    for (auto i = 0; i < n_trials; i++)
+		    batch_seed[i] = i; // say the seed equals to the #trial
+
+	    for (short int trial = 0; trial < n_trials; trial++)
+	    {
+		    cout << "trial-" << trial << " and batch_seed-" << batch_seed[trial] << endl;
             size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
-            auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, false, false);
+            auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[trial], false, false);
 
             std::cout << edges.second << " ";
 
@@ -193,8 +195,8 @@ void throughput(commandLine& command_line)
         std::cout << "}" << std::endl;
     }
 
-    endloop:
-    std::cout << "Loop ended" << std::endl;
+//    endloop:
+//    std::cout << "Loop ended" << std::endl;
 }
 
 int main(int argc, char** argv)

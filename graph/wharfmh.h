@@ -665,7 +665,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(b.compressed_edges.plus);
                     tree_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
-										walk_update_time_on_delete.start();
+					// _________________________________________________
+					walk_update_time_on_delete.start();
                     for(auto& element : this->walk_storage.lock_table())
                     {
                         for (types::Position position = 0; position < element.second.size(); position++)
@@ -687,7 +688,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             }
                         }
                     }
-										walk_update_time_on_delete.stop();
+					walk_update_time_on_delete.stop();
+					// __________________________________________________________
 
                     return VertexEntry(difference_edge_tree, a.sampler_manager);
                 };
@@ -965,13 +967,18 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 			size_t walk_seq = 0;
 			auto new_walk_storage = walk_storage;
 			for (const auto &it : new_walk_storage.lock_table())
+//			for (const auto &it : walk_storage.lock_table())
 			{
 				walk_seq += sizeof(it.first);
+//				cout << "wid-" << it.first << " | ";
 				for (auto i = it.second.begin(); i != it.second.end(); i++)
 				{
 					walk_seq += sizeof(*i);
+//					cout << *i << " ";
 				}
+//				cout << endl;
 			}
+			assert(new_walk_storage.size() == walk_storage());
 
             std::cout << "Walks (sequences): \n\t"
                       << ", Memory usage: " << utility::MB(walk_seq) << " MB"
