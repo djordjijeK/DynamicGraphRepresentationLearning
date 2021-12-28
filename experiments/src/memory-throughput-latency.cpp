@@ -94,7 +94,7 @@ void throughput(commandLine& command_line)
 	exit(666);
 
 
-	
+
 
     auto batch_sizes = pbbs::sequence<size_t>(3);
     batch_sizes[0] = 5;

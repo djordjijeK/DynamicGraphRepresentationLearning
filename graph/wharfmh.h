@@ -906,7 +906,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 });
             }
 
-			/**
+		/**
          * @brief Prints memory footprint details.
          */
         void memory_footprint() const
@@ -963,8 +963,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                      << " = " << utility::GB(InvertedIndex::get_used_bytes()) << " GB" << std::endl;
 
 			size_t walk_seq = 0;
-			auto lt = walk_storage.lock_table();
-			for (const auto &it : lt)
+			auto new_walk_storage = walk_storage;
+			for (const auto &it : new_walk_storage.lock_table())
 			{
 				walk_seq += sizeof(it.first);
 				for (auto i = it.second.begin(); i != it.second.end(); i++)
@@ -978,8 +978,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                       << " = " << utility::GB(walk_seq) << " GB" << std::endl;
 
 			size_t walk_ind = 0;
-			auto lt2 = walk_index.lock_table();
-			for (const auto &it : lt2)
+			auto new_walk_index = walk_index;
+			for (const auto &it : new_walk_index.lock_table())
 			{
 				walk_ind += sizeof(it.first);
 				for (auto i = it.second.begin(); i != it.second.end(); i++)
