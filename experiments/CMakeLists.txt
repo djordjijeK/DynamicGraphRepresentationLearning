@@ -40,6 +40,7 @@ file(COPY data DESTINATION .)
 file(COPY bin/SNAPtoAdj DESTINATION .)
 
 # experiments executables
-add_executable(throughput-latency src/throughput-latency.cpp src/throughput-latency.cpp)
+add_executable(throughput-latency src/throughput-latency.cpp)  ## src/throughput-latency.cpp
+add_executable(memory-throughput-latency src/memory-throughput-latency.cpp)
 
 # -------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING WITH METROPOLIS HASTINGS ----------------------------

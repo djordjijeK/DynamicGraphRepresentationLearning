@@ -906,6 +906,111 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 });
             }
 
+			/**
+         * @brief Prints memory footprint details.
+         */
+        void memory_footprint() const
+        {
+            std::cout << std::endl;
+
+            size_t graph_vertices = this->number_of_vertices();
+            size_t graph_edges    = this->number_of_edges();
+
+            size_t vertex_node_size = Graph::node_size();
+//            size_t index_node_size  = InvertedIndex::node_size();
+            size_t c_tree_node_size = types::CompressedTreesLists::node_size();
+
+            size_t edges_heads    = 0;
+            size_t edges_bytes    = 0;
+            size_t samplers_bytes = 0;
+            size_t flat_graph_bytes = 0;
+            auto flat_graph = this->flatten_vertex_tree();
+
+            for (auto i = 0; i < flat_graph.size(); i++)
+            {
+                flat_graph_bytes += sizeof(flat_graph[i]);
+
+                edges_heads += flat_graph[i].compressed_edges.edge_tree_nodes();
+                edges_bytes += flat_graph[i].compressed_edges.size_in_bytes(i);
+
+                for (auto& entry : flat_graph[i].sampler_manager->lock_table())
+                {
+                    samplers_bytes += sizeof(entry.first) + sizeof(entry.second);
+                }
+            }
+
+            std::cout << "Graph: \n\t" << "Vertices: " << graph_vertices << ", Edges: " << graph_edges << std::endl;
+
+            std::cout << "Vertex Tree: \n\t"
+                      << "Heads: " << Graph::used_node()
+                      << ", Head size: " << vertex_node_size
+                      << ", Memory usage: " << utility::MB(Graph::get_used_bytes()) << " MB"
+                      << " = " << utility::GB(Graph::get_used_bytes()) << " GB" << std::endl;
+
+            std::cout << "Edge Trees: \n\t"
+                      << "Heads: " << edges_heads
+                      << ", Head size: " << c_tree_node_size
+                      << ", Lists memory: " << utility::MB(edges_bytes) << " MB"
+                      << " = " << utility::GB(edges_bytes) << " GB"
+                      << ", Total memory usage: " << utility::MB(edges_bytes + edges_heads*c_tree_node_size)
+                      << " MB = " << utility::GB(edges_bytes + edges_heads*c_tree_node_size)
+                      << " GB" << std::endl;
+
+//            std::cout << "Walks Trees: \n\t"
+//                      << "Heads: " << InvertedIndex::used_node()
+//                      << ", Head size: " << index_node_size
+//                      << ", Memory usage: " << utility::MB(InvertedIndex::get_used_bytes()) << " MB"
+//                      << " = " << utility::GB(InvertedIndex::get_used_bytes()) << " GB" << std::endl;
+
+			size_t walk_seq = 0;
+			auto lt = walk_storage.lock_table();
+			for (const auto &it : lt)
+			{
+				walk_seq += sizeof(it.first);
+				for (auto i = it.second.begin(); i != it.second.end(); i++)
+				{
+					walk_seq += sizeof(*i);
+				}
+			}
+
+            std::cout << "Walks (sequences): \n\t"
+                      << ", Memory usage: " << utility::MB(walk_seq) << " MB"
+                      << " = " << utility::GB(walk_seq) << " GB" << std::endl;
+
+			size_t walk_ind = 0;
+			auto lt2 = walk_index.lock_table();
+			for (const auto &it : lt2)
+			{
+				walk_ind += sizeof(it.first);
+				for (auto i = it.second.begin(); i != it.second.end(); i++)
+				{
+					walk_ind += sizeof(*i);
+				}
+			}
+
+			std::cout << "Walks Inverted Index: \n\t"
+			          << ", Memory usage: " << utility::MB(walk_ind) << " MB"
+			          << " = " << utility::GB(walk_ind) << " GB" << std::endl;
+
+            std::cout << "Samplers: \n\t"
+                      << "Total memory usage: " << utility::MB(samplers_bytes)
+                      << " MB = " << utility::GB(samplers_bytes)
+                      << " GB" << std::endl;
+
+            std::cout << "Flat graph: \n\t"
+                      << "Total memory usage: " << utility::MB(flat_graph_bytes)
+                      << " MB = " << utility::GB(flat_graph_bytes)
+                      << " GB" << std::endl;
+
+            size_t total_memory = Graph::get_used_bytes() + (walk_seq + walk_ind) //InvertedIndex::get_used_bytes()
+                    + edges_bytes + edges_heads*c_tree_node_size + samplers_bytes;
+
+            std::cout << "Total memory used: \n\t" << utility::MB(total_memory) << " MB = "
+                      << utility::GB(total_memory) << " GB" << std::endl;
+
+            std::cout << std::endl;
+        }
+
         private:
             Graph graph_tree;
             WalkStorage walk_storage;
