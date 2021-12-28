@@ -148,6 +148,8 @@ void throughput(commandLine& command_line)
         double total_insert_walks_affected = 0;
         double total_delete_walks_affected = 0;
 
+		int batc
+
         for (short int trial = 0; trial < n_trials; trial++)
         {
             // Check whether the bound for min and max are correctly resetted
