@@ -95,10 +95,10 @@ void throughput(commandLine& command_line)
     auto time_form_scratch_initial_walks = initial_walks_from_scratch_timer.get_total();
     cout << "===> Total time (seconds) for generating *initial* walks from scratch: " << time_form_scratch_initial_walks << endl;
 	// memory
-	malin.memory_footprint();
+//	malin.memory_footprint(); // todo: kapoia malakia simbainei edo
 	// -----
 
-	exit(555);
+//	exit(555);
 
     // ----------------------------------------
     // Store the (min, max) bounds of each walk-tree in the initial walk corpus to reassign them after each run
@@ -163,7 +163,7 @@ void throughput(commandLine& command_line)
             });
 
             size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
-            auto edges = utility::generate_batch_of_edges(batch_sizes[i], batch_seed[trial], n, false, false);
+            auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[trial], false, false);
 
             std::cout << edges.second << " ";
 
