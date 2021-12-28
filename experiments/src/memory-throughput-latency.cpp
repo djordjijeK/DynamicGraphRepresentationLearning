@@ -148,10 +148,14 @@ void throughput(commandLine& command_line)
         double total_insert_walks_affected = 0;
         double total_delete_walks_affected = 0;
 
-		int batc
+	    int batch_seed[n_trials];
+	    for (auto i = 0; i < n_trials; i++)
+		    batch_seed[i] = i; // say the seed equals to the #trial
 
-        for (short int trial = 0; trial < n_trials; trial++)
-        {
+	    for (short int trial = 0; trial < n_trials; trial++)
+	    {
+		    cout << "trial-" << trial << " and batch_seed-" << batch_seed[trial] << endl;
+
             // Check whether the bound for min and max are correctly resetted
             parallel_for(0, n, [&] (auto i) {
                 assert(flat_snapshot[i].compressed_walks.vnext_min == get<0>(initial_minmax_bounds[i]));
@@ -159,7 +163,7 @@ void throughput(commandLine& command_line)
             });
 
             size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
-            auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, false, false);
+            auto edges = utility::generate_batch_of_edges(batch_sizes[i], batch_seed[trial], n, false, false);
 
             std::cout << edges.second << " ";
 
