@@ -88,10 +88,10 @@ void throughput(commandLine& command_line)
     dygrl::WharfMH WharfMH = dygrl::WharfMH(n, m, offsets, edges);
     WharfMH.generate_initial_random_walks();
 	// --- add memory measurements here
-	WharfMH.memory_footprint();
+//	WharfMH.memory_footprint();
 	// ----
 
-	exit(666);
+//	exit(666);
 
     auto batch_sizes = pbbs::sequence<size_t>(3);
     batch_sizes[0] = 5;

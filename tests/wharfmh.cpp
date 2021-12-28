@@ -54,7 +54,7 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
 {
     dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
     WharfMH.generate_initial_random_walks();
-    int n_trials = 1; //3;
+    int n_trials = 2; //3;
 
     double limit = 5.5;
 
@@ -211,12 +211,12 @@ TEST_F(WharfMHTest, BatchGenerator)
 		cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
 	cout << "second batch" << endl;
-	edges = utility::generate_batch_of_edges(10, 6, false, false);
+	edges = utility::generate_batch_of_edges(10, 6, 5, false, false);
 	for (auto i = 0; i < edges.second; i++)
 		cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
 	cout << "third batch" << endl;
-	edges = utility::generate_batch_of_edges(10, 6, false, false);
+	edges = utility::generate_batch_of_edges(10, 6, 7, false, false);
 	for (auto i = 0; i < edges.second; i++)
 		cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 }

@@ -969,16 +969,16 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 			for (const auto &it : new_walk_storage.lock_table())
 //			for (const auto &it : walk_storage.lock_table())
 			{
-				walk_seq += sizeof(it.first);
+				walk_seq += sizeof(it.first); //sizeof(uint32_t); // sizeof(it.first);
 //				cout << "wid-" << it.first << " | ";
 				for (auto i = it.second.begin(); i != it.second.end(); i++)
 				{
-					walk_seq += sizeof(*i);
+					walk_seq += sizeof(*i); //sizeof(uint32_t); // sizeof(*i);
 //					cout << *i << " ";
 				}
 //				cout << endl;
 			}
-			assert(new_walk_storage.size() == walk_storage());
+			assert(new_walk_storage.size() == walk_storage.size());
 
             std::cout << "Walks (sequences): \n\t"
                       << ", Memory usage: " << utility::MB(walk_seq) << " MB"
@@ -988,10 +988,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 			auto new_walk_index = walk_index;
 			for (const auto &it : new_walk_index.lock_table())
 			{
-				walk_ind += sizeof(it.first);
+				walk_ind += sizeof(it.first); //sizeof(uint32_t); // sizeof(it.first);
 				for (auto i = it.second.begin(); i != it.second.end(); i++)
 				{
-					walk_ind += sizeof(*i);
+					walk_ind += sizeof(*i); // sizeof(uint32_t); // sizeof(*i);
 				}
 			}
 

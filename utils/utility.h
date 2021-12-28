@@ -56,7 +56,7 @@ namespace utility
     (
         size_t edges_number,
         size_t vertices_number,
-		size_t batch_seed,
+		size_t batch_seed = 0,
         bool self_loops = false,
         bool directed = true,
         double a = 0.5,
