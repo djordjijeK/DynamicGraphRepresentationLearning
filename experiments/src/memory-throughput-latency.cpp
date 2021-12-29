@@ -117,10 +117,11 @@ void throughput(commandLine& command_line)
     });
     // -------------------------------------
 
-    auto batch_sizes = pbbs::sequence<size_t>(3);
-    batch_sizes[0] = 5;
-    batch_sizes[1] = 50;
-    batch_sizes[2] = 500;
+    auto batch_sizes = pbbs::sequence<size_t>(1);
+    batch_sizes[0] = 500;
+//    batch_sizes[0] = 5;
+//    batch_sizes[1] = 50;
+//    batch_sizes[2] = 500;
 //    batch_sizes[1] = 5000;
 //    batch_sizes[4] = 50000; // up to 10^5 edges per batch
 //    batch_sizes[5] = 500000; // we produce undirected edges, and thus, we generate both directions for an edge in each batch
@@ -134,6 +135,11 @@ void throughput(commandLine& command_line)
         walk_update_time_on_insert.reset();
         graph_update_time_on_delete.reset();
         walk_update_time_on_delete.reset();
+		// --- profiling initialization
+		walk_insert_init.reset();
+		walk_insert_2jobs.reset();
+		walk_insert_2accs.reset();
+		// ---
 
         std::cout << std::endl;
         std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -207,6 +213,22 @@ void throughput(commandLine& command_line)
         std::cout << "Average graph update delete time = " << graph_update_time_on_delete.get_total() / n_trials << std::endl;
         std::cout << "Average walk update delete time = " << walk_update_time_on_delete.get_total() / n_trials << " | Average number of walks affected = " << total_delete_walks_affected / n_trials << std::endl;
 
+	    // --- profiling ---
+	    std::cout << "{ total profiling for insert and delete" << std::endl;
+	    std::cout << "Initialization: " << walk_insert_init.get_total() / n_trials << " (" << (walk_insert_init.get_total()*100) / (walk_insert_init.get_total() +
+	                                                                                                                          walk_insert_2jobs.get_total() +
+	                                                                                                                          walk_insert_2accs.get_total()) << "%)" << std::endl;
+	    std::cout << "Insert/Delete Jobs: " << walk_insert_2jobs.get_total() / n_trials << " (" << (walk_insert_2jobs.get_total()*100) / (walk_insert_init.get_total() +
+	                                                                                                                                walk_insert_2jobs.get_total() +
+	                                                                                                                                walk_insert_2accs.get_total()) << "%)" << std::endl;
+	    std::cout << "Accumulators: " << walk_insert_2accs.get_total() / n_trials << " (" << (walk_insert_2accs.get_total()*100) / (walk_insert_init.get_total() +
+	                                                                                                                          walk_insert_2jobs.get_total() +
+	                                                                                                                          walk_insert_2accs.get_total()) << "%)" << std::endl;
+	    std::cout << "}" << std::endl;
+//	    std::cout << "wut: " << walk_update_time_on_insert.get_total() << " | 2jobs: " << walk_insert_2jobs.get_total() << std::endl;
+	    // --- profiling ---
+
+		// latencies
         std::cout << "Average walk insert latency = { ";
         for (int i = 0; i < n_trials; i++) {
             std::cout << latency_insert[i] << " ";

@@ -1145,6 +1145,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              */
             void batch_walk_update(types::MapOfChanges& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks)
             {
+				walk_insert_init.start();
                 types::ChangeAccumulator deletes = types::ChangeAccumulator();
                 types::ChangeAccumulator inserts = types::ChangeAccumulator();
 
@@ -1192,7 +1193,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         std::cerr << "Unrecognized random walking model!" << std::endl;
                         std::exit(1);
                 }
+	            walk_insert_init.stop();
 
+				// Most time-consuming part of the process
+	            walk_insert_2jobs.start();
                 // Parallel Update of Affected Walks
                 parallel_for(0, affected_walks.size(), [&](auto index)
                 {
@@ -1332,8 +1336,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     }; delete_job();
 
                 });
+	            walk_insert_2jobs.stop();
 
-                // ----------------------- For debugging purposes ---------------------------------------------------
+	            // ----------------------- For debugging purposes ---------------------------------------------------
                 // print out the ranges in the delete and insert batches
 //                for (auto i = 0; i < this->number_of_vertices(); i++)
 //                {
@@ -1356,7 +1361,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // that initiates from it has only one element.
                 // --------------------------------------------------------------------------------------------------
 
-                using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
+	            walk_insert_2accs.start();
+	            using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto insert_walks  = pbbs::sequence<VertexStruct>(inserts.size());
                 auto delete_walks  = pbbs::sequence<VertexStruct>(deletes.size());
 
@@ -1459,6 +1465,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 // Then, apply the batch insertions
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, insert_walks.begin(), insert_walks.size(), replaceI, true);
+				walk_insert_2accs.stop();
 
             } // End of batch walk update procedure
 
