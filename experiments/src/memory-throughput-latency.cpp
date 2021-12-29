@@ -139,6 +139,11 @@ void throughput(commandLine& command_line)
 		walk_insert_init.reset();
 		walk_insert_2jobs.reset();
 		walk_insert_2accs.reset();
+	    ij.reset();
+	    dj.reset();
+		walk_find_in_vertex_tree.reset();
+		walk_find_next_tree.reset();
+		szudzik_hash.reset();
 		// ---
 
         std::cout << std::endl;
@@ -221,11 +226,15 @@ void throughput(commandLine& command_line)
 	    std::cout << "Insert/Delete Jobs: " << walk_insert_2jobs.get_total() / n_trials << " (" << (walk_insert_2jobs.get_total()*100) / (walk_insert_init.get_total() +
 	                                                                                                                                walk_insert_2jobs.get_total() +
 	                                                                                                                                walk_insert_2accs.get_total()) << "%)" << std::endl;
+	    std::cout << "InsertJob: " << ij.get_total() / n_trials << " | DeleteJob: " << dj.get_total() / n_trials << std::endl;
+	    std::cout << "FindInVertexTree in DeleteJob total: " << walk_find_in_vertex_tree.get_total() / n_trials << std::endl;
+	    std::cout << "FindNext in DeleteJob total: " << walk_find_next_tree.get_total() / n_trials << std::endl;
+	    std::cout << "Sudzik total: " << szudzik_hash.get_total() / n_trials << std::endl;
+
 	    std::cout << "Accumulators: " << walk_insert_2accs.get_total() / n_trials << " (" << (walk_insert_2accs.get_total()*100) / (walk_insert_init.get_total() +
 	                                                                                                                          walk_insert_2jobs.get_total() +
 	                                                                                                                          walk_insert_2accs.get_total()) << "%)" << std::endl;
 	    std::cout << "}" << std::endl;
-//	    std::cout << "wut: " << walk_update_time_on_insert.get_total() << " | 2jobs: " << walk_insert_2jobs.get_total() << std::endl;
 	    // --- profiling ---
 
 		// latencies

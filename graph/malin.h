@@ -1220,7 +1220,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         if (graph[current_vertex_new_walk].degree == 0)
                         {
 //                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length, std::numeric_limits<uint32_t>::max() - 1});
-                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
+                            szudzik_hash.start();
+							types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
+							szudzik_hash.stop();
 
                             if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
                             inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
@@ -1268,11 +1270,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							else
                                 state = temp_state;
 
+							szudzik_hash.start();
                             types::PairedTriplet hash = (position != config::walk_length - 1) ?
                                 pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
                                 pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, current_vertex_new_walk});
 //                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, std::numeric_limits<uint32_t>::max() - 1});
 //                            cout << "Insertion wid=" << index << ", pos=" << (int) position << ", next=" << ((position != config::walk_length - 1) ? state.first : cached_current_vertex) << " ===> pairedTriplet=" << hash << endl;
+							szudzik_hash.stop();
 
                             if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
                             inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
@@ -1297,7 +1301,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             current_vertex_new_walk = state.first;
                         }
 
-                    }; insert_job();
+                    };
+					ij.start();
+					insert_job();
+					ij.stop();
 
                     fork_join_scheduler::Job delete_job = [&] ()
                     {
@@ -1307,16 +1314,22 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                        while (current_vertex_old_walk != std::numeric_limits<uint32_t>::max() - 1)
                         while (current_vertex_old_walk != cached_current_vertex)
                         {
+							walk_find_in_vertex_tree.start();
                             auto vertex = this->graph_tree.find(current_vertex_old_walk);
+							walk_find_in_vertex_tree.stop();
 
+							walk_find_next_tree.start();
                             types::Vertex next_old_walk;
                             if (config::range_search_mode)
                                 next_old_walk = vertex.value.compressed_walks.find_next_in_range(affected_walks[index], position, current_vertex_old_walk);
                             else
                                 next_old_walk = vertex.value.compressed_walks.find_next(affected_walks[index], position, current_vertex_old_walk);
+							walk_find_next_tree.stop();
 
+							szudzik_hash.start();
                             types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, next_old_walk});
 //                            cout << "Deletion wid=" << index << ", pos=" << (int) position << ", next=" << next_old_walk << " ===> pairedTriplet=" << hash << endl;
+							szudzik_hash.stop();
 
                             if (!deletes.contains(current_vertex_old_walk)) deletes.insert(current_vertex_old_walk, std::vector<types::PairedTriplet>());
                             deletes.update_fn(current_vertex_old_walk, [&](auto& vector) {
@@ -1333,7 +1346,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             cached_current_vertex   = current_vertex_old_walk; // cache the current vertex
                             current_vertex_old_walk = next_old_walk;
                         }
-                    }; delete_job();
+                    };
+					dj.start();
+					delete_job();
+					dj.stop();
 
                 });
 	            walk_insert_2jobs.stop();

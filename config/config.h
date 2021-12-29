@@ -13,6 +13,11 @@ auto walk_update_time_on_insert  = timer("WalkUpdateTimeOnInsert", false);
 auto walk_insert_init            = timer("WalkInsertTimeForInitialization", false);
 auto walk_insert_2jobs           = timer("WalkInsertTimeFor2Jobs", false);
 auto walk_insert_2accs           = timer("WalkInsertTimeFor2Accs", false);
+auto ij                          = timer("WalkInsertJobTime", false);
+auto dj                          = timer("WalkDeleteJobTime", false);
+auto walk_find_in_vertex_tree    = timer("FindInVertexTreeTime", false);
+auto walk_find_next_tree         = timer("FindNextTime", false);
+auto szudzik_hash                = timer("SzudzikTime", false);
 // ---
 
 auto graph_update_time_on_delete = timer("GraphUpdateTimeOnDelete", false);
