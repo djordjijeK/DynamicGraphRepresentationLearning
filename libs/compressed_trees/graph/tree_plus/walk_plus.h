@@ -207,7 +207,9 @@ namespace walk_plus {
 //            cout << "searching in T" << endl;
             auto T = edge_list(); T.root = root; // (Augmented) Map
 //            res = T.template iter_elms_cond(iter_over_a_node); // play with the chunks only -- but this will examines all nodes in the T of the C-tree
-            res = T.template iter_elms_cond_in_range(lb, ub, iter_over_a_node);
+            fnir_tree_search.start();
+			res = T.template iter_elms_cond_in_range(lb, ub, iter_over_a_node);
+			fnir_tree_search.stop();
             T.root = nullptr;
         }
 

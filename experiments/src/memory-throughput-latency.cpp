@@ -144,6 +144,7 @@ void throughput(commandLine& command_line)
 		walk_find_in_vertex_tree.reset();
 		walk_find_next_tree.reset();
 		szudzik_hash.reset();
+		fnir_tree_search.reset();
 		// ---
 
         std::cout << std::endl;
@@ -229,6 +230,7 @@ void throughput(commandLine& command_line)
 	    std::cout << "InsertJob: " << ij.get_total() / n_trials << " | DeleteJob: " << dj.get_total() / n_trials << std::endl;
 	    std::cout << "FindInVertexTree in DeleteJob total: " << walk_find_in_vertex_tree.get_total() / n_trials << std::endl;
 	    std::cout << "FindNext in DeleteJob total: " << walk_find_next_tree.get_total() / n_trials << std::endl;
+	    std::cout << "FindNext (search of the tree): " << fnir_tree_search.get_total() / n_trials << std::endl;
 	    std::cout << "Sudzik total: " << szudzik_hash.get_total() / n_trials << std::endl;
 
 	    std::cout << "Accumulators: " << walk_insert_2accs.get_total() / n_trials << " (" << (walk_insert_2accs.get_total()*100) / (walk_insert_init.get_total() +
