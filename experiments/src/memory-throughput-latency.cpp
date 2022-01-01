@@ -198,6 +198,10 @@ void throughput(commandLine& command_line)
 
 //    endloop:
 //    std::cout << "Loop ended" << std::endl;
+
+	// --- add memory measurements here
+	WharfMH.memory_footprint();
+	// ----
 }
 
 int main(int argc, char** argv)
