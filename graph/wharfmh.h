@@ -832,6 +832,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						}
 						else // position >= current_position
 						{
+
 							this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
 							{
 							  vector[position] = state.first;
@@ -842,6 +843,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							  set.insert(affected_walks[index]);
 //							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << state.first << endl;
 							});
+
+							// check
+//							if (graph[state.first].degrees == 0)
+//							{
+//								cout << "ZERO DEGREES!" << endl;
+//								break;
+//							}
 
 							if (!graph[state.first].samplers->contains(state.second))
 							{
@@ -1006,7 +1014,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //			assert(new_walk_storage.size() == walk_storage.size());
 
             std::cout << "Walks (sequences): \n\t"
-                      << ", Memory usage: " << utility::MB(walk_seq) << " MB"
+                      << "Memory usage: " << utility::MB(walk_seq) << " MB"
                       << " = " << utility::GB(walk_seq) << " GB" << std::endl;
 
 			size_t walk_ind = 0;
@@ -1020,7 +1028,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 			}
 
 			std::cout << "Walks Inverted Index: \n\t"
-			          << ", Memory usage: " << utility::MB(walk_ind) << " MB"
+			          << "Memory usage: " << utility::MB(walk_ind) << " MB"
 			          << " = " << utility::GB(walk_ind) << " GB" << std::endl;
 
             std::cout << "Samplers: \n\t"
