@@ -88,7 +88,7 @@ void throughput(commandLine& command_line)
     dygrl::WharfMH WharfMH = dygrl::WharfMH(n, m, offsets, edges);
     WharfMH.generate_initial_random_walks();
 	// --- add memory measurements here
-//	WharfMH.memory_footprint();
+	WharfMH.memory_footprint();
 	// ----
 
 //	exit(666);

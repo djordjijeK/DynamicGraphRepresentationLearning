@@ -938,7 +938,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 		/**
          * @brief Prints memory footprint details.
          */
-        void memory_footprint() const
+        void memory_footprint() //const todo: this is not needed. i do not change the cuckoo map
         {
             std::cout << std::endl;
 
@@ -992,9 +992,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                      << " = " << utility::GB(InvertedIndex::get_used_bytes()) << " GB" << std::endl;
 
 			size_t walk_seq = 0;
-			auto new_walk_storage = walk_storage;
-			for (const auto &it : new_walk_storage.lock_table())
-//			for (const auto &it : walk_storage.lock_table())
+			for (const auto &it : walk_storage.lock_table())
 			{
 				walk_seq += sizeof(it.first); //sizeof(uint32_t); // sizeof(it.first);
 //				cout << "wid-" << it.first << " | ";
@@ -1005,15 +1003,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				}
 //				cout << endl;
 			}
-			assert(new_walk_storage.size() == walk_storage.size());
+//			assert(new_walk_storage.size() == walk_storage.size());
 
             std::cout << "Walks (sequences): \n\t"
                       << ", Memory usage: " << utility::MB(walk_seq) << " MB"
                       << " = " << utility::GB(walk_seq) << " GB" << std::endl;
 
 			size_t walk_ind = 0;
-			auto new_walk_index = walk_index;
-			for (const auto &it : new_walk_index.lock_table())
+			for (const auto &it : walk_index.lock_table())
 			{
 				walk_ind += sizeof(it.first); //sizeof(uint32_t); // sizeof(it.first);
 				for (auto i = it.second.begin(); i != it.second.end(); i++)
