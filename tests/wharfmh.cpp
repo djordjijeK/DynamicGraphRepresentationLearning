@@ -64,12 +64,12 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
 //		WharfMH.walk_cout(13);
 
 // ----------------------------------------------
-		cout << "WALKS" << endl;
-		for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-				cout << WharfMH.walk(i) << endl;
-
-		cout << "INV INDEX" << endl;
-		WharfMH.walk_index_print();
+//		cout << "WALKS" << endl;
+//		for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+//				cout << WharfMH.walk(i) << endl;
+//
+//		cout << "INV INDEX" << endl;
+//		WharfMH.walk_index_print();
 // ----------------------------------------------
 
 
@@ -77,7 +77,7 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
 
 
     auto batch_sizes = pbbs::sequence<size_t>(1);
-    batch_sizes[0] = 10; //5;
+    batch_sizes[0] = 1000; //5;
 //    batch_sizes[1] = 50;
 //    batch_sizes[2] = 500;
 //    batch_sizes[3] = 5000;
@@ -192,12 +192,12 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
     }
 
 // ----------------------------------------------
-	cout << "(NEW) WALKS" << endl;
-	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-		cout << WharfMH.walk(i) << endl;
-
-	cout << "(NEW) INV INDEX" << endl;
-	WharfMH.walk_index_print();
+//	cout << "(NEW) WALKS" << endl;
+//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+//		cout << WharfMH.walk(i) << endl;
+//
+//	cout << "(NEW) INV INDEX" << endl;
+//	WharfMH.walk_index_print();
 // ----------------------------------------------
 
     endloop:
