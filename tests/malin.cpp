@@ -284,8 +284,8 @@ TEST_F(MalinTest, UpdateRandomWalksWithRangeSearch)
     malin.generate_initial_random_walks();
 
     // print random walks before batch insertion
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        std::cout << "id=" << i << ":\t" << malin.walk(i) << std::endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        std::cout << "id=" << i << ":\t" << malin.walk(i) << std::endl;
 
     // geneate edges
     auto edges = utility::generate_batch_of_edges(1000, malin.number_of_vertices(), false, false);
@@ -295,8 +295,8 @@ TEST_F(MalinTest, UpdateRandomWalksWithRangeSearch)
     malin.insert_edges_batch(edges.second, edges.first, true, false);
 
     // print random walks after batch insertion
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        std::cout << "id=" << i << ":\t" << malin.walk(i) << std::endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        std::cout << "id=" << i << ":\t" << malin.walk(i) << std::endl;
 
 //    cout << "and now with simple find" << endl;
 //    // print random walks after batch insertion
@@ -321,9 +321,9 @@ TEST_F(MalinTest, MalinThroughputLatency)
 //		WharfMH.walk_cout(13);
 
 // ----------------------------------------------
-	cout << "WALKS" << endl;
-	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-		cout << malin.walk(i) << endl;
+//	cout << "WALKS" << endl;
+//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+//		cout << malin.walk(i) << endl;
 // ----------------------------------------------
 
 
@@ -481,9 +481,9 @@ TEST_F(MalinTest, MalinThroughputLatency)
 	}
 
 // ----------------------------------------------
-	cout << "(NEW) WALKS" << endl;
-	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-		cout << malin.walk(i) << endl;
+//	cout << "(NEW) WALKS" << endl;
+//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+//		cout << malin.walk(i) << endl;
 // ----------------------------------------------
 
 	endloop:
