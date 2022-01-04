@@ -348,7 +348,7 @@ TEST_F(MalinTest, MalinThroughputLatency)
 
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 10; //5;
+	batch_sizes[0] = 1000; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
