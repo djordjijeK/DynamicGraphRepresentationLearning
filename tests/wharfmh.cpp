@@ -15,7 +15,8 @@ class WharfMHTest : public testing::Test
         uintE* offsets;
         bool mmap = false;
         bool is_symmetric = true;
-        std::string default_file_path = "data/aspen-paper-graph";
+//        std::string default_file_path = "data/aspen-paper-graph";
+        std::string default_file_path = "data/flickr-graph";
 };
 
 void WharfMHTest::SetUp()
@@ -54,7 +55,7 @@ TEST_F(WharfMHTest, WharfMHThroughputLatency)
 {
     dygrl::WharfMH WharfMH = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
     WharfMH.generate_initial_random_walks();
-    int n_trials = 2; //3;
+    int n_trials = 1; //3;
 
     double limit = 5.5;
 
