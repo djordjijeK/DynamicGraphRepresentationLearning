@@ -309,12 +309,12 @@ TEST_F(MalinTest, MalinThroughputLatency)
 {
 	dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
 	malin.generate_initial_random_walks();
-	int n_trials = 1; //3;
+	int n_trials = 3; //3;
 
-	cout << "total vertices: " << total_vertices << endl;
-	cout << "total edges:    " << total_edges << endl;
+//	cout << "total vertices: " << total_vertices << endl;
+//	cout << "total edges:    " << total_edges << endl;
 
-	double limit = 5.5;
+//	double limit = 5.5;
 
 //		WharfMH.walk_cout(1);
 //		cout << WharfMH.walk(1);
@@ -348,7 +348,7 @@ TEST_F(MalinTest, MalinThroughputLatency)
 
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 1000; //5;
+	batch_sizes[0] = 500; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -364,6 +364,17 @@ TEST_F(MalinTest, MalinThroughputLatency)
 		walk_update_time_on_insert.reset();
 		graph_update_time_on_delete.reset();
 		walk_update_time_on_delete.reset();
+		// --- profiling initialization
+		walk_insert_init.reset();
+		walk_insert_2jobs.reset();
+		walk_insert_2accs.reset();
+		ij.reset();
+		dj.reset();
+		walk_find_in_vertex_tree.reset();
+		walk_find_next_tree.reset();
+		szudzik_hash.reset();
+		fnir_tree_search.reset();
+		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
 
@@ -377,8 +388,15 @@ TEST_F(MalinTest, MalinThroughputLatency)
 		double total_insert_walks_affected = 0;
 		double total_delete_walks_affected = 0;
 
+		int batch_seed[n_trials];
+		for (auto i = 0; i < n_trials; i++)
+			batch_seed[i] = i; // say the seed equals to the #trial
+
 		for (short int trial = 0; trial < n_trials; trial++)
 		{
+			cout << "trial-" << trial << " and batch_seed-" << batch_seed[trial] << endl;
+
+
 			// Check whether the bound for min and max are correctly resetted
 			parallel_for(0, total_vertices, [&] (auto i) {
 			  assert(flat_snapshot[i].compressed_walks.vnext_min == get<0>(initial_minmax_bounds[i]));
@@ -386,32 +404,12 @@ TEST_F(MalinTest, MalinThroughputLatency)
 			});
 
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(total_vertices) - 1);
-			cout << "graph size pow: " << graph_size_pow2 << endl;
-			cout << "batch size: " << batch_sizes[i] << endl;
-			cout << "total V: " << total_vertices << endl;
-			auto edges = utility::generate_batch_of_edges(batch_sizes[i], total_vertices, false, false);
-			// ---
-		    for (auto i = 0; i < edges.second; i++)
-		        cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
-
-			// hack to veify if with the same batch we update the walks in the same way
-//			edges.first[2] = make_pair(1, 3);
-//			edges.first[3] = make_pair(3, 1);
-//			// ---
-//			cout << "after adding two more edge (1,3) and (3,1)" << endl;
-//			for (auto i = 0; i < 4; i++)
-//				cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
-
-			// ----
-			// Print the edges that you generated
-//			cout << "edges generated are..." << endl;
-//			for (auto i = 0; i < edges.second; i++)
-//			{
-//				cout << get<0>(edges.first[i]) << "," << get<1>(edges.first[i]) << endl;
-//			}
-			// ----
+			auto edges = utility::generate_batch_of_edges(batch_sizes[i], total_vertices, batch_seed[trial], false, false);
 
 			std::cout << edges.second << " ";
+			// ---
+//		    for (auto i = 0; i < edges.second; i++)
+//		        cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
 			insert_timer.start();
 			auto x = malin.insert_edges_batch(edges.second, edges.first, false, true, graph_size_pow2);
@@ -422,17 +420,17 @@ TEST_F(MalinTest, MalinThroughputLatency)
 			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
 			latency_insert[trial] = (double) last_insert_time / x.size();
 
-//            delete_timer.start();
-//            auto y = WharfMH.delete_edges_batch(edges.second, edges.first, false, true, graph_size_pow2);
-//            delete_timer.stop();
-//
-//            total_delete_walks_affected += y;
-//
-//            last_delete_time = walk_update_time_on_delete.get_total() - last_delete_time;
-//            latency_delete[trial] = (double) last_delete_time / y;
+            delete_timer.start();
+            auto y = malin.delete_edges_batch(edges.second, edges.first, false, true, graph_size_pow2);
+            delete_timer.stop();
 
-//            latency[trial] = (double) (last_insert_time + last_delete_time) / (x + y);
-			latency[trial] = latency_insert[trial]; // todo: for now latency insert trial only
+            total_delete_walks_affected += y.size();
+
+            last_delete_time = walk_update_time_on_delete.get_total() - last_delete_time;
+            latency_delete[trial] = (double) last_delete_time / y.size();
+
+            latency[trial] = (double) (last_insert_time + last_delete_time) / (x.size() + y.size());
+//			latency[trial] = latency_insert[trial]; // todo: for now latency insert trial only
 
 //            if (insert_timer.get_total() > 2*limit || delete_timer.get_total() > 2*limit) goto endloop;
 
@@ -453,11 +451,32 @@ TEST_F(MalinTest, MalinThroughputLatency)
 		std::cout << "Average walk update insert time = " << walk_update_time_on_insert.get_total() / n_trials
 		          << ", average walk affected = " << total_insert_walks_affected / n_trials << std::endl;
 
-//        std::cout << "Average delete time = " << delete_timer.get_total() / n_trials << std::endl;
-//        std::cout << "Average graph update delete time = " << graph_update_time_on_delete.get_total() / n_trials << std::endl;
-//        std::cout << "Average walk update delete time = " << walk_update_time_on_delete.get_total() / n_trials
-//                  << ", average walk affected = " << total_delete_walks_affected / n_trials << std::endl;
+        std::cout << "Average delete time = " << delete_timer.get_total() / n_trials << std::endl;
+        std::cout << "Average graph update delete time = " << graph_update_time_on_delete.get_total() / n_trials << std::endl;
+        std::cout << "Average walk update delete time = " << walk_update_time_on_delete.get_total() / n_trials
+                  << ", average walk affected = " << total_delete_walks_affected / n_trials << std::endl;
 
+		// --- profiling ---
+		std::cout << "{ total profiling for insert and delete" << std::endl;
+		std::cout << "Initialization: " << walk_insert_init.get_total() / n_trials << " (" << (walk_insert_init.get_total()*100) / (walk_insert_init.get_total() +
+		                                                                                                                            walk_insert_2jobs.get_total() +
+		                                                                                                                            walk_insert_2accs.get_total()) << "%)" << std::endl;
+		std::cout << "Insert/Delete Jobs: " << walk_insert_2jobs.get_total() / n_trials << " (" << (walk_insert_2jobs.get_total()*100) / (walk_insert_init.get_total() +
+		                                                                                                                                  walk_insert_2jobs.get_total() +
+		                                                                                                                                  walk_insert_2accs.get_total()) << "%)" << std::endl;
+		std::cout << "InsertJob: " << ij.get_total() / n_trials << " | DeleteJob: " << dj.get_total() / n_trials << std::endl;
+		std::cout << "FindInVertexTree in DeleteJob total: " << walk_find_in_vertex_tree.get_total() / n_trials << std::endl;
+		std::cout << "FindNext in DeleteJob total: " << walk_find_next_tree.get_total() / n_trials << std::endl;
+		std::cout << "FindNext (search of the tree): " << fnir_tree_search.get_total() / n_trials << std::endl;
+		std::cout << "Sudzik total: " << szudzik_hash.get_total() / n_trials << std::endl;
+
+		std::cout << "Accumulators: " << walk_insert_2accs.get_total() / n_trials << " (" << (walk_insert_2accs.get_total()*100) / (walk_insert_init.get_total() +
+		                                                                                                                            walk_insert_2jobs.get_total() +
+		                                                                                                                            walk_insert_2accs.get_total()) << "%)" << std::endl;
+		std::cout << "}" << std::endl;
+		// --- profiling ---
+
+		// latencies
 		std::cout << "Average walk insert latency = { ";
 		for(int i = 0; i < n_trials; i++)
 		{
@@ -465,12 +484,12 @@ TEST_F(MalinTest, MalinThroughputLatency)
 		}
 		std::cout << "}" << std::endl;
 
-//        std::cout << "Average walk delete latency = { ";
-//        for(int i = 0; i < n_trials; i++)
-//        {
-//            std::cout << latency_delete[i] << " ";
-//        }
-//        std::cout << "}" << std::endl;
+        std::cout << "Average walk delete latency = { ";
+        for(int i = 0; i < n_trials; i++)
+        {
+            std::cout << latency_delete[i] << " ";
+        }
+        std::cout << "}" << std::endl;
 
 		std::cout << "Average walk update latency = { ";
 		for(int i = 0; i < n_trials; i++)

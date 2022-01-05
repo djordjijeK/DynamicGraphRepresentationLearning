@@ -1343,7 +1343,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         }
                     };
 					dj.start();
-//					delete_job();
+//					delete_job(); // todo: have disabled the delete job to simulate the insert_only workload
 					dj.stop();
 
                 });

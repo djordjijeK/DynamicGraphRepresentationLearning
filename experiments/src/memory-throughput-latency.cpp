@@ -14,7 +14,7 @@ void throughput(commandLine& command_line)
     double paramP           = command_line.getOptionDoubleValue("-paramP", config::paramP);
     double paramQ           = command_line.getOptionDoubleValue("-paramQ", config::paramQ);
     string init_strategy    = string(command_line.getOptionValue("-init", "weight"));
-    size_t n_trials         = command_line.getOptionLongValue("-trials", 3);
+    size_t n_trials         = command_line.getOptionLongValue("-trials",  20); //3); todo: changed the number of trials
 
     string determinism      = string(command_line.getOptionValue("-d", "false"));
     string range_search     = string(command_line.getOptionValue("-rs", "true"));
