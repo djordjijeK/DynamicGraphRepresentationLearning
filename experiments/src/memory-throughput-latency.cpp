@@ -14,7 +14,7 @@ void throughput(commandLine& command_line)
     double paramP           = command_line.getOptionDoubleValue("-paramP", config::paramP);
     double paramQ           = command_line.getOptionDoubleValue("-paramQ", config::paramQ);
     string init_strategy    = string(command_line.getOptionValue("-init", "weight"));
-    size_t n_trials         = command_line.getOptionLongValue("-trials",  20); //3); todo: changed the number of trials
+    size_t n_trials         = command_line.getOptionLongValue("-trials",  5); //3); todo: changed the number of trials
 
     string determinism      = string(command_line.getOptionValue("-d", "false"));
     string range_search     = string(command_line.getOptionValue("-rs", "true"));
@@ -109,12 +109,12 @@ void throughput(commandLine& command_line)
     auto flat_snapshot = malin.flatten_vertex_tree();
 
     // Cache the initial ranges
-    parallel_for(0, n, [&] (auto i) {
+/*    parallel_for(0, n, [&] (auto i) {
         auto min = flat_snapshot[i].compressed_walks.vnext_min;
         auto max = flat_snapshot[i].compressed_walks.vnext_max;
         initial_minmax_bounds[i] = std::make_pair(min, max);
 //        cout << "vertex=" << i << " {min=" << min << ", max=" << max << "}" << endl;
-    });
+    });*/
     // -------------------------------------
 
     auto batch_sizes = pbbs::sequence<size_t>(1);
@@ -169,10 +169,10 @@ void throughput(commandLine& command_line)
 		    cout << "trial-" << trial << " and batch_seed-" << batch_seed[trial] << endl;
 
             // Check whether the bound for min and max are correctly resetted
-            parallel_for(0, n, [&] (auto i) {
+/*            parallel_for(0, n, [&] (auto i) {
                 assert(flat_snapshot[i].compressed_walks.vnext_min == get<0>(initial_minmax_bounds[i]));
                 assert(flat_snapshot[i].compressed_walks.vnext_max == get<1>(initial_minmax_bounds[i]));
-            });
+            });*/
 
             size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
             auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[trial], false, false);
@@ -203,10 +203,10 @@ void throughput(commandLine& command_line)
             pbbs::free_array(edges.first);
 
             // Reset the initial corpus next vertex bounds
-            parallel_for(0, n, [&] (auto i) {
+ /*           parallel_for(0, n, [&] (auto i) {
               flat_snapshot[i].compressed_walks.vnext_min = get<0>(initial_minmax_bounds[i]);
               flat_snapshot[i].compressed_walks.vnext_max = get<1>(initial_minmax_bounds[i]);
-            });
+            });*/
         }
 
         std::cout << std::endl;

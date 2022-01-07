@@ -16,8 +16,8 @@ class MalinTest : public testing::Test
         bool mmap = false;
         bool is_symmetric = true;
 //        std::string default_file_path = "data/email-graph";
-        std::string default_file_path = "data/flickr-graph";
-//        std::string default_file_path = "data/aspen-paper-graph";
+//        std::string default_file_path = "data/flickr-graph";
+        std::string default_file_path = "data/aspen-paper-graph";
 };
 
 void MalinTest::SetUp()
@@ -74,7 +74,7 @@ TEST_F(MalinTest, MalinConstructor)
         ASSERT_EQ(flat_snapshot[i].compressed_edges.degree(), degree);
 
         // assert that compressed_walks_tree is empty
-        ASSERT_EQ(flat_snapshot[i].compressed_walks.root, nullptr);
+//        ASSERT_EQ(flat_snapshot[i].compressed_walks.root, nullptr); // todo: removed it
         ASSERT_EQ(flat_snapshot[i].compressed_walks.size(), 0);
 
         // assert empty samplers
@@ -134,7 +134,7 @@ TEST_F(MalinTest, MalinDestroyIndex)
 
     parallel_for(0, total_vertices, [&] (long i)
     {
-        ASSERT_EQ(flat_snapshot[i].compressed_walks.size(), 0);
+//        ASSERT_EQ(flat_snapshot[i].compressed_walks.size(), 0); // todo: removed it
         ASSERT_EQ(flat_snapshot[i].sampler_manager->size(), 0);
     });
 }
@@ -156,6 +156,61 @@ TEST_F(MalinTest, InsertBatchOfEdges)
 
     // assert edge insertion
     ASSERT_GE(malin.number_of_edges(), start_edges);
+}
+
+// Pump up the test to debug diff updates approach
+TEST_F(MalinTest, InsertBatchOfEdgesPlayground)
+{
+	// create wharf instance (vertices & edges)
+	dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+	auto start_edges = malin.number_of_edges();
+
+	malin.generate_initial_random_walks();
+
+	// geneate edges
+	auto edges = utility::generate_batch_of_edges(10, malin.number_of_vertices(), false, false);
+
+	// insert batch of edges
+	malin.insert_edges_batch(edges.second, edges.first, true, false/*, std::numeric_limits<size_t>::max(), false*/);
+
+	auto flat_graph = malin.flatten_vertex_tree();
+	for (auto i = 0; i < malin.number_of_vertices(); i++)
+	{
+		cout << "vertex " << i << endl;
+//		flat_graph[i].compressed_edges.iter_elms(i, [&](auto edge){
+//			cout << edge << " ";
+//		});
+//		cout << endl;
+
+		int inc = 0;
+		for (auto wt = flat_graph[i].compressed_walks.rbegin(); wt != flat_graph[i].compressed_walks.rend(); wt++)
+		{
+			inc++;
+			cout << "walk-tree " << inc << endl;
+			wt->iter_elms(i, [&](auto enc_triplet){
+				auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
+
+				auto walk_id  = pair.first / config::walk_length;                  // todo: needs floor?
+				auto position = pair.first - (walk_id * config::walk_length); // todo: position here starts from 0. verify this one!
+				auto next_vertex   = pair.second;
+//				cout << enc_triplet << " ";
+				cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
+			});
+			cout << endl;
+		}
+	}
+
+//	// geneate edges
+//	auto edges = utility::generate_batch_of_edges(1000000, malin.number_of_vertices(), false, false);
+//
+//	// insert batch of edges
+//	malin.insert_edges_batch(edges.second, edges.first, true, false, std::numeric_limits<size_t>::max(), false);
+
+	std::cout << "Edges before batch insert: " << start_edges << std::endl;
+	std::cout << "Edges after batch insert: "  << malin.number_of_edges() << std::endl;
+
+	// assert edge insertion
+	ASSERT_GE(malin.number_of_edges(), start_edges);
 }
 
 TEST_F(MalinTest, DeleteBatchOfEdges)
@@ -184,8 +239,8 @@ TEST_F(MalinTest, UpdateRandomWalksOnInsertEdges)
     malin.generate_initial_random_walks();
 
     // print random walks
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        std::cout << malin.walk(i) << std::endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        std::cout << malin.walk(i) << std::endl;
 
     // geneate edges
     auto edges = utility::generate_batch_of_edges(1000, malin.number_of_vertices(), false, false);
@@ -194,8 +249,8 @@ TEST_F(MalinTest, UpdateRandomWalksOnInsertEdges)
     malin.insert_edges_batch(edges.second, edges.first, true, false);
 
     // print updated random walks
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        std::cout << malin.walk(i) << std::endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        std::cout << malin.walk(i) << std::endl;
 }
 
 TEST_F(MalinTest, UpdateRandomWalksOnDeleteEdges)
@@ -205,8 +260,8 @@ TEST_F(MalinTest, UpdateRandomWalksOnDeleteEdges)
     malin.generate_initial_random_walks();
 
     // print random walks
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        std::cout << malin.walk(i) << std::endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        std::cout << malin.walk(i) << std::endl;
 
     // geneate edges
     auto edges = utility::generate_batch_of_edges(1000, malin.number_of_vertices(), false, false);
@@ -215,8 +270,8 @@ TEST_F(MalinTest, UpdateRandomWalksOnDeleteEdges)
     malin.delete_edges_batch(edges.second, edges.first, true, false);
 
     // print updated random walks
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        std::cout << malin.walk(i) << std::endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        std::cout << malin.walk(i) << std::endl;
 }
 
 TEST_F(MalinTest, UpdateRandomWalks)
@@ -226,8 +281,8 @@ TEST_F(MalinTest, UpdateRandomWalks)
     malin.generate_initial_random_walks();
 
     // print random walks
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        std::cout << malin.walk(i) << std::endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        std::cout << malin.walk(i) << std::endl;
 
     for(int i = 0; i < 10; i++)
     {
@@ -239,8 +294,8 @@ TEST_F(MalinTest, UpdateRandomWalks)
     }
 
     // print random walks
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        std::cout << malin.walk(i) << std::endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        std::cout << malin.walk(i) << std::endl;
 }
 
 // -------------------------------//
@@ -258,16 +313,16 @@ TEST_F(MalinTest, GenerateAndPrintInitialRW)
 
     walk_printing_timer.start();
     // for debugging purposes - uses simple find_next only
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        std::cout << "simple - id=" << i << ":\t" << malin.walk_simple_find(i) << std::endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        std::cout << "simple - id=" << i << ":\t" << malin.walk_simple_find(i) << std::endl;
     time_simple = walk_printing_timer.get_total();
 
     cout << "-- now print out the walks with the find_in_range operation" << endl;
 
     walk_printing_timer.reset(); walk_printing_timer.start();
     // print random walks
-    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
-        std::cout << "range - id=" << i << ":\t" << malin.walk(i) << std::endl;
+//    for(int i = 0; i < config::walks_per_vertex * malin.number_of_vertices(); i++)
+//        std::cout << "range - id=" << i << ":\t" << malin.walk(i) << std::endl;
     time_range = walk_printing_timer.get_total();
 
     cout << "Time to print all walk corpus with simple find: " << time_simple << endl
@@ -338,12 +393,12 @@ TEST_F(MalinTest, MalinThroughputLatency)
 	auto flat_snapshot = malin.flatten_vertex_tree();
 
 	// Cache the initial ranges
-	parallel_for(0, total_vertices, [&] (auto i) {
-	  auto min = flat_snapshot[i].compressed_walks.vnext_min;
-	  auto max = flat_snapshot[i].compressed_walks.vnext_max;
-	  initial_minmax_bounds[i] = std::make_pair(min, max);
-//        cout << "vertex=" << i << " {min=" << min << ", max=" << max << "}" << endl;
-	});
+//	parallel_for(0, total_vertices, [&] (auto i) {
+//	  auto min = flat_snapshot[i].compressed_walks.vnext_min;
+//	  auto max = flat_snapshot[i].compressed_walks.vnext_max;
+//	  initial_minmax_bounds[i] = std::make_pair(min, max);
+////        cout << "vertex=" << i << " {min=" << min << ", max=" << max << "}" << endl;
+//	});
 	// -------------------------------------
 
 
@@ -398,10 +453,10 @@ TEST_F(MalinTest, MalinThroughputLatency)
 
 
 			// Check whether the bound for min and max are correctly resetted
-			parallel_for(0, total_vertices, [&] (auto i) {
-			  assert(flat_snapshot[i].compressed_walks.vnext_min == get<0>(initial_minmax_bounds[i]));
-			  assert(flat_snapshot[i].compressed_walks.vnext_max == get<1>(initial_minmax_bounds[i]));
-			});
+//			parallel_for(0, total_vertices, [&] (auto i) {
+//			  assert(flat_snapshot[i].compressed_walks.vnext_min == get<0>(initial_minmax_bounds[i]));
+//			  assert(flat_snapshot[i].compressed_walks.vnext_max == get<1>(initial_minmax_bounds[i]));
+//			});
 
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(total_vertices) - 1);
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], total_vertices, batch_seed[trial], false, false);
@@ -438,10 +493,10 @@ TEST_F(MalinTest, MalinThroughputLatency)
 			pbbs::free_array(edges.first);
 
 			// Reset the initial corpus next vertex bounds
-			parallel_for(0, total_vertices, [&] (auto i) {
-			  flat_snapshot[i].compressed_walks.vnext_min = get<0>(initial_minmax_bounds[i]);
-			  flat_snapshot[i].compressed_walks.vnext_max = get<1>(initial_minmax_bounds[i]);
-			});
+//			parallel_for(0, total_vertices, [&] (auto i) {
+//			  flat_snapshot[i].compressed_walks.vnext_min = get<0>(initial_minmax_bounds[i]);
+//			  flat_snapshot[i].compressed_walks.vnext_max = get<1>(initial_minmax_bounds[i]);
+//			});
 		}
 
 		std::cout << std::endl;
