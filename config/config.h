@@ -18,6 +18,7 @@ auto dj                          = timer("WalkDeleteJobTime", false);
 auto walk_find_in_vertex_tree    = timer("FindInVertexTreeTime", false);
 auto walk_find_next_tree         = timer("FindNextTime", false);
 auto szudzik_hash                = timer("SzudzikTime", false);
+auto MAV_time                    = timer("MAVTime", false);
 // --- profile find next in range
 auto fnir_tree_search            = timer("FNIR_TreeSearchTime", false);
 // ---

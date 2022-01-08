@@ -93,8 +93,8 @@ void self_speedup(commandLine& command_line)
     uintV* edges;
     std::tie(n, m, offsets, edges) = read_unweighted_graph(fname.c_str(), is_symmetric, mmap);
 
-    dygrl::Malin malin = dygrl::Malin(n, m, offsets, edges);
-    dygrl::Malin malin_2 = dygrl::Malin(n, m, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(n, m, offsets, edges);
+    dygrl::Wharf malin_2 = dygrl::Wharf(n, m, offsets, edges);
 
     // -------------------------------------------------------------------
     // Produce initial walks corpus with all threads -- full parallel mode

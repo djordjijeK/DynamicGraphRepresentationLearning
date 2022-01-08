@@ -2,7 +2,7 @@
 
 #include <malin.h>
 
-class MalinTest : public testing::Test
+class WharfTest : public testing::Test
 {
     public:
         void SetUp()    override;
@@ -16,11 +16,11 @@ class MalinTest : public testing::Test
         bool mmap = false;
         bool is_symmetric = true;
 //        std::string default_file_path = "data/email-graph";
-//        std::string default_file_path = "data/flickr-graph";
-        std::string default_file_path = "data/aspen-paper-graph";
+        std::string default_file_path = "data/flickr-graph";
+//        std::string default_file_path = "data/aspen-paper-graph";
 };
 
-void MalinTest::SetUp()
+void WharfTest::SetUp()
 {
     std::cout << "-----------------------------------------------------------------------------------------------------" << std::endl;
     std::cout << "Malin running with " << num_workers() << " threads" << std::endl;
@@ -39,7 +39,7 @@ void MalinTest::SetUp()
     std::cout << std::endl;
 }
 
-void MalinTest::TearDown()
+void WharfTest::TearDown()
 {
     // remove adjaceny graph format representation
     int graph = system("rm -rf data/adjacency-graph-format.txt");
@@ -52,9 +52,9 @@ void MalinTest::TearDown()
     std::cout << "-----------------------------------------------------------------------------------------------------" << std::endl;
 }
 
-TEST_F(MalinTest, MalinConstructor)
+TEST_F(WharfTest, MalinConstructor)
 {
-    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges, false);
+    dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges, false);
 
     // assert the number of vertices and edges in a graph
     ASSERT_EQ(malin.number_of_vertices(), total_vertices);
@@ -97,9 +97,9 @@ TEST_F(MalinTest, MalinConstructor)
     });
 }
 
-TEST_F(MalinTest, DockDestructor)
+TEST_F(WharfTest, DockDestructor)
 {
-    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
 
     malin.print_memory_pool_stats();
     malin.destroy();
@@ -116,9 +116,9 @@ TEST_F(MalinTest, DockDestructor)
     ASSERT_EQ(flat_snapshot.size(), 0);
 }
 
-TEST_F(MalinTest, MalinDestroyIndex)
+TEST_F(WharfTest, MalinDestroyIndex)
 {
-    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
     malin.generate_initial_random_walks();
 
     malin.print_memory_pool_stats();
@@ -139,10 +139,10 @@ TEST_F(MalinTest, MalinDestroyIndex)
     });
 }
 
-TEST_F(MalinTest, InsertBatchOfEdges)
+TEST_F(WharfTest, InsertBatchOfEdges)
 {
     // create wharf instance (vertices & edges)
-    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
     auto start_edges = malin.number_of_edges();
 
     // geneate edges
@@ -159,16 +159,16 @@ TEST_F(MalinTest, InsertBatchOfEdges)
 }
 
 // Pump up the test to debug diff updates approach
-TEST_F(MalinTest, InsertBatchOfEdgesPlayground)
+TEST_F(WharfTest, InsertBatchOfEdgesPlayground)
 {
 	// create wharf instance (vertices & edges)
-	dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+	dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
 	auto start_edges = malin.number_of_edges();
 
 	malin.generate_initial_random_walks();
 
 	// geneate edges
-	auto edges = utility::generate_batch_of_edges(10, malin.number_of_vertices(), false, false);
+	auto edges = utility::generate_batch_of_edges(10, malin.number_of_vertices(), 10, false, false);
 
 	// insert batch of edges
 	malin.insert_edges_batch(edges.second, edges.first, true, false/*, std::numeric_limits<size_t>::max(), false*/);
@@ -183,7 +183,7 @@ TEST_F(MalinTest, InsertBatchOfEdgesPlayground)
 //		cout << endl;
 
 		int inc = 0;
-		for (auto wt = flat_graph[i].compressed_walks.rbegin(); wt != flat_graph[i].compressed_walks.rend(); wt++)
+		for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++)
 		{
 			inc++;
 			cout << "walk-tree " << inc << endl;
@@ -213,10 +213,10 @@ TEST_F(MalinTest, InsertBatchOfEdgesPlayground)
 	ASSERT_GE(malin.number_of_edges(), start_edges);
 }
 
-TEST_F(MalinTest, DeleteBatchOfEdges)
+TEST_F(WharfTest, DeleteBatchOfEdges)
 {
     // create wharf instance (vertices & edges)
-    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
     auto start_edges = malin.number_of_edges();
 
     // geneate edges
@@ -232,10 +232,10 @@ TEST_F(MalinTest, DeleteBatchOfEdges)
     ASSERT_LE(malin.number_of_edges(), start_edges);
 }
 
-TEST_F(MalinTest, UpdateRandomWalksOnInsertEdges)
+TEST_F(WharfTest, UpdateRandomWalksOnInsertEdges)
 {
     // create graph and walks
-    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
     malin.generate_initial_random_walks();
 
     // print random walks
@@ -253,10 +253,10 @@ TEST_F(MalinTest, UpdateRandomWalksOnInsertEdges)
 //        std::cout << malin.walk(i) << std::endl;
 }
 
-TEST_F(MalinTest, UpdateRandomWalksOnDeleteEdges)
+TEST_F(WharfTest, UpdateRandomWalksOnDeleteEdges)
 {
     // create graph and walks
-    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
     malin.generate_initial_random_walks();
 
     // print random walks
@@ -274,10 +274,10 @@ TEST_F(MalinTest, UpdateRandomWalksOnDeleteEdges)
 //        std::cout << malin.walk(i) << std::endl;
 }
 
-TEST_F(MalinTest, UpdateRandomWalks)
+TEST_F(WharfTest, UpdateRandomWalks)
 {
     // create graph and walks
-    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
     malin.generate_initial_random_walks();
 
     // print random walks
@@ -302,10 +302,10 @@ TEST_F(MalinTest, UpdateRandomWalks)
 // ---- tests for range search ---//
 // -------------------------------//
 
-TEST_F(MalinTest, GenerateAndPrintInitialRW)
+TEST_F(WharfTest, GenerateAndPrintInitialRW)
 {
     // create graph and walks
-    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
     malin.generate_initial_random_walks();
 
     auto walk_printing_timer = timer("TotalTimeToRewalk", false);
@@ -332,10 +332,10 @@ TEST_F(MalinTest, GenerateAndPrintInitialRW)
 // -----------------------------------
 // -----------------------------------
 
-TEST_F(MalinTest, UpdateRandomWalksWithRangeSearch)
+TEST_F(WharfTest, UpdateRandomWalksWithRangeSearch)
 {
     // create graph and walks
-    dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
     malin.generate_initial_random_walks();
 
     // print random walks before batch insertion
@@ -360,9 +360,9 @@ TEST_F(MalinTest, UpdateRandomWalksWithRangeSearch)
 }
 
 
-TEST_F(MalinTest, MalinThroughputLatency)
+TEST_F(WharfTest, MalinThroughputLatency)
 {
-	dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
+	dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
 	malin.generate_initial_random_walks();
 	int n_trials = 3; //3;
 
@@ -554,6 +554,34 @@ TEST_F(MalinTest, MalinThroughputLatency)
 		std::cout << "}" << std::endl;
 	}
 
+	auto flat_graph = malin.flatten_vertex_tree();
+	for (auto i = 0; i < malin.number_of_vertices(); i++)
+	{
+		cout << "vertex " << i << endl;
+//		flat_graph[i].compressed_edges.iter_elms(i, [&](auto edge){
+//			cout << edge << " ";
+//		});
+//		cout << endl;
+
+		cout << "size of walk-tree vector " << flat_graph[i].compressed_walks.size() << endl;
+		int inc = 0;
+		for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // print the walk-trees in chronological order
+		{
+			inc++;
+			cout << "walk-tree " << inc << endl;
+			wt->iter_elms(i, [&](auto enc_triplet){
+			  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
+
+			  auto walk_id  = pair.first / config::walk_length;                  // todo: needs floor?
+			  auto position = pair.first - (walk_id * config::walk_length); // todo: position here starts from 0. verify this one!
+			  auto next_vertex   = pair.second;
+//				cout << enc_triplet << " ";
+			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
+			});
+			cout << endl;
+		}
+	}
+
 // ----------------------------------------------
 //	cout << "(NEW) WALKS" << endl;
 //	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
@@ -564,7 +592,7 @@ TEST_F(MalinTest, MalinThroughputLatency)
 	std::cout << "Loop ended" << std::endl;
 }
 
-TEST_F(MalinTest, BatchGenerator)
+TEST_F(WharfTest, BatchGenerator)
 {
 	cout << "first batch" << endl;
 	auto edges = utility::generate_batch_of_edges(10, 6, false, false);
@@ -580,4 +608,245 @@ TEST_F(MalinTest, BatchGenerator)
 	edges = utility::generate_batch_of_edges(10, 6, false, false);
 	for (auto i = 0; i < edges.second; i++)
 		cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+}
+
+// --------------------------------------------------------------------------
+// --------- WHARF++ tests --------------------------------------------------
+// --------------------------------------------------------------------------
+
+// Pump up the test to debug diff updates approach
+TEST_F(WharfTest, WharfPlusPlusPlayground)
+{
+	// create wharf instance (vertices & edges)
+	dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
+	auto start_edges = malin.number_of_edges();
+
+	malin.generate_initial_random_walks();
+
+	// geneate edges
+	auto edges = utility::generate_batch_of_edges(1, malin.number_of_vertices(), 10, false, false);
+	for (auto i = 0; i < edges.second; i++)
+		cout << "[" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+
+	// insert batch of edges
+	malin.insert_edges_batch(edges.second, edges.first, true, false);
+
+	auto flat_graph = malin.flatten_vertex_tree();
+	for (auto i = 0; i < malin.number_of_vertices(); i++)
+	{
+		cout << "vertex " << i << endl;
+//		flat_graph[i].compressed_edges.iter_elms(i, [&](auto edge){
+//			cout << edge << " ";
+//		});
+//		cout << endl;
+
+		cout << "size of walk-tree vector " << flat_graph[i].compressed_walks.size() << endl;
+		int inc = 0;
+		for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // print the walk-trees in chronological order
+		{
+			inc++;
+			cout << "walk-tree " << inc << endl;
+			wt->iter_elms(i, [&](auto enc_triplet){
+			  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
+
+			  auto walk_id  = pair.first / config::walk_length;                  // todo: needs floor?
+			  auto position = pair.first - (walk_id * config::walk_length); // todo: position here starts from 0. verify this one!
+			  auto next_vertex   = pair.second;
+//				cout << enc_triplet << " ";
+			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
+			});
+			cout << endl;
+		}
+	}
+
+//	// geneate edges
+//	auto edges = utility::generate_batch_of_edges(1000000, malin.number_of_vertices(), false, false);
+//
+//	// insert batch of edges
+//	malin.insert_edges_batch(edges.second, edges.first, true, false, std::numeric_limits<size_t>::max(), false);
+
+	std::cout << "Edges before batch insert: " << start_edges << std::endl;
+	std::cout << "Edges after batch insert: "  << malin.number_of_edges() << std::endl;
+
+	// assert edge insertion
+	ASSERT_GE(malin.number_of_edges(), start_edges);
+}
+
+// ----------------------------
+// --- INSERT ONLY WORKLOAD ---
+// ----------------------------
+
+TEST_F(WharfTest, WharfInsertOnlyWorkload) {
+	dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
+	malin.generate_initial_random_walks();
+	int n_batches = 1; // todo: how many batches per batch size?
+
+	auto batch_sizes = pbbs::sequence<size_t>(1);
+	batch_sizes[0] = 5; //5;
+//	batch_sizes[1] = 50;
+//	batch_sizes[2] = 500;
+//	batch_sizes[3] = 5000;
+//	batch_sizes[4] = 50000;
+//  batch_sizes[5] = 500000;
+
+	for (short int i = 0; i < batch_sizes.size(); i++)
+	{
+		timer insert_timer("InsertTimer");
+		timer delete_timer("DeleteTimer");
+
+		graph_update_time_on_insert.reset();
+		walk_update_time_on_insert.reset();
+		graph_update_time_on_delete.reset();
+		walk_update_time_on_delete.reset();
+		// --- profiling initialization
+		walk_insert_init.reset();
+		walk_insert_2jobs.reset();
+		walk_insert_2accs.reset();
+		ij.reset();
+		dj.reset();
+		walk_find_in_vertex_tree.reset();
+		walk_find_next_tree.reset();
+		szudzik_hash.reset();
+		fnir_tree_search.reset();
+		MAV_time.reset();
+		// ---
+
+		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
+
+		double last_insert_time = 0;
+
+		auto latency_insert = pbbs::sequence<double>(n_batches);
+		auto latency = pbbs::sequence<double>(n_batches);
+
+		double total_insert_walks_affected = 0;
+		double total_delete_walks_affected = 0;
+
+		int batch_seed[n_batches];
+		for (auto i = 0; i < n_batches; i++)
+			batch_seed[i] = i; // say the seed equals to the #batch todo: produce a different batch each time
+
+		for (short int b = 0; b < n_batches; b++)
+		{
+			cout << "batch-" << b << " and batch_seed-" << batch_seed[b] << endl;
+
+			size_t graph_size_pow2 = 1 << (pbbs::log2_up(total_vertices) - 1);
+			auto edges = utility::generate_batch_of_edges(batch_sizes[i], total_vertices, batch_seed[b], false, false);
+
+			std::cout << edges.second << " ";
+		    for (auto i = 0; i < edges.second; i++)
+		        cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+
+			insert_timer.start();
+			auto x = malin.insert_edges_batch(edges.second, edges.first, false, true, graph_size_pow2);
+			insert_timer.stop();
+
+			total_insert_walks_affected += x.size();
+
+			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
+			latency_insert[b] = (double) last_insert_time / x.size();
+
+			latency[b] = latency_insert[b];
+
+			// free edges
+			pbbs::free_array(edges.first);
+		}
+
+		std::cout << std::endl;
+
+		std::cout << "Average insert time = "
+		          << insert_timer.get_total() / n_batches << std::endl;
+		std::cout << "Average graph update insert time = "
+		          << graph_update_time_on_insert.get_total() / n_batches
+		          << std::endl;
+		std::cout << "Average walk update insert time = "
+		          << walk_update_time_on_insert.get_total() / n_batches
+		          << ", average walk affected = "
+		          << total_insert_walks_affected / n_batches << std::endl;
+
+		std::cout << "Average delete time = "
+		          << delete_timer.get_total() / n_batches << std::endl;
+		std::cout << "Average graph update delete time = "
+		          << graph_update_time_on_delete.get_total() / n_batches
+		          << std::endl;
+		std::cout << "Average walk update delete time = "
+		          << walk_update_time_on_delete.get_total() / n_batches
+		          << ", average walk affected = "
+		          << total_delete_walks_affected / n_batches << std::endl;
+
+		// --- profiling ---
+		std::cout << "{ total profiling for insert and delete" << std::endl;
+		std::cout << "Initialization: "
+		          << walk_insert_init.get_total() / n_batches << " ("
+		          << (walk_insert_init.get_total() * 100) /
+		             (walk_insert_init.get_total() +
+		              walk_insert_2jobs.get_total() +
+		              walk_insert_2accs.get_total()) << "%)" << std::endl;
+		std::cout << "Insert/Delete Jobs: "
+		          << walk_insert_2jobs.get_total() / n_batches << " ("
+		          << (walk_insert_2jobs.get_total() * 100) /
+		             (walk_insert_init.get_total() +
+		              walk_insert_2jobs.get_total() +
+		              walk_insert_2accs.get_total()) << "%)" << std::endl;
+		std::cout << "InsertJob: " << ij.get_total() / n_batches
+		          << " | DeleteJob: " << dj.get_total() / n_batches << std::endl;
+		std::cout << "FindInVertexTree in DeleteJob total: "
+		          << walk_find_in_vertex_tree.get_total() / n_batches
+		          << std::endl;
+		std::cout << "FindNext in DeleteJob total: "
+		          << walk_find_next_tree.get_total() / n_batches << std::endl;
+		std::cout << "FindNext (search of the tree): "
+		          << fnir_tree_search.get_total() / n_batches << std::endl;
+		std::cout << "Sudzik total: " << szudzik_hash.get_total() / n_batches
+		          << std::endl;
+
+		std::cout << "Accumulators: "
+		          << walk_insert_2accs.get_total() / n_batches << " ("
+		          << (walk_insert_2accs.get_total() * 100) /
+		             (walk_insert_init.get_total() +
+		              walk_insert_2jobs.get_total() +
+		              walk_insert_2accs.get_total()) << "%)" << std::endl;
+		std::cout << "}" << std::endl;
+		// --- profiling ---
+
+		// latencies
+		std::cout << "Average walk insert latency = { ";
+		for (int i = 0; i < n_batches; i++) {
+			std::cout << latency_insert[i] << " ";
+		}
+		std::cout << "}" << std::endl;
+
+		std::cout << "Average walk update latency = { ";
+		for (int i = 0; i < n_batches; i++) {
+			std::cout << latency[i] << " ";
+		}
+		std::cout << "}" << std::endl;
+	}
+
+	auto flat_graph = malin.flatten_vertex_tree();
+	for (auto i = 0; i < malin.number_of_vertices(); i++)
+	{
+		cout << "vertex " << i << endl;
+//		flat_graph[i].compressed_edges.iter_elms(i, [&](auto edge){
+//			cout << edge << " ";
+//		});
+//		cout << endl;
+
+		cout << "size of walk-tree vector " << flat_graph[i].compressed_walks.size() << endl;
+		int inc = 0;
+		for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // print the walk-trees in chronological order
+		{
+			inc++;
+			cout << "walk-tree " << inc << endl;
+			wt->iter_elms(i, [&](auto enc_triplet){
+			  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
+
+			  auto walk_id  = pair.first / config::walk_length;                  // todo: needs floor?
+			  auto position = pair.first - (walk_id * config::walk_length); // todo: position here starts from 0. verify this one!
+			  auto next_vertex   = pair.second;
+//				cout << enc_triplet << " ";
+//			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
+			});
+			cout << endl;
+		}
+	}
 }

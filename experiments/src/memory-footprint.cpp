@@ -92,7 +92,7 @@ void memory_footprint(commandLine& command_line)
     cout << endl << "*** Head frequency is " << compressed_lists::head_frequency << ", and thus, chunk size is " << compressed_lists::head_mask << endl;
     // ---------------------------------
 
-    dygrl::Malin malin = dygrl::Malin(n, m, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(n, m, offsets, edges);
 
     auto produce_initial_walk_corpus = timer("WalkCorpusProduction", false); produce_initial_walk_corpus.start();
     malin.generate_initial_random_walks();

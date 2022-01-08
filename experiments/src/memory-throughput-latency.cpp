@@ -88,7 +88,7 @@ void throughput(commandLine& command_line)
     uintV* edges;
     std::tie(n, m, offsets, edges) = read_unweighted_graph(fname.c_str(), is_symmetric, mmap);
 
-    dygrl::Malin malin = dygrl::Malin(n, m, offsets, edges);
+    dygrl::Wharf malin = dygrl::Wharf(n, m, offsets, edges);
 
     timer initial_walks_from_scratch_timer("GenerateInitialWalksFromScratch", false); initial_walks_from_scratch_timer.reset(); initial_walks_from_scratch_timer.start();
     malin.generate_initial_random_walks();

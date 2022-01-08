@@ -19,7 +19,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
      * @brief Malin represents a structure that stores a graph as an augmented parallel balanced binary tree.
      * Keys in this tree are graph vertices and values are compressed edges, compressed walks, and metropolis hastings samplers.
      */
-    class Malin
+    class Wharf
     {
         public:
             using Graph = aug_map<dygrl::Vertex>;
@@ -33,14 +33,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              * @param edges          - edges
              * @param free_memory    - free memory excess after graph is loaded
              */
-            Malin(long graph_vertices, long graph_edges, uintE* offsets, uintV* edges, bool free_memory = true)
+            Wharf(long graph_vertices, long graph_edges, uintE* offsets, uintV* edges, bool free_memory = true)
             {
                 #ifdef MALIN_TIMER
                     timer timer("Malin::Constructor");
                 #endif
 
                 // 1. Initialize memory pools
-                Malin::init_memory_pools(graph_vertices, graph_edges);
+                Wharf::init_memory_pools(graph_vertices, graph_edges);
 
                 // 2. Create an empty vertex sequence
                 using VertexStruct = std::pair<types::Vertex, VertexEntry>;
@@ -645,7 +645,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // 2. Sort the edges in the batch (by source)
                 if (!sorted)
                 {
-                    Malin::sort_edge_batch_by_source(edges, m, nn);
+                    Wharf::sort_edge_batch_by_source(edges, m, nn);
                 }
 
                 // 3. Remove duplicate edges
@@ -699,7 +699,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), vec_compwalks, new dygrl::SamplerManager(0)));
                 });
 
-                types::MapOfChanges rewalk_points = types::MapOfChanges();
+                types::MapAffectedVertices rewalk_points = types::MapAffectedVertices();
 
                 auto replace = [&, run_seq] (const intV& v, const VertexEntry& a, const VertexEntry& b)
                 {
@@ -711,14 +711,34 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(b.compressed_edges.plus);
                     edge_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
-				cout << "i" << endl;
-
 					// todo: which among all the walk-trees will we search?
 //					for (auto it = a.compressed_walks.rend())
 //                    a.compressed_walks.iter_elms(v, [&](auto value)
+					MAV_time.start();
+					int num_walk_trees = a.compressed_walks.size();
+					cout << "vertex " << v << " has " << num_walk_trees << " walk-trees";
+					for (auto wt = a.compressed_walks.rbegin(); wt != a.compressed_walks.rend(); wt++)
+					{
+						wt->iter_elms(v, [&](auto value)
+						{
+							auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
+
+							auto walk_id = pair.first / config::walk_length;
+							auto position = pair.first - (walk_id * config::walk_length);
+							auto next = pair.second;
+
+							// how to check
+							// if it is part of the latest walk-tree
+
+							// if it belongs to a previous walk-tree
+						});
+
+						cout << "walk-tree " << num_walk_trees << " CHECKED!" << endl;
+						num_walk_trees--;
+					}
+
                     a.compressed_walks.front().iter_elms(v, [&](auto value) // todo: CAUTION: to check only the last walk-tree
                     {
-				cout << "a" << endl;
                         auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
 
                         auto walk_id = pair.first / config::walk_length;
@@ -738,17 +758,17 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                                 rewalk_points.template update(walk_id, std::make_tuple(position, v, false));
                             }
                         }
-              cout << "b" << endl;
                     });
 
-				cout << "ii" << endl;
+					MAV_time.stop();
+
                     return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager
                 };
-cout << "1" << endl;
+
                 graph_update_time_on_insert.start();
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace,true, run_seq);
                 graph_update_time_on_insert.stop();
-cout << "2" << endl;
+
                 walk_update_time_on_insert.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 if (apply_walk_updates)
@@ -812,7 +832,7 @@ cout << "2" << endl;
                 // 2. Sort the edges in the batch (by source)
                 if (!sorted)
                 {
-                    Malin::sort_edge_batch_by_source(edges, m, nn);
+                    Wharf::sort_edge_batch_by_source(edges, m, nn);
                 }
 
                 // 3. Remove duplicate edges
@@ -869,7 +889,7 @@ cout << "2" << endl;
                     new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), vec_compwalks, new dygrl::SamplerManager(0)));
                 });
 
-                types::MapOfChanges rewalk_points = types::MapOfChanges();
+                types::MapAffectedVertices rewalk_points = types::MapAffectedVertices();
 
                 auto replace = [&,run_seq] (const intV& v, const VertexEntry& a, const VertexEntry& b)
                 {
@@ -954,10 +974,10 @@ cout << "2" << endl;
 
             /**
              * @brief Updates affected walks in batch mode. (VERSION 1)
-             * // todo: Compare this initial version of batch walk updates
+             * // TODO: make use of the nxt in order not to scan again the first walk-tree
              * @param types::MapOfChanges - rewalking points
              */
-            void batch_walk_update(types::MapOfChanges& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks)
+            void batch_walk_update(types::MapAffectedVertices& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks)
             {
 				walk_insert_init.start();
                 types::ChangeAccumulator deletes = types::ChangeAccumulator();
@@ -1280,7 +1300,8 @@ cout << "2" << endl;
 					// add compressed walks of y to x
 					// todo: is this correct?
 					auto x_prime = x.compressed_walks;
-					x_prime.push_back(y.compressed_walks.back()); // y has only one walk tree
+					if (y.compressed_walks.back().size() != 0)
+						x_prime.push_back(y.compressed_walks.back()); // y has only one walk tree
 
                     // deallocate the memory
 //                    lists::deallocate(x.compressed_walks.plus);
