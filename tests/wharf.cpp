@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <malin.h>
+#include <wharf.h>
 
 class WharfTest : public testing::Test
 {
@@ -682,7 +682,7 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 	int n_batches = 1; // todo: how many batches per batch size?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 5; //5;
+	batch_sizes[0] = 1000; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;

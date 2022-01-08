@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <malin.h>
+#include <wharf.h>
 #include <math.h>
 
 class SamplerTest : public testing::Test

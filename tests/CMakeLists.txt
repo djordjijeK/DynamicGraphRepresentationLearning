@@ -116,7 +116,7 @@ endif()
 # ------------------------------------------------------ TESTS ---------------------------------------------------------
 
 # Dock tests
-add_executable(malin malin.cpp)
+add_executable(malin wharf.cpp)
 target_link_libraries(malin ${GTEST_LIBRARIES})
 add_test(NAME malin COMMAND malin)
 

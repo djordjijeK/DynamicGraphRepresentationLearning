@@ -1,5 +1,5 @@
-#ifndef DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_MALIN_H
-#define DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_MALIN_H
+#ifndef DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_WHARF_H
+#define DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_WHARF_H
 
 #include <graph/api.h>
 #include <cuckoohash_map.hh>
@@ -731,6 +731,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							// if it is part of the latest walk-tree
 
 							// if it belongs to a previous walk-tree
+
+
 						});
 
 						cout << "walk-tree " << num_walk_trees << " CHECKED!" << endl;
@@ -1535,4 +1537,4 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
     };
 }
 
-#endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_MALIN_H
+#endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_WHARF_H
