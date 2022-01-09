@@ -904,6 +904,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(b.compressed_edges.plus);
                     edge_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
+					MAV_time.start();
                     a.compressed_walks.iter_elms(v, [&](auto value)
                     {
                         auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
@@ -926,6 +927,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             }
                         }
                     });
+					MAV_time.stop();
 
                     return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager
                 };

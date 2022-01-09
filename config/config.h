@@ -21,6 +21,7 @@ auto szudzik_hash                = timer("SzudzikTime", false);
 // --- profile find next in range
 auto fnir_tree_search            = timer("FNIR_TreeSearchTime", false);
 // ---
+auto MAV_time                    = timer("MAV_time", false);
 
 auto graph_update_time_on_delete = timer("GraphUpdateTimeOnDelete", false);
 auto walk_update_time_on_delete  = timer("WalkUpdateTimeOnDelete", false);
