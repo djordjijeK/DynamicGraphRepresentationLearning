@@ -721,11 +721,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					MAV_time.start();
 					int num_walk_trees = a.compressed_walks.size();
 					int wt_num = 0;
-					cout << "vertex " << v << " has " << num_walk_trees << " walk-trees";
+					cout << "vertex " << v << " has " << num_walk_trees << " walk-trees" << endl;
 //					for (auto wt = a.compressed_walks.rbegin(); wt != a.compressed_walks.rend(); wt++)
 					for (auto wt = a.compressed_walks.begin(); wt != a.compressed_walks.end(); wt++)
 					{
-						cout << "iterating wt-0" << endl;
+						cout << "iterating wt-" << wt_num << endl;
 						wt->iter_elms(v, [&](auto value)
 						{
 							auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
@@ -761,12 +761,18 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //								for (auto& entry : MAVS.lock_table())  // TODO: NOT ALL MAVS! + no need to lock, as we do only reads
 								for (auto mav = wt_num+1; mav < batch_num; mav++)
 								{
-									auto temp_pos = get<0>((MAVS.template find(mav)).template find(walk_id));
-									if (temp_pos < p_min_global)
-										p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
+//									cout << "aa" << endl;
+									if (MAVS.template find(mav).template contains(walk_id))
+									{
+										auto temp_pos = get<0>((MAVS.template find(mav)).template find(walk_id)); // it does not always contain this wid
+										if (temp_pos < p_min_global)
+											p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
+									}
+//									cout << "bb" << endl;
 								} // constructed the p_min_global for this w. preffix of MAVS. preffix tree (trie data structure?)
 
 								// Check the relationship of the triplet with respect to the p_min_global or the w
+//								if ((position < p_min_global) && (p_min_global != config::walk_length))
 								if (position < p_min_global)
 								{
 									// take the triplet under consideration for the MAV and proceed normally
@@ -793,7 +799,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 						});
 
-						cout << "walk-tree " << num_walk_trees << " CHECKED!" << endl;
+//						cout << "walk-tree " << num_walk_trees << " CHECKED!" << endl;
 //						num_walk_trees--;
 						wt_num++;
 					}
