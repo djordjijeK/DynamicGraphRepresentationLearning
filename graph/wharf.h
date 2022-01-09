@@ -70,6 +70,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 auto replace = [](const VertexEntry& x, const VertexEntry& y) { return y; };
                 this->graph_tree = Graph::Tree::multi_insert_sorted(nullptr, vertices.begin(), vertices.size(), replace, true);
 
+				// Initialize the MAVs vector. 1 MAV for each batch
+				MAVS = libcuckoo::cuckoohash_map<int, types::MapAffectedVertices>();
+
                 // 5. Memory cleanup
                 if (free_memory)
                 {
@@ -628,6 +631,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             */
             pbbs::sequence<types::WalkID> insert_edges_batch(size_t m,
                                                              std::tuple<uintV, uintV>* edges,
+															 int batch_num,
                                                              bool sorted = false,
                                                              bool remove_dups = false,
                                                              size_t nn = std::numeric_limits<size_t>::max(),
@@ -716,9 +720,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                    a.compressed_walks.iter_elms(v, [&](auto value)
 					MAV_time.start();
 					int num_walk_trees = a.compressed_walks.size();
+					int wt_num = 0;
 					cout << "vertex " << v << " has " << num_walk_trees << " walk-trees";
-					for (auto wt = a.compressed_walks.rbegin(); wt != a.compressed_walks.rend(); wt++)
+//					for (auto wt = a.compressed_walks.rbegin(); wt != a.compressed_walks.rend(); wt++)
+					for (auto wt = a.compressed_walks.begin(); wt != a.compressed_walks.end(); wt++)
 					{
+						cout << "iterating wt-0" << endl;
 						wt->iter_elms(v, [&](auto value)
 						{
 							auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
@@ -729,38 +736,90 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 							// how to check
 							// if it is part of the latest walk-tree
-
 							// if it belongs to a previous walk-tree
+							if (MAVS.empty())
+							{
+								// proceed as before and construct the first MAV
+								if (!rewalk_points.template contains(walk_id))
+		                        {
+		                            rewalk_points.template insert(walk_id, std::make_tuple(position, v, false));
+		                        }
+		                        else
+		                        {
+		                            types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
 
+		                            if (current_min_pos > position)
+		                            {
+		                                rewalk_points.template update(walk_id, std::make_tuple(position, v, false));
+		                            }
+		                        }
+							}
+							else // it is not the first batch of edges. there are previous MAVs
+							{
+								auto p_min_global = config::walk_length;
+								// find the p_min_global among all existing MAVS for w
+//								for (auto& entry : MAVS.lock_table())  // TODO: NOT ALL MAVS! + no need to lock, as we do only reads
+								for (auto mav = wt_num+1; mav < batch_num; mav++)
+								{
+									auto temp_pos = get<0>((MAVS.template find(mav)).template find(walk_id));
+									if (temp_pos < p_min_global)
+										p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
+								} // constructed the p_min_global for this w. preffix of MAVS. preffix tree (trie data structure?)
+
+								// Check the relationship of the triplet with respect to the p_min_global or the w
+								if (position < p_min_global)
+								{
+									// take the triplet under consideration for the MAV and proceed normally
+									if (!rewalk_points.template contains(walk_id))
+									{
+										rewalk_points.template insert(walk_id, std::make_tuple(position, v, false));
+									}
+									else
+									{
+										types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
+
+										if (current_min_pos > position)
+										{
+											rewalk_points.template update(walk_id, std::make_tuple(position, v, false));
+										}
+									}
+								}
+								else
+								{
+									;
+									// todo: DELETE THE TRIPLET FROM THE CURRENT WALK-TREE
+								}
+							}
 
 						});
 
 						cout << "walk-tree " << num_walk_trees << " CHECKED!" << endl;
-						num_walk_trees--;
+//						num_walk_trees--;
+						wt_num++;
 					}
 
-                    a.compressed_walks.front().iter_elms(v, [&](auto value) // todo: CAUTION: to check only the last walk-tree
-                    {
-                        auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
-
-                        auto walk_id = pair.first / config::walk_length;
-                        auto position = pair.first - (walk_id * config::walk_length);
-                        auto next = pair.second;
-
-                        if (!rewalk_points.template contains(walk_id))
-                        {
-                            rewalk_points.template insert(walk_id, std::make_tuple(position, v, false));
-                        }
-                        else
-                        {
-                            types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
-
-                            if (current_min_pos > position)
-                            {
-                                rewalk_points.template update(walk_id, std::make_tuple(position, v, false));
-                            }
-                        }
-                    });
+//                    a.compressed_walks.front().iter_elms(v, [&](auto value) // todo: CAUTION: to check only the last walk-tree
+//                    {
+//                        auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
+//
+//                        auto walk_id = pair.first / config::walk_length;
+//                        auto position = pair.first - (walk_id * config::walk_length);
+//                        auto next = pair.second;
+//
+//                        if (!rewalk_points.template contains(walk_id))
+//                        {
+//                            rewalk_points.template insert(walk_id, std::make_tuple(position, v, false));
+//                        }
+//                        else
+//                        {
+//                            types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
+//
+//                            if (current_min_pos > position)
+//                            {
+//                                rewalk_points.template update(walk_id, std::make_tuple(position, v, false));
+//                            }
+//                        }
+//                    });
 
 					MAV_time.stop();
 
@@ -770,6 +829,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 graph_update_time_on_insert.start();
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace,true, run_seq);
                 graph_update_time_on_insert.stop();
+
+				// Store/cache the MAV of each batch
+				MAVS.insert(batch_num, rewalk_points);
 
                 walk_update_time_on_insert.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
@@ -817,6 +879,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             pbbs::sequence<types::WalkID> delete_edges_batch(size_t m,
                                                              tuple<uintV,
                                                              uintV>* edges,
+															 int batch_num,
                                                              bool sorted = false,
                                                              bool remove_dups = false,
                                                              size_t nn = std::numeric_limits<size_t>::max(),
@@ -935,6 +998,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 graph_update_time_on_delete.start();
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace, true, run_seq);
                 graph_update_time_on_delete.stop();
+
+	            // Store/cache the MAV of each batch
+	            MAVS.insert(batch_num, rewalk_points);
 
                 walk_update_time_on_delete.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
@@ -1459,6 +1525,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
         private:
             Graph graph_tree;
+//			vector<types::MapAffectedVertices> MAVS;
+            libcuckoo::cuckoohash_map<int, types::MapAffectedVertices> MAVS; // batch_num, MAV[batch_num]
 
             /**
             * Initializes memory pools for underlying lists.

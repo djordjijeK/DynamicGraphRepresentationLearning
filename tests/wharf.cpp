@@ -16,8 +16,8 @@ class WharfTest : public testing::Test
         bool mmap = false;
         bool is_symmetric = true;
 //        std::string default_file_path = "data/email-graph";
-        std::string default_file_path = "data/flickr-graph";
-//        std::string default_file_path = "data/aspen-paper-graph";
+//        std::string default_file_path = "data/flickr-graph";
+        std::string default_file_path = "data/aspen-paper-graph";
 };
 
 void WharfTest::SetUp()
@@ -679,10 +679,10 @@ TEST_F(WharfTest, WharfPlusPlusPlayground)
 TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 	dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
 	malin.generate_initial_random_walks();
-	int n_batches = 1; // todo: how many batches per batch size?
+	int n_batches = 4; // todo: how many batches per batch size?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 1000; //5;
+	batch_sizes[0] = 5; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -737,7 +737,7 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 		        cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
 			insert_timer.start();
-			auto x = malin.insert_edges_batch(edges.second, edges.first, false, true, graph_size_pow2);
+			auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
 
 			total_insert_walks_affected += x.size();
@@ -772,6 +772,11 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 		          << walk_update_time_on_delete.get_total() / n_batches
 		          << ", average walk affected = "
 		          << total_delete_walks_affected / n_batches << std::endl;
+
+		// MAV time
+		std::cout << "Average MAV (we are not deleting obsolete parts) = "
+		          << MAV_time.get_total() / n_batches
+		          << std::endl;
 
 		// --- profiling ---
 		std::cout << "{ total profiling for insert and delete" << std::endl;
