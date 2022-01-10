@@ -750,7 +750,7 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 			// free edges
 			pbbs::free_array(edges.first);
 		}
-
+		cout << fixed;
 		std::cout << std::endl;
 
 		std::cout << "Average insert time = "

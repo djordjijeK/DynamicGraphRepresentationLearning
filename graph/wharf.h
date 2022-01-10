@@ -738,7 +738,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 							if (MAVS.empty())
 							{
-								cout << "empty MAV, operating on walk-tree 0" << endl;
+//								cout << "empty MAV, operating on walk-tree 0" << endl;
 								// proceed as before and construct the first MAV
 								if (!rewalk_points.template contains(walk_id))
 		                        {
