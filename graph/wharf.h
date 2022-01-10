@@ -776,7 +776,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //								if ((position < p_min_global) && (p_min_global != config::walk_length))
 								if (position < p_min_global)
 								{
-									cout << "hey" << endl;
+//									cout << "hey" << endl;
 									// take the triplet under consideration for the MAV and proceed normally
 									if (!rewalk_points.template contains(walk_id))
 									{
