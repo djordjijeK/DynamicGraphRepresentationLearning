@@ -679,7 +679,7 @@ TEST_F(WharfTest, WharfPlusPlusPlayground)
 TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 	dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
 	malin.generate_initial_random_walks();
-	int n_batches = 4; // todo: how many batches per batch size?
+	int n_batches = 1; // todo: how many batches per batch size?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
 	batch_sizes[0] = 5; //5;

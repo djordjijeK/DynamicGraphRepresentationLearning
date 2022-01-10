@@ -398,12 +398,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             sequence[index] = triplets[index];
 
                         pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
-						vector<dygrl::CompressedWalks> vec_compwalks; vec_compwalks.push_back(dygrl::CompressedWalks(sequence, vertex, next_min[vertex], next_max[vertex]));
+						// assume the initial random walks are created at batch 0
+						vector<dygrl::CompressedWalks> vec_compwalks;
+						vec_compwalks.push_back(dygrl::CompressedWalks(sequence, vertex, next_min[vertex], next_max[vertex], 0));
                         vertices[vertex] = std::make_pair(vertex, VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
                     }
                     else
                     {
-	                    vector<dygrl::CompressedWalks> vec_compwalks; vec_compwalks.push_back(dygrl::CompressedWalks());
+	                    vector<dygrl::CompressedWalks> vec_compwalks; vec_compwalks.push_back(dygrl::CompressedWalks(0)); // at batch 0
 	                    vertices[vertex] = std::make_pair(vertex, VertexEntry(types::CompressedEdges(), vec_compwalks,new dygrl::SamplerManager(0)));
                     }
                 });
@@ -698,7 +700,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     auto S = pbbs::delayed_seq<uintV>(deg, [&] (size_t i) { return get<1>(E[off + i]); });
 
-					vector<dygrl::CompressedWalks> vec_compwalks; vec_compwalks.push_back(dygrl::CompressedWalks());
+					vector<dygrl::CompressedWalks> vec_compwalks; vec_compwalks.push_back(dygrl::CompressedWalks(batch_num));
 //                    new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), dygrl::CompressedWalks(), new dygrl::SamplerManager(0)));
                     new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), vec_compwalks, new dygrl::SamplerManager(0)));
                 });
@@ -720,25 +722,23 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                    a.compressed_walks.iter_elms(v, [&](auto value)
 					MAV_time.start();
 					int num_walk_trees = a.compressed_walks.size();
-					int wt_num = 0;
+//					int wt_num = 0;
 					cout << "vertex " << v << " has " << num_walk_trees << " walk-trees" << endl;
 //					for (auto wt = a.compressed_walks.rbegin(); wt != a.compressed_walks.rend(); wt++)
-					for (auto wt = a.compressed_walks.begin(); wt != a.compressed_walks.end(); wt++)
+					// todo: at which batch_num each of the existing walk-trees was inserted?
+					for (auto wt = a.compressed_walks.begin(); wt != a.compressed_walks.end(); wt++) // TODO: this could be a parallel for
 					{
-						cout << "iterating wt-" << wt_num << endl;
+						cout << "iterating wt-" << wt->created_at_batch << "(created on batch-" << wt->created_at_batch << ")" << endl;
 						wt->iter_elms(v, [&](auto value)
 						{
 							auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
-
 							auto walk_id = pair.first / config::walk_length;
 							auto position = pair.first - (walk_id * config::walk_length);
 							auto next = pair.second;
 
-							// how to check
-							// if it is part of the latest walk-tree
-							// if it belongs to a previous walk-tree
 							if (MAVS.empty())
 							{
+								cout << "empty MAV, operating on walk-tree 0" << endl;
 								// proceed as before and construct the first MAV
 								if (!rewalk_points.template contains(walk_id))
 		                        {
@@ -754,14 +754,15 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 		                            }
 		                        }
 							}
-							else // it is not the first batch of edges. there are previous MAVs
+							else // it is not the first batch of edges. there are previous MAVs. runs in case of batch_num >= 2
 							{
 								auto p_min_global = config::walk_length;
 								// find the p_min_global among all existing MAVS for w
 //								for (auto& entry : MAVS.lock_table())  // TODO: NOT ALL MAVS! + no need to lock, as we do only reads
-								for (auto mav = wt_num+1; mav < batch_num; mav++)
+								for (auto mav = wt->created_at_batch+1; mav < batch_num; mav++)
 								{
 //									cout << "aa" << endl;
+//									cout << "checking MAV-" << mav << endl;
 									if (MAVS.template find(mav).template contains(walk_id))
 									{
 										auto temp_pos = get<0>((MAVS.template find(mav)).template find(walk_id)); // it does not always contain this wid
@@ -775,6 +776,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //								if ((position < p_min_global) && (p_min_global != config::walk_length))
 								if (position < p_min_global)
 								{
+									cout << "hey" << endl;
 									// take the triplet under consideration for the MAV and proceed normally
 									if (!rewalk_points.template contains(walk_id))
 									{
@@ -801,7 +803,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 //						cout << "walk-tree " << num_walk_trees << " CHECKED!" << endl;
 //						num_walk_trees--;
-						wt_num++;
+//						wt_num++;
 					}
 
 //                    a.compressed_walks.front().iter_elms(v, [&](auto value) // todo: CAUTION: to check only the last walk-tree
@@ -842,7 +844,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 walk_update_time_on_insert.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 if (apply_walk_updates)
-                        this->batch_walk_update(rewalk_points, affected_walks); // todo: deactivated the walks
+                        this->batch_walk_update(rewalk_points, affected_walks, batch_num); // todo: deactivated the walks
                 walk_update_time_on_insert.stop();
 
                 // 6. Deallocate memory
@@ -955,7 +957,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     auto S = pbbs::delayed_seq<uintV>(deg, [&] (size_t i) { return get<1>(E[off + i]); });
 
 //                    new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), dygrl::CompressedWalks(), new SamplerManager(0)));
-                    vector<dygrl::CompressedWalks> vec_compwalks; vec_compwalks.push_back(dygrl::CompressedWalks());
+                    vector<dygrl::CompressedWalks> vec_compwalks; vec_compwalks.push_back(dygrl::CompressedWalks(batch_num));
 //                    new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), dygrl::CompressedWalks(), new dygrl::SamplerManager(0)));
                     new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), vec_compwalks, new dygrl::SamplerManager(0)));
                 });
@@ -1015,7 +1017,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                    if (config::mini_batch_mode)
 //                        this->mini_batch_walk_update(rewalk_points, affected_walks);
 //                    else
-                        this->batch_walk_update(rewalk_points, affected_walks);
+                        this->batch_walk_update(rewalk_points, affected_walks, batch_num);
                 }
                 walk_update_time_on_delete.stop();
 
@@ -1051,7 +1053,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              * // TODO: make use of the nxt in order not to scan again the first walk-tree
              * @param types::MapOfChanges - rewalking points
              */
-            void batch_walk_update(types::MapAffectedVertices& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks)
+            void batch_walk_update(types::MapAffectedVertices& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks, int batch_num)
             {
 				walk_insert_init.start();
                 types::ChangeAccumulator deletes = types::ChangeAccumulator();
@@ -1306,7 +1308,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                         pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
 						vector<dygrl::CompressedWalks> vec_compwalks;
-						vec_compwalks.push_back(dygrl::CompressedWalks(sequence, item.first, next_min_wtree_I[item.first], next_max_wtree_I[item.first]));
+						vec_compwalks.push_back(dygrl::CompressedWalks(sequence, item.first, next_min_wtree_I[item.first], next_max_wtree_I[item.first], batch_num));
                         insert_walks[ind++] = std::make_pair(item.first,VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
                     }
                 },

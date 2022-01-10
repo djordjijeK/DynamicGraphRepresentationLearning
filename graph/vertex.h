@@ -103,8 +103,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				// Copy the (min, max) range as well
 				auto vnext_min = cw.vnext_min;
 				auto vnext_max = cw.vnext_max;
+				auto batch_num = cw.created_at_batch;
 
-				walk_trees_cpy.push_back(dygrl::CompressedWalks(cw_plus, cw_root, vnext_min, vnext_max)); // put all the compressed walks in the vector
+				walk_trees_cpy.push_back(dygrl::CompressedWalks(cw_plus, cw_root, vnext_min, vnext_max, batch_num)); // put all the compressed walks in the vector
 			}
 
 

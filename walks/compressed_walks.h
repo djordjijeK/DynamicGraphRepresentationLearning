@@ -19,12 +19,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              */
             types::Vertex vnext_min;
             types::Vertex vnext_max;
+			int created_at_batch;    // maintains the number of batch during which this walk-tree was created
 
             /**
              * @brief CompressedWalks default constructor.
              * REMARK: Initialize the (min,max) properly
              */
-            CompressedWalks() : walk_plus::treeplus(), vnext_min(std::numeric_limits<uint32_t>::max()), vnext_max(0) {};
+            CompressedWalks(int batch_num) : walk_plus::treeplus(), vnext_min(std::numeric_limits<uint32_t>::max()), vnext_max(0), created_at_batch(batch_num) {};
 
             /**
              * @brief CompressedWalks constructor.
@@ -32,8 +33,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              * @param plus - tree plus
              * @param root - tree root
              */
-            CompressedWalks(walk_plus::AT* plus, walk_plus::treeplus::Node* root, types::Vertex _vnext_min, types::Vertex _vnext_max)
-                : walk_plus::treeplus(plus, root), vnext_min(_vnext_min), vnext_max(_vnext_max) {};
+            CompressedWalks(walk_plus::AT* plus, walk_plus::treeplus::Node* root, types::Vertex _vnext_min, types::Vertex _vnext_max, int batch_num)
+                : walk_plus::treeplus(plus, root), vnext_min(_vnext_min), vnext_max(_vnext_max), created_at_batch(batch_num) {};
 
             /**
             * @brief CompressedWalks constructor.
@@ -45,8 +46,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             * @param flag
             */
             template<class Sequence>
-            CompressedWalks(const Sequence &sequence, types::Vertex source, types::Vertex _vnext_min, types::Vertex _vnext_max, pbbs::flags flag = pbbs::no_flag)
-                : walk_plus::treeplus(sequence, source, flag), vnext_min(_vnext_min), vnext_max(_vnext_max) {};
+            CompressedWalks(const Sequence &sequence, types::Vertex source, types::Vertex _vnext_min, types::Vertex _vnext_max, int batch_num, pbbs::flags flag = pbbs::no_flag)
+                : walk_plus::treeplus(sequence, source, flag), vnext_min(_vnext_min), vnext_max(_vnext_max), created_at_batch(batch_num) {};
 
             /**
             * @brief Finds the next vertex in the walk given walk id and position
