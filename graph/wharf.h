@@ -723,43 +723,44 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					MAV_time.start();
 					int num_walk_trees = a.compressed_walks.size();
 //					int wt_num = 0;
-					cout << "vertex " << v << " has " << num_walk_trees << " walk-trees" << endl;
+//					cout << "vertex " << v << " has " << num_walk_trees << " walk-trees" << endl;
 //					for (auto wt = a.compressed_walks.rbegin(); wt != a.compressed_walks.rend(); wt++)
 					// todo: at which batch_num each of the existing walk-trees was inserted?
-					for (auto wt = a.compressed_walks.begin(); wt != a.compressed_walks.end(); wt++) // TODO: this could be a parallel for
+//					for (auto wt = a.compressed_walks.begin(); wt != a.compressed_walks.end(); wt++) // TODO: this could be a parallel for
+					parallel_for(0, a.compressed_walks.size(), [&](int index)
 					{
-						cout << "iterating wt-" << wt->created_at_batch << "(created on batch-" << wt->created_at_batch << ")" << endl;
-						wt->iter_elms(v, [&](auto value)
+//						cout << "iterating wt-" << a.compressed_walks[index].created_at_batch << "(created on batch-" << a.compressed_walks[index].created_at_batch << ")" << endl;
+					    a.compressed_walks[index].iter_elms(v, [&](auto value)
 						{
 							auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
 							auto walk_id = pair.first / config::walk_length;
 							auto position = pair.first - (walk_id * config::walk_length);
 							auto next = pair.second;
 
-							if (MAVS.empty())
-							{
-//								cout << "empty MAV, operating on walk-tree 0" << endl;
-								// proceed as before and construct the first MAV
-								if (!rewalk_points.template contains(walk_id))
-		                        {
-		                            rewalk_points.template insert(walk_id, std::make_tuple(position, v, false));
-		                        }
-		                        else
-		                        {
-		                            types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
-
-		                            if (current_min_pos > position)
-		                            {
-		                                rewalk_points.template update(walk_id, std::make_tuple(position, v, false));
-		                            }
-		                        }
-							}
-							else // it is not the first batch of edges. there are previous MAVs. runs in case of batch_num >= 2
-							{
+//							if (MAVS.empty())
+//							{
+////								cout << "empty MAV, operating on walk-tree 0" << endl;
+//								// proceed as before and construct the first MAV
+//								if (!rewalk_points.template contains(walk_id))
+//		                        {
+//		                            rewalk_points.template insert(walk_id, std::make_tuple(position, v, false));
+//		                        }
+//		                        else
+//		                        {
+//		                            types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
+//
+//		                            if (current_min_pos > position)
+//		                            {
+//		                                rewalk_points.template update(walk_id, std::make_tuple(position, v, false));
+//		                            }
+//		                        }
+//							}
+//							else // it is not the first batch of edges. there are previous MAVs. runs in case of batch_num >= 2
+//							{
 								auto p_min_global = config::walk_length;
 								// find the p_min_global among all existing MAVS for w
 //								for (auto& entry : MAVS.lock_table())  // TODO: NOT ALL MAVS! + no need to lock, as we do only reads
-								for (auto mav = wt->created_at_batch+1; mav < batch_num; mav++)
+								for (auto mav = a.compressed_walks[index].created_at_batch+1; mav < batch_num; mav++)
 								{
 //									cout << "aa" << endl;
 //									cout << "checking MAV-" << mav << endl;
@@ -774,7 +775,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 								// Check the relationship of the triplet with respect to the p_min_global or the w
 //								if ((position < p_min_global) && (p_min_global != config::walk_length))
-								if (position < p_min_global)
+								if (position < p_min_global) // TODO: this accepts all?
 								{
 //									cout << "hey" << endl;
 									// take the triplet under consideration for the MAV and proceed normally
@@ -797,14 +798,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 									;
 									// todo: DELETE THE TRIPLET FROM THE CURRENT WALK-TREE
 								}
-							}
+//							}
 
 						});
 
 //						cout << "walk-tree " << num_walk_trees << " CHECKED!" << endl;
-//						num_walk_trees--;
-//						wt_num++;
-					}
+
+					});
+//					}
 
 //                    a.compressed_walks.front().iter_elms(v, [&](auto value) // todo: CAUTION: to check only the last walk-tree
 //                    {
