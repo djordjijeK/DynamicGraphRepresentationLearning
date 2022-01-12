@@ -679,10 +679,10 @@ TEST_F(WharfTest, WharfPlusPlusPlayground)
 TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 	dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
 	malin.generate_initial_random_walks();
-	int n_batches = 2; // todo: how many batches per batch size?
+	int n_batches = 4; // todo: how many batches per batch size?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 5; //5;
+	batch_sizes[0] = 500; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -709,6 +709,7 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 		szudzik_hash.reset();
 		fnir_tree_search.reset();
 		MAV_time.reset();
+		read_access_MAV.reset();
 		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -777,6 +778,10 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 		std::cout << "Average MAV (we are not deleting obsolete parts) = "
 		          << MAV_time.get_total() / n_batches
 		          << std::endl;
+		// read access time MAV
+		std::cout << "Average Read Access Time MAV = "
+		          << read_access_MAV.get_total() / n_batches
+		          << std::endl;
 
 		// --- profiling ---
 		std::cout << "{ total profiling for insert and delete" << std::endl;
@@ -840,8 +845,9 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 //		int inc = 0;
 //		for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // print the walk-trees in chronological order
 //		{
-//			inc++;
+////			inc++;
 //			cout << "walk-tree " << inc << endl;
+//			inc++;
 //			wt->iter_elms(i, [&](auto enc_triplet){
 //			  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
 //

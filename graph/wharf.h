@@ -3,6 +3,7 @@
 
 #include <graph/api.h>
 #include <cuckoohash_map.hh>
+#include <pbbslib/utilities.h>
 //#include <concurrentqueue.h>
 
 #include <config.h>
@@ -764,12 +765,21 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 								{
 //									cout << "aa" << endl;
 //									cout << "checking MAV-" << mav << endl;
-									if (MAVS.template find(mav).template contains(walk_id))
+									read_access_MAV.start();
+//									if (MAVS.template find(mav).template contains(walk_id))
+//									{//MAVS.template find_fn()
+//										auto temp_pos = get<0>((MAVS.template find(mav)).template find(walk_id)); // it does not always contain this wid
+//										if (temp_pos < p_min_global)
+//											p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
+//									}
+
+									if (MAVS2[mav].template contains(walk_id))
 									{
-										auto temp_pos = get<0>((MAVS.template find(mav)).template find(walk_id)); // it does not always contain this wid
+										auto temp_pos = get<0>((MAVS2[mav]).template find(walk_id)); // it does not always contain this wid
 										if (temp_pos < p_min_global)
 											p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
 									}
+									read_access_MAV.stop();
 //									cout << "bb" << endl;
 								} // constructed the p_min_global for this w. preffix of MAVS. preffix tree (trie data structure?)
 
@@ -841,6 +851,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 				// Store/cache the MAV of each batch
 				MAVS.insert(batch_num, rewalk_points);
+				MAVS2[batch_num] = rewalk_points;
 
                 walk_update_time_on_insert.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
@@ -1010,6 +1021,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 	            // Store/cache the MAV of each batch
 	            MAVS.insert(batch_num, rewalk_points);
+				MAVS2[batch_num] = rewalk_points;
 
                 walk_update_time_on_delete.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
@@ -1536,6 +1548,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             Graph graph_tree;
 //			vector<types::MapAffectedVertices> MAVS;
             libcuckoo::cuckoohash_map<int, types::MapAffectedVertices> MAVS; // batch_num, MAV[batch_num]
+			types::MapAffectedVertices MAVS2[10];
 
             /**
             * Initializes memory pools for underlying lists.
