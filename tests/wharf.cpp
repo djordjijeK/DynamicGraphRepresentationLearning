@@ -679,7 +679,7 @@ TEST_F(WharfTest, WharfPlusPlusPlayground)
 TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 	dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
 	malin.generate_initial_random_walks();
-	int n_batches = 2; // todo: how many batches per batch size?
+	int n_batches = 3; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
@@ -784,6 +784,10 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 		std::cout << "Average Read Access Time MAV = "
 		          << read_access_MAV.get_total() / n_batches
 		          << std::endl;
+
+		std::cout << "Total MAV (we are not deleting obsolete parts) = " << MAV_time.get_total() << std::endl;
+		std::cout << "Total Read Access Time MAV = " << read_access_MAV.get_total() << std::endl;
+		std::cout << "Total walk update insert time = " << walk_update_time_on_insert.get_total() << ", average walk affected = " << total_insert_walks_affected / n_batches << std::endl;
 
 		// --- profiling ---
 		std::cout << "{ total profiling for insert and delete" << std::endl;
