@@ -37,7 +37,7 @@ namespace types
     enum SamplerInitStartegy   { RANDOM, BURNIN, WEIGHT };
 
     // Global Map of Changes (MoC) = contains starting positions to crop the walk
-    using MapAffectedVertices         = libcuckoo::cuckoohash_map<WalkID, std::tuple<Position, Vertex, bool>>; //, Vertex>>; // ADDED the next vertex id
+    using MapAffectedVertices  = libcuckoo::cuckoohash_map<WalkID, std::tuple<Position, Vertex, bool>>; //, Vertex>>; // ADDED the next vertex id
 
     // ChangeAccumulator = accumulator of changes for walk updates
     using ChangeAccumulator    = libcuckoo::cuckoohash_map<Vertex, std::vector<PairedTriplet>>; // WalkID made to Vertex
