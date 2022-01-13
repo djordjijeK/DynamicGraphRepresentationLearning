@@ -15,8 +15,8 @@ class WharfMHTest : public testing::Test
         uintE* offsets;
         bool mmap = false;
         bool is_symmetric = true;
-//        std::string default_file_path = "data/aspen-paper-graph";
-        std::string default_file_path = "data/flickr-graph";
+        std::string default_file_path = "data/aspen-paper-graph";
+//        std::string default_file_path = "data/flickr-graph";
 };
 
 void WharfMHTest::SetUp()
@@ -228,7 +228,7 @@ TEST_F(WharfMHTest, WharfInsertOnlyWorkload) {
 	int n_batches = 3; // todo: how many batches per batch size?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 500; //5;
+	batch_sizes[0] = 5; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -376,6 +376,15 @@ TEST_F(WharfMHTest, WharfInsertOnlyWorkload) {
 		}
 		std::cout << "}" << std::endl;
 	}
+
+// ----------------------------------------------
+	cout << "(NEW) WALKS" << endl;
+	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+		cout << malin.walk(i) << endl;
+
+	cout << "(NEW) INV INDEX" << endl;
+	malin.walk_index_print();
+// ----------------------------------------------
 
 //	auto flat_graph = malin.flatten_vertex_tree();
 //	for (auto i = 0; i < malin.number_of_vertices(); i++)
