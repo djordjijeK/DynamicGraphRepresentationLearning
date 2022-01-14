@@ -15,8 +15,8 @@ class WharfMHTest : public testing::Test
         uintE* offsets;
         bool mmap = false;
         bool is_symmetric = true;
-        std::string default_file_path = "data/aspen-paper-graph";
-//        std::string default_file_path = "data/flickr-graph";
+//        std::string default_file_path = "data/aspen-paper-graph";
+        std::string default_file_path = "data/flickr-graph";
 };
 
 void WharfMHTest::SetUp()
@@ -225,7 +225,7 @@ TEST_F(WharfMHTest, BatchGenerator)
 TEST_F(WharfMHTest, WharfInsertOnlyWorkload) {
 	dygrl::WharfMH malin = dygrl::WharfMH(total_vertices, total_edges, offsets, edges);
 	malin.generate_initial_random_walks();
-	int n_batches = 3; // todo: how many batches per batch size?
+	int n_batches = 4; // todo: how many batches per batch size?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
 	batch_sizes[0] = 5; //5;
@@ -377,14 +377,14 @@ TEST_F(WharfMHTest, WharfInsertOnlyWorkload) {
 		std::cout << "}" << std::endl;
 	}
 
-// ----------------------------------------------
-	cout << "(NEW) WALKS" << endl;
-	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-		cout << malin.walk(i) << endl;
-
-	cout << "(NEW) INV INDEX" << endl;
-	malin.walk_index_print();
-// ----------------------------------------------
+//// ----------------------------------------------
+//	cout << "(NEW) WALKS" << endl;
+//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+//		cout << malin.walk(i) << endl;
+//
+//	cout << "(NEW) INV INDEX" << endl;
+//	malin.walk_index_print();
+//// ----------------------------------------------
 
 //	auto flat_graph = malin.flatten_vertex_tree();
 //	for (auto i = 0; i < malin.number_of_vertices(); i++)
