@@ -872,6 +872,7 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 //			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
 			});
 			cout << endl;
+			cout << "size of walk-tree " << wt->size() << endl;
 		}
 	}
 

@@ -1485,6 +1485,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						inc++;
 					}
 
+					// check how many triplets we have to delete from each walk-tree
+					for (auto ii = 0; ii < flat_graph[i].compressed_walks.size(); ii++)
+					{
+						cout << flat_graph[i].compressed_walks[ii].size() << "(" << triplets_to_delete[ii].size() << ") ";
+					}
+					cout << endl;
+					// -------------------------------------------------------------
+
 					vector<dygrl::CompressedWalks> vec_compwalks;
 					// traverse and apply "deletion" walk-trees to their corresponding walk-trees
 					for (auto j = 0; j < flat_graph[i].compressed_walks.size(); j++)
@@ -1519,24 +1527,53 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                            walk_plus::Tree_GC::decrement_recursive(y.compressed_walks[ind].root);
 						}
 
+						for (auto ind = 0; ind < new_compressed_vector.size(); ind++)
+						{
+							cout << new_compressed_vector[ind].size() << " ";
+						}
+						cout << endl;
+
 						// merge the refined walk-trees here
 					    std::vector<dygrl::CompressedWalks> final_compressed_vector;
-						final_compressed_vector.push_back(new_compressed_vector[0]);
-						if (new_compressed_vector.size() > 1)
-							for (auto ind = 1; ind < new_compressed_vector.size(); ind++)
-							{
-								auto union_all_tree = walk_plus::uniont(new_compressed_vector[ind], final_compressed_vector[0], src);
-								final_compressed_vector.clear();
-								final_compressed_vector.push_back(dygrl::CompressedWalks(union_all_tree.plus, union_all_tree.root, 666, 666, 666));
-							}
+//						final_compressed_vector.push_back(new_compressed_vector[0]);
+//						if (x.compressed_walks.size() > 1)
+//						{
+//							for (auto ind = 1; ind < x.compressed_walks.size(); ind++)
+//							{
+//								auto union_all_tree = walk_plus::uniont(new_compressed_vector[ind], final_compressed_vector[0], src);
+////								final_compressed_vector.clear();
+//								final_compressed_vector[0] = dygrl::CompressedWalks(union_all_tree.plus, union_all_tree.root, 666, 666, 666);
+//							}
+//						}
+
+						final_compressed_vector.push_back(CompressedWalks(666));
+						for (auto ind = 0; ind < new_compressed_vector.size(); ind++)
+						{
+							auto union_all_tree = walk_plus::uniont(new_compressed_vector[ind], final_compressed_vector[0], src);
+
+							// deallocate the memory
+							lists::deallocate(new_compressed_vector[ind].plus);
+							walk_plus::Tree_GC::decrement_recursive(new_compressed_vector[ind].root);
+							lists::deallocate(final_compressed_vector[0].plus);
+							walk_plus::Tree_GC::decrement_recursive(final_compressed_vector[0].root);
+
+							final_compressed_vector[0] = dygrl::CompressedWalks(union_all_tree.plus, union_all_tree.root, 666, 666, 666);
+						}
+
+						cout << "inside replaceI size of final_compressed_vector: " << final_compressed_vector[0].size() << endl;
+
+					    auto toreturn_final_compressed_vector = dygrl::CompressedWalks(final_compressed_vector[0].plus, final_compressed_vector[0].root, 666, 666, 666);
+					    std::vector<dygrl::CompressedWalks> return_vector;
+						return_vector.push_back(toreturn_final_compressed_vector);
 
 //	                    return VertexEntry(x.compressed_edges, new_compressed_vector, x.sampler_manager);
-	                    return VertexEntry(x.compressed_edges, final_compressed_vector, x.sampler_manager);
+	                    return VertexEntry(x.compressed_edges, return_vector, x.sampler_manager);
 					};
 
 					this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, insert_walks.begin(), insert_walks.size(), replaceI, true);
 
 					// merge all "updated" walk-trees into one walk-tree
+					cout << flat_graph[i].compressed_walks[0].size() << " is equal to " << this->graph_tree.find(i).value.compressed_walks[0].size() << endl; // print out the size of the final single walk-tree
 				}
 			}
 
