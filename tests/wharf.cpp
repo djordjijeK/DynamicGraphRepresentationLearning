@@ -16,8 +16,8 @@ class WharfTest : public testing::Test
         bool mmap = false;
         bool is_symmetric = true;
 //        std::string default_file_path = "data/email-graph";
-//        std::string default_file_path = "data/flickr-graph";
-        std::string default_file_path = "data/aspen-paper-graph";
+        std::string default_file_path = "data/flickr-graph";
+//        std::string default_file_path = "data/aspen-paper-graph";
 };
 
 void WharfTest::SetUp()
@@ -839,47 +839,47 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 	}
 
 	// Merge all walks after the bathes
-	timer MergeAll("MergeAllTimer", false);
-	MergeAll.start();
-	malin.merge_walk_trees_all_vertices(n_batches);
-	MergeAll.stop();
-	std::cout << "Merge all the walk-trees time: " << MergeAll.get_total() << std::endl;
+//	timer MergeAll("MergeAllTimer", false);
+//	MergeAll.start();
+//	malin.merge_walk_trees_all_vertices(n_batches);
+//	MergeAll.stop();
+//	std::cout << "Merge all the walk-trees time: " << MergeAll.get_total() << std::endl;
 
 
-	auto flat_graph = malin.flatten_vertex_tree();
-	for (auto i = 0; i < malin.number_of_vertices(); i++)
-	{
-		cout << "vertex " << i << endl;
-//		flat_graph[i].compressed_edges.iter_elms(i, [&](auto edge){
-//			cout << edge << " ";
-//		});
-//		cout << endl;
-
-		cout << "size of walk-tree vector " << flat_graph[i].compressed_walks.size() << endl;
-		int inc = 0;
-		for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // print the walk-trees in chronological order
-		{
+//	auto flat_graph = malin.flatten_vertex_tree();
+//	for (auto i = 0; i < malin.number_of_vertices(); i++)
+//	{
+//		cout << "vertex " << i << endl;
+////		flat_graph[i].compressed_edges.iter_elms(i, [&](auto edge){
+////			cout << edge << " ";
+////		});
+////		cout << endl;
+//
+//		cout << "size of walk-tree vector " << flat_graph[i].compressed_walks.size() << endl;
+//		int inc = 0;
+//		for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // print the walk-trees in chronological order
+//		{
+////			inc++;
+//			cout << "walk-tree " << inc << endl;
 //			inc++;
-			cout << "walk-tree " << inc << endl;
-			inc++;
-			wt->iter_elms(i, [&](auto enc_triplet){
-			  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
-
-			  auto walk_id  = pair.first / config::walk_length;                  // todo: needs floor?
-			  auto position = pair.first - (walk_id * config::walk_length); // todo: position here starts from 0. verify this one!
-			  auto next_vertex   = pair.second;
-//				cout << enc_triplet << " ";
-//			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
-			});
-			cout << endl;
-			cout << "size of walk-tree " << wt->size() << endl;
-		}
-	}
-
-// ----------------------------------------------
-	cout << "(NEW) WALKS" << endl;
-	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-		cout << malin.walk_simple_find(i) << endl;
-// ----------------------------------------------
+//			wt->iter_elms(i, [&](auto enc_triplet){
+//			  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
+//
+//			  auto walk_id  = pair.first / config::walk_length;                  // todo: needs floor?
+//			  auto position = pair.first - (walk_id * config::walk_length); // todo: position here starts from 0. verify this one!
+//			  auto next_vertex   = pair.second;
+////				cout << enc_triplet << " ";
+////			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
+//			});
+//			cout << endl;
+//			cout << "size of walk-tree " << wt->size() << endl;
+//		}
+//	}
+//
+//// ----------------------------------------------
+//	cout << "(NEW) WALKS" << endl;
+//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+//		cout << malin.walk_simple_find(i) << endl;
+//// ----------------------------------------------
 
 }
