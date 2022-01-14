@@ -15,8 +15,8 @@ class WharfTest : public testing::Test
         uintE* offsets;
         bool mmap = false;
         bool is_symmetric = true;
-//        std::string default_file_path = "data/email-graph";
-        std::string default_file_path = "data/flickr-graph";
+        std::string default_file_path = "data/email-graph";
+//        std::string default_file_path = "data/flickr-graph";
 //        std::string default_file_path = "data/aspen-paper-graph";
 };
 
@@ -839,11 +839,11 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 	}
 
 	// Merge all walks after the bathes
-//	timer MergeAll("MergeAllTimer", false);
-//	MergeAll.start();
-//	malin.merge_walk_trees_all_vertices(n_batches);
-//	MergeAll.stop();
-//	std::cout << "Merge all the walk-trees time: " << MergeAll.get_total() << std::endl;
+	timer MergeAll("MergeAllTimer", false);
+	MergeAll.start();
+	malin.merge_walk_trees_all_vertices(n_batches);
+	MergeAll.stop();
+	std::cout << "Merge all the walk-trees time: " << MergeAll.get_total() << std::endl;
 
 
 //	auto flat_graph = malin.flatten_vertex_tree();
@@ -877,9 +877,9 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 //	}
 //
 //// ----------------------------------------------
-//	cout << "(NEW) WALKS" << endl;
-//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-//		cout << malin.walk_simple_find(i) << endl;
+	cout << "(NEW) WALKS" << endl;
+	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+		cout << malin.walk_simple_find(i) << endl;
 //// ----------------------------------------------
 
 }
