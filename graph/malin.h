@@ -23,7 +23,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
     {
         public:
             using Graph = aug_map<dygrl::Vertex>;
-			int number_sampled_vertices;
+            std::atomic<int> number_sampled_vertices;
 
             /**
              * @brief Malin constructor.
