@@ -15,8 +15,8 @@ class WharfTest : public testing::Test
         uintE* offsets;
         bool mmap = false;
         bool is_symmetric = true;
-        std::string default_file_path = "data/email-graph";
-//        std::string default_file_path = "data/flickr-graph";
+//        std::string default_file_path = "data/email-graph";
+        std::string default_file_path = "data/flickr-graph";
 //        std::string default_file_path = "data/aspen-paper-graph";
 };
 
@@ -788,6 +788,7 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 		std::cout << "Total MAV (we are not deleting obsolete parts) = " << MAV_time.get_total() << std::endl;
 		std::cout << "Total Read Access Time MAV = " << read_access_MAV.get_total() << std::endl;
 		std::cout << "Total walk update insert time = " << walk_update_time_on_insert.get_total() << ", average walk affected = " << total_insert_walks_affected / n_batches << std::endl;
+		std::cout << "Total #sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
 
 		// --- profiling ---
 		std::cout << "{ total profiling for insert and delete" << std::endl;
@@ -877,9 +878,9 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 //	}
 //
 //// ----------------------------------------------
-	cout << "(NEW) WALKS" << endl;
-	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-		cout << malin.walk_simple_find(i) << endl;
+//	cout << "(NEW) WALKS" << endl;
+//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+//		cout << malin.walk_simple_find(i) << endl;
 //// ----------------------------------------------
 
 }

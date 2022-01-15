@@ -24,6 +24,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
     {
         public:
             using Graph = aug_map<dygrl::Vertex>;
+			int number_of_sampled_vertices;
 
             /**
              * @brief Malin constructor.
@@ -73,6 +74,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 				// Initialize the MAVs vector. 1 MAV for each batch
 				MAVS = libcuckoo::cuckoohash_map<int, types::MapAffectedVertices>();
+				number_of_sampled_vertices = 0;
 
                 // 5. Memory cleanup
                 if (free_memory)
@@ -1194,6 +1196,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							else
                                 state = temp_state;
 
+							number_of_sampled_vertices++;
+
 							szudzik_hash.start();
                             types::PairedTriplet hash = (position != config::walk_length - 1) ?
                                 pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
@@ -1425,23 +1429,23 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 			 void merge_walk_trees_all_vertices(int num_batches_so_far)
 			{
 	            auto flat_graph = this->flatten_vertex_tree();
-				for (auto i = 0; i < this->number_of_vertices(); i++)
+				for (auto i = 0; i < this->number_of_vertices(); i++) // TODO: make this parallel for
 				{
 					// Create a pbbs array of walk-trees
 					auto deletions_walk_trees = pbbs::new_array_no_init<CompressedWalks>(flat_graph[i].compressed_walks.size());
 
-					cout << "merging on vertex " << i << "\t(size of walk-tree vector " << flat_graph[i].compressed_walks.size() << ")" << endl;
+//					cout << "merging on vertex " << i << "\t(size of walk-tree vector " << flat_graph[i].compressed_walks.size() << ")" << endl;
 					int inc = 0;
 
 //					std::vector<types::PairedTriplet> triplets_to_delete;
 					auto triplets_to_delete = pbbs::new_array<std::vector<types::PairedTriplet>>(flat_graph[i].compressed_walks.size());
 
 					// traverse each walk-tree and find out the obsolete triplets and create corresponding "deletion" walk-trees
-					for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // print the walk-trees in chronological order
+					for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // TODO: make this parallel for
 					{
 						// Define the triplets to delete vector for each walk-tree
 
-						cout << "walk-tree " << inc << endl;
+//						cout << "walk-tree " << inc << endl;
 
 						wt->iter_elms(i, [&](auto enc_triplet){
 						  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
@@ -1480,17 +1484,17 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						  }
 
 						});
-						cout << endl;
+//						cout << endl;
 
 						inc++;
 					}
 
 					// check how many triplets we have to delete from each walk-tree
-					for (auto ii = 0; ii < flat_graph[i].compressed_walks.size(); ii++)
-					{
-						cout << flat_graph[i].compressed_walks[ii].size() << "(" << triplets_to_delete[ii].size() << ") ";
-					}
-					cout << endl;
+//					for (auto ii = 0; ii < flat_graph[i].compressed_walks.size(); ii++)
+//					{
+//						cout << flat_graph[i].compressed_walks[ii].size() << "(" << triplets_to_delete[ii].size() << ") ";
+//					}
+//					cout << endl;
 					// -------------------------------------------------------------
 
 					vector<dygrl::CompressedWalks> vec_compwalks;
@@ -1527,11 +1531,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                            walk_plus::Tree_GC::decrement_recursive(y.compressed_walks[ind].root);
 						}
 
-						for (auto ind = 0; ind < new_compressed_vector.size(); ind++)
-						{
-							cout << new_compressed_vector[ind].size() << " ";
-						}
-						cout << endl;
+//						for (auto ind = 0; ind < new_compressed_vector.size(); ind++)
+//						{
+//							cout << new_compressed_vector[ind].size() << " ";
+//						}
+//						cout << endl;
 
 						// merge the refined walk-trees here
 					    std::vector<dygrl::CompressedWalks> final_compressed_vector;
@@ -1560,7 +1564,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							final_compressed_vector[0] = dygrl::CompressedWalks(union_all_tree.plus, union_all_tree.root, 666, 666, 666);
 						}
 
-						cout << "inside replaceI size of final_compressed_vector: " << final_compressed_vector[0].size() << endl;
+//						cout << "inside replaceI size of final_compressed_vector: " << final_compressed_vector[0].size() << endl;
 
 					    auto toreturn_final_compressed_vector = dygrl::CompressedWalks(final_compressed_vector[0].plus, final_compressed_vector[0].root, 666, 666, 666);
 					    std::vector<dygrl::CompressedWalks> return_vector;
@@ -1573,7 +1577,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, insert_walks.begin(), insert_walks.size(), replaceI, true);
 
 					// merge all "updated" walk-trees into one walk-tree
-					cout << flat_graph[i].compressed_walks[0].size() << " is equal to " << this->graph_tree.find(i).value.compressed_walks[0].size() << endl; // print out the size of the final single walk-tree
+//					cout << flat_graph[i].compressed_walks[0].size() << " is equal to " << this->graph_tree.find(i).value.compressed_walks[0].size() << endl; // print out the size of the final single walk-tree
 				}
 			}
 
