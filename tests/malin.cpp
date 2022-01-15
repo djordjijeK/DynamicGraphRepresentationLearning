@@ -515,7 +515,7 @@ TEST_F(MalinTest, BatchGenerator)
 TEST_F(MalinTest, WharfInsertOnlyWorkload) {
 	dygrl::Malin malin = dygrl::Malin(total_vertices, total_edges, offsets, edges);
 	malin.generate_initial_random_walks();
-	int n_batches = 1; // todo: how many batches per batch size?
+	int n_batches = 3; // todo: how many batches per batch size?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
 	batch_sizes[0] = 5; //5;
@@ -662,6 +662,8 @@ TEST_F(MalinTest, WharfInsertOnlyWorkload) {
 		}
 		std::cout << "}" << std::endl;
 	}
+
+	std::cout << "Total #sampled vertices = " << malin.number_sampled_vertices << std::endl;
 
 //	auto flat_graph = malin.flatten_vertex_tree();
 //	for (auto i = 0; i < malin.number_of_vertices(); i++)

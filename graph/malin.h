@@ -23,6 +23,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
     {
         public:
             using Graph = aug_map<dygrl::Vertex>;
+			int number_sampled_vertices;
 
             /**
              * @brief Malin constructor.
@@ -66,6 +67,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // 4. Construct the graph
                 auto replace = [](const VertexEntry& x, const VertexEntry& y) { return y; };
                 this->graph_tree = Graph::Tree::multi_insert_sorted(nullptr, vertices.begin(), vertices.size(), replace, true);
+
+				number_sampled_vertices = 0;
 
                 // 5. Memory cleanup
                 if (free_memory)
@@ -1271,6 +1274,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             }
 							else
                                 state = temp_state;
+
+							number_sampled_vertices++;
 
 							szudzik_hash.start();
                             types::PairedTriplet hash = (position != config::walk_length - 1) ?
