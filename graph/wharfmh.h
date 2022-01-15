@@ -24,6 +24,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             using Graph       = aug_map<dygrl::Vertex>;
             using WalkStorage = libcuckoo::cuckoohash_map<types::WalkID, std::vector<types::Vertex>>;
 			using WalkIndex   = libcuckoo::cuckoohash_map<types::Vertex, std::set<types::WalkID>>;
+            std::atomic<int> number_sampled_vertices;
 
             /**
              * @brief WharfMH constructor.
@@ -63,6 +64,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // 4. Construct the graph
                 auto replace = [](const VertexEntry& x, const VertexEntry& y) { return y; };
                 this->graph_tree = Graph::Tree::multi_insert_sorted(nullptr, vertices.begin(), vertices.size(), replace, true);
+
+				number_sampled_vertices = 0;
 
                 // 5. Memory cleanup
                 if (free_memory)
@@ -869,6 +872,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //								state = model->new_state(state, graph[state.first].neighbors[0]); // todo: do not use this one
 							else
 								state = graph[state.first].samplers->find(state.second).sample(state, model);
+
+							number_sampled_vertices++;
 						}
                     }
 

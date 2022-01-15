@@ -378,6 +378,8 @@ TEST_F(WharfMHTest, WharfInsertOnlyWorkload) {
 		std::cout << "}" << std::endl;
 	}
 
+	std::cout << "Total #sampled vertices = " << malin.number_sampled_vertices << std::endl;
+
 //// ----------------------------------------------
 //	cout << "(NEW) WALKS" << endl;
 //	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
