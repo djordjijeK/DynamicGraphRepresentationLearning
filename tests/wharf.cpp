@@ -842,7 +842,7 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 	// Merge all walks after the bathes
 	timer MergeAll("MergeAllTimer", false);
 	MergeAll.start();
-	malin.merge_walk_trees_all_vertices(n_batches);
+	malin.merge_walk_trees_all_vertices_parallel(n_batches); // use the parallel merging
 	MergeAll.stop();
 	std::cout << "Merge all the walk-trees time: " << MergeAll.get_total() << std::endl;
 
@@ -878,7 +878,7 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 //	}
 //
 //// ----------------------------------------------
-//	cout << "(NEW) WALKS" << endl;
+	cout << "(NEW) WALKS" << endl;
 //	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
 //		cout << malin.walk_simple_find(i) << endl;
 //// ----------------------------------------------
