@@ -75,7 +75,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				// Initialize the MAVs vector. 1 MAV for each batch
 //				MAVS = libcuckoo::cuckoohash_map<int, types::MapAffectedVertices>();
 				for (auto i = 0; i < 10; i++)
-					MAVS2[i] = types::MapAffectedVertices();
+					MAVS2.push_back(types::MapAffectedVertices());
 
 				number_of_sampled_vertices = 0;
 
@@ -1904,7 +1904,8 @@ cout << "4" << endl;
             Graph graph_tree;
 //			vector<types::MapAffectedVertices> MAVS;
 //            libcuckoo::cuckoohash_map<int, types::MapAffectedVertices> MAVS; // batch_num, MAV[batch_num]
-			types::MapAffectedVertices MAVS2[10];
+//			types::MapAffectedVertices MAVS2[10];
+			std::vector<types::MapAffectedVertices> MAVS2;
 
             /**
             * Initializes memory pools for underlying lists.
