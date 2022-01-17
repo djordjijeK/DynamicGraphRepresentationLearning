@@ -859,7 +859,13 @@ cout << "2" << endl;
 cout << "rewalk_points before: " << rewalk_points.size() << endl;
 cout << "size of the MAV2[batch_num]: " << MAVS2[batch_num].size() << endl;
 cout << "batch num: " << batch_num << endl;
-				MAVS2[batch_num] = rewalk_points;
+	            for(auto& entry : rewalk_points.lock_table()) // todo: blocking?
+	            {
+		            MAVS2[batch_num].insert(entry.first, entry.second);
+	            }
+	            assert(rewalk_points.size() == MAVS2[batch_num].size());
+
+//				MAVS2[batch_num] = rewalk_points;
 cout << "rewalk_points  after: " << rewalk_points.size() << endl;
 cout << "3" << endl;
                 walk_update_time_on_insert.start();
@@ -1028,9 +1034,14 @@ cout << "4" << endl;
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace, true, run_seq);
                 graph_update_time_on_delete.stop();
 
+	            for(auto& entry : rewalk_points.lock_table()) // todo: blocking?
+	            {
+		            MAVS2[batch_num].insert(entry.first, entry.second);
+	            }
+	            assert(rewalk_points.size() == MAVS2[batch_num].size());
 	            // Store/cache the MAV of each batch
 //	            MAVS.insert(batch_num, rewalk_points);
-				MAVS2[batch_num] = rewalk_points;
+//				MAVS2[batch_num] = rewalk_points;
 
                 walk_update_time_on_delete.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
