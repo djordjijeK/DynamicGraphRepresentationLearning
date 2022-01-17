@@ -73,7 +73,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 this->graph_tree = Graph::Tree::multi_insert_sorted(nullptr, vertices.begin(), vertices.size(), replace, true);
 
 				// Initialize the MAVs vector. 1 MAV for each batch
-				MAVS = libcuckoo::cuckoohash_map<int, types::MapAffectedVertices>();
+//				MAVS = libcuckoo::cuckoohash_map<int, types::MapAffectedVertices>();
+				for (auto i = 0; i < 10; i++)
+					MAVS2[i] = types::MapAffectedVertices();
+
 				number_of_sampled_vertices = 0;
 
                 // 5. Memory cleanup
@@ -1024,7 +1027,7 @@ cout << "4" << endl;
                 graph_update_time_on_delete.stop();
 
 	            // Store/cache the MAV of each batch
-	            MAVS.insert(batch_num, rewalk_points);
+//	            MAVS.insert(batch_num, rewalk_points);
 				MAVS2[batch_num] = rewalk_points;
 
                 walk_update_time_on_delete.start();
@@ -1900,7 +1903,7 @@ cout << "4" << endl;
         private:
             Graph graph_tree;
 //			vector<types::MapAffectedVertices> MAVS;
-            libcuckoo::cuckoohash_map<int, types::MapAffectedVertices> MAVS; // batch_num, MAV[batch_num]
+//            libcuckoo::cuckoohash_map<int, types::MapAffectedVertices> MAVS; // batch_num, MAV[batch_num]
 			types::MapAffectedVertices MAVS2[10];
 
             /**
