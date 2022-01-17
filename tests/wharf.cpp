@@ -684,7 +684,7 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 5; //5;
+	batch_sizes[0] = 5000; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -736,13 +736,14 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], total_vertices, batch_seed[b], false, false);
 
 			std::cout << edges.second << " ";
-		    for (auto i = 0; i < edges.second; i++)
-		        cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+//		    for (auto i = 0; i < edges.second; i++)
+//		        cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
+cout << "10" << endl;
 			insert_timer.start();
 			auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
-
+cout << "11" << endl;
 			total_insert_walks_affected += x.size();
 
 			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;

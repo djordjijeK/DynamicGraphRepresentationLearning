@@ -846,21 +846,21 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager
                 };
-
+cout << "1" << endl;
                 graph_update_time_on_insert.start();
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace,true, run_seq);
                 graph_update_time_on_insert.stop();
-
+cout << "2" << endl;
 				// Store/cache the MAV of each batch
 				MAVS.insert(batch_num, rewalk_points);
 				MAVS2[batch_num] = rewalk_points;
-
+cout << "3" << endl;
                 walk_update_time_on_insert.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 if (apply_walk_updates)
                         this->batch_walk_update(rewalk_points, affected_walks, batch_num); // todo: deactivated the walks
                 walk_update_time_on_insert.stop();
-
+cout << "4" << endl;
                 // 6. Deallocate memory
                 if (num_starts > stack_size) pbbs::free_array(new_verts);
                 if (edges_deduped)           pbbs::free_array(edges_deduped);

@@ -332,8 +332,8 @@ void throughput(commandLine& command_line)
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[b], false, false);
 
 			std::cout << edges.second << " ";
-			for (auto i = 0; i < edges.second; i++)
-				cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
+//			for (auto i = 0; i < edges.second; i++)
+//				cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
 			insert_timer.start();
 			auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
