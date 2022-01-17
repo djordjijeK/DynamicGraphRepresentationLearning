@@ -312,7 +312,7 @@ void throughput(commandLine& command_line)
 //		std::cout << "Total MAV (we are not deleting obsolete parts) = " << MAV_time.get_total() << std::endl;
 //		std::cout << "Total Read Access Time MAV = " << read_access_MAV.get_total() << std::endl;
 		std::cout << "Total walk update insert time = " << walk_update_time_on_insert.get_total() << ", average walk affected = " << total_insert_walks_affected / n_batches << std::endl;
-//		std::cout << "Total #sampled vertices = " << WharfMH.number_of_sampled_vertices << std::endl;
+		std::cout << "Total #sampled vertices = " << WharfMH.number_sampled_vertices << std::endl;
 
 //		// --- profiling ---
 //		std::cout << "{ total profiling for insert and delete" << std::endl;
