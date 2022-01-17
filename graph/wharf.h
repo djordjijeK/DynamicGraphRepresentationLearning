@@ -853,7 +853,9 @@ cout << "1" << endl;
 cout << "2" << endl;
 				// Store/cache the MAV of each batch
 //				MAVS.insert(batch_num, rewalk_points);
+cout << "rewalk_points before: " << rewalk_points.size() << endl;
 				MAVS2[batch_num] = rewalk_points;
+cout << "rewalk_points  after: " << rewalk_points.size() << endl;
 cout << "3" << endl;
                 walk_update_time_on_insert.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
