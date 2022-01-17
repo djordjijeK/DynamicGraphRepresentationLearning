@@ -852,7 +852,7 @@ cout << "1" << endl;
                 graph_update_time_on_insert.stop();
 cout << "2" << endl;
 				// Store/cache the MAV of each batch
-				MAVS.insert(batch_num, rewalk_points);
+//				MAVS.insert(batch_num, rewalk_points);
 				MAVS2[batch_num] = rewalk_points;
 cout << "3" << endl;
                 walk_update_time_on_insert.start();
