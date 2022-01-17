@@ -857,6 +857,7 @@ cout << "2" << endl;
 				// Store/cache the MAV of each batch
 //				MAVS.insert(batch_num, rewalk_points);
 cout << "rewalk_points before: " << rewalk_points.size() << endl;
+cout << "batch num: " << batch_num << endl;
 				MAVS2[batch_num] = rewalk_points;
 cout << "rewalk_points  after: " << rewalk_points.size() << endl;
 cout << "3" << endl;
