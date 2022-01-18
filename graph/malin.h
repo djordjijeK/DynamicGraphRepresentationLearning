@@ -1205,7 +1205,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // Parallel Update of Affected Walks
                 parallel_for(0, affected_walks.size(), [&](auto index)
                 {
-                    auto entry = rewalk_points.template find(affected_walks[index]);
+					auto entry = rewalk_points.template find(affected_walks[index]);
 
                     auto current_position        = std::get<0>(entry);
                     auto current_vertex_old_walk = std::get<1>(entry);
@@ -1222,7 +1222,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     fork_join_scheduler::Job insert_job = [&] ()
                     {
-                        if (graph[current_vertex_new_walk].degree == 0)
+                        if (index == 2) // only for walk 2
+                            cout << "batch-* -> ";
+
+						if (graph[current_vertex_new_walk].degree == 0)
                         {
 //                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length, std::numeric_limits<uint32_t>::max() - 1});
                             szudzik_hash.start();
@@ -1275,6 +1278,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							else
                                 state = temp_state;
 
+	                        if (index == 2) // only for walk 2
+		                        cout << state.first << " ";
 							number_sampled_vertices++;
 
 							szudzik_hash.start();
@@ -1307,6 +1312,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             // Then, change the current vertex in the new walk
                             current_vertex_new_walk = state.first;
                         }
+						if (index == 2)
+							cout << endl;
 
                     };
 					ij.start();
