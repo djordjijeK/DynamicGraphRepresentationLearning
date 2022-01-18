@@ -1644,7 +1644,7 @@ cout << "4" << endl;
 			//			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
 
 			              auto p_min_global = config::walk_length; // greater than l
-						  for (auto mav = wt->created_at_batch+1; mav < num_batches_so_far; mav++)
+						  for (auto mav = wt->created_at_batch+1; mav < num_batches_so_far+1; mav++) // CAUTION: #b in the input + 1
 					      {
    							  if (MAVS2[mav].template contains(walk_id))
 							  {
