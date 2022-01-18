@@ -16,8 +16,8 @@ class WharfTest : public testing::Test
         bool mmap = false;
         bool is_symmetric = true;
 //        std::string default_file_path = "data/email-graph";
-        std::string default_file_path = "data/flickr-graph";
-//        std::string default_file_path = "data/aspen-paper-graph";
+//        std::string default_file_path = "data/flickr-graph";
+        std::string default_file_path = "data/aspen-paper-graph";
 };
 
 void WharfTest::SetUp()
@@ -684,7 +684,7 @@ TEST_F(WharfTest, WharfInsertOnlyWorkload) {
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 5000; //5;
+	batch_sizes[0] = 5; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -880,8 +880,8 @@ cout << "11" << endl;
 //
 //// ----------------------------------------------
 	cout << "(NEW) WALKS" << endl;
-//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-//		cout << malin.walk_simple_find(i) << endl;
+	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+		cout << malin.walk_simple_find(i) << endl;
 //// ----------------------------------------------
 
 }

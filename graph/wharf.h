@@ -1160,6 +1160,9 @@ cout << "4" << endl;
 
                     fork_join_scheduler::Job insert_job = [&] ()
                     {
+						if (index == 2) // only for walk 2
+							cout << "batch-" << batch_num << "-> ";
+
                         if (graph[current_vertex_new_walk].degree == 0)
                         {
 //                            types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length, std::numeric_limits<uint32_t>::max() - 1});
@@ -1214,6 +1217,8 @@ cout << "4" << endl;
 							else
                                 state = temp_state;
 
+							if (index == 2) // only for walk 2
+								cout << state.first << " "; // print the sampled vertex
 							number_of_sampled_vertices++;
 
 							szudzik_hash.start();
@@ -1246,6 +1251,8 @@ cout << "4" << endl;
                             // Then, change the current vertex in the new walk
                             current_vertex_new_walk = state.first;
                         }
+						if (index == 2)
+							cout << endl; // change line for the next batch
 
                     };
 					ij.start();
