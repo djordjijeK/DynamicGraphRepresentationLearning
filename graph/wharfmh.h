@@ -251,7 +251,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 {
                     if (graph[walk_id % total_vertices].degrees == 0)
                     {
-                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
+//                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
+                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
 
                         this->walk_storage.update_fn(walk_id, [&](auto& vector)
                         {

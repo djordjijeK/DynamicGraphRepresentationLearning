@@ -15,8 +15,8 @@ class WharfMHTest : public testing::Test
         uintE* offsets;
         bool mmap = false;
         bool is_symmetric = true;
-        std::string default_file_path = "data/aspen-paper-graph";
-//        std::string default_file_path = "data/email-graph";
+//        std::string default_file_path = "data/aspen-paper-graph";
+        std::string default_file_path = "data/email-graph";
 //        std::string default_file_path = "data/flickr-graph";
 };
 
