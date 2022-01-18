@@ -849,16 +849,16 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager
                 };
-cout << "1" << endl;
+//cout << "1" << endl;
                 graph_update_time_on_insert.start();
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace,true, run_seq);
                 graph_update_time_on_insert.stop();
-cout << "2" << endl;
+//cout << "2" << endl;
 				// Store/cache the MAV of each batch
 //				MAVS.insert(batch_num, rewalk_points);
-cout << "rewalk_points before: " << rewalk_points.size() << endl;
-cout << "size of the MAV2[batch_num]: " << MAVS2[batch_num].size() << endl;
-cout << "batch num: " << batch_num << endl;
+//cout << "rewalk_points before: " << rewalk_points.size() << endl;
+//cout << "size of the MAV2[batch_num]: " << MAVS2[batch_num].size() << endl;
+//cout << "batch num: " << batch_num << endl;
 	            for(auto& entry : rewalk_points.lock_table()) // todo: blocking?
 	            {
 		            MAVS2[batch_num].insert(entry.first, entry.second);
@@ -866,14 +866,14 @@ cout << "batch num: " << batch_num << endl;
 	            assert(rewalk_points.size() == MAVS2[batch_num].size());
 
 //				MAVS2[batch_num] = rewalk_points;
-cout << "rewalk_points  after: " << rewalk_points.size() << endl;
-cout << "3" << endl;
+//cout << "rewalk_points  after: " << rewalk_points.size() << endl;
+//cout << "3" << endl;
                 walk_update_time_on_insert.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 if (apply_walk_updates)
                         this->batch_walk_update(rewalk_points, affected_walks, batch_num); // todo: deactivated the walks
                 walk_update_time_on_insert.stop();
-cout << "4" << endl;
+//cout << "4" << endl;
                 // 6. Deallocate memory
                 if (num_starts > stack_size) pbbs::free_array(new_verts);
                 if (edges_deduped)           pbbs::free_array(edges_deduped);
@@ -1160,8 +1160,8 @@ cout << "4" << endl;
 
                     fork_join_scheduler::Job insert_job = [&] ()
                     {
-						if (index == 3) // only for walk 2
-							cout << "batch-" << batch_num << "-> ";
+//						if (index == 3) // only for walk 2
+//							cout << "batch-" << batch_num << "-> ";
 
                         if (graph[current_vertex_new_walk].degree == 0)
                         {
@@ -1217,8 +1217,8 @@ cout << "4" << endl;
 							else
                                 state = temp_state;
 
-							if (index == 3) // only for walk 2
-								cout << state.first << " "; // print the sampled vertex
+//							if (index == 3) // only for walk 2
+//								cout << state.first << " "; // print the sampled vertex
 							number_of_sampled_vertices++;
 
 							szudzik_hash.start();
@@ -1251,8 +1251,8 @@ cout << "4" << endl;
                             // Then, change the current vertex in the new walk
                             current_vertex_new_walk = state.first;
                         }
-						if (index == 3)
-							cout << endl; // change line for the next batch
+//						if (index == 3)
+//							cout << endl; // change line for the next batch
 
                     };
 					ij.start();
@@ -1643,7 +1643,7 @@ cout << "4" << endl;
 			//				cout << enc_triplet << " ";
 			//			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
 
-			              auto p_min_global = config::walk_length; // greater than l
+			              auto p_min_global = config::walk_length;
 						  for (auto mav = wt->created_at_batch+1; mav < num_batches_so_far+1; mav++) // CAUTION: #b in the input + 1
 					      {
    							  if (MAVS2[mav].template contains(walk_id))
@@ -1669,7 +1669,7 @@ cout << "4" << endl;
 
 //							triplets_to_delete[inc].push_back(enc_triplet);
 							triplets_to_delete_pbbs[inc].push_back(enc_triplet);
-							cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << endl;
+//							cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << endl;
 						  }
 
 						});
