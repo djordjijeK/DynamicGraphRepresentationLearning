@@ -15,9 +15,9 @@ class WharfMHTest : public testing::Test
         uintE* offsets;
         bool mmap = false;
         bool is_symmetric = true;
-//        std::string default_file_path = "data/aspen-paper-graph";
+        std::string default_file_path = "data/aspen-paper-graph";
 //        std::string default_file_path = "data/email-graph";
-        std::string default_file_path = "data/flickr-graph";
+//        std::string default_file_path = "data/flickr-graph";
 };
 
 void WharfMHTest::SetUp()
@@ -381,12 +381,12 @@ TEST_F(WharfMHTest, WharfInsertOnlyWorkload) {
 	std::cout << "Total #sampled vertices = " << malin.number_sampled_vertices << std::endl;
 
 //// ----------------------------------------------
-//	cout << "(NEW) WALKS" << endl;
-//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-//		cout << malin.walk(i) << endl;
-//
-//	cout << "(NEW) INV INDEX" << endl;
-//	malin.walk_index_print();
+	cout << "(NEW) WALKS" << endl;
+	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+		cout << malin.walk(i) << endl;
+
+	cout << "(NEW) INV INDEX" << endl;
+	malin.walk_index_print();
 //// ----------------------------------------------
 
 //	auto flat_graph = malin.flatten_vertex_tree();
