@@ -1160,7 +1160,7 @@ cout << "4" << endl;
 
                     fork_join_scheduler::Job insert_job = [&] ()
                     {
-						if (index == 2) // only for walk 2
+						if (index == 3) // only for walk 2
 							cout << "batch-" << batch_num << "-> ";
 
                         if (graph[current_vertex_new_walk].degree == 0)
@@ -1217,7 +1217,7 @@ cout << "4" << endl;
 							else
                                 state = temp_state;
 
-							if (index == 2) // only for walk 2
+							if (index == 3) // only for walk 2
 								cout << state.first << " "; // print the sampled vertex
 							number_of_sampled_vertices++;
 
@@ -1251,7 +1251,7 @@ cout << "4" << endl;
                             // Then, change the current vertex in the new walk
                             current_vertex_new_walk = state.first;
                         }
-						if (index == 2)
+						if (index == 3)
 							cout << endl; // change line for the next batch
 
                     };
@@ -1643,7 +1643,7 @@ cout << "4" << endl;
 			//				cout << enc_triplet << " ";
 			//			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
 
-			              auto p_min_global = config::walk_length;
+			              auto p_min_global = config::walk_length; // greater than l
 						  for (auto mav = wt->created_at_batch+1; mav < num_batches_so_far; mav++)
 					      {
    							  if (MAVS2[mav].template contains(walk_id))
@@ -1669,6 +1669,7 @@ cout << "4" << endl;
 
 //							triplets_to_delete[inc].push_back(enc_triplet);
 							triplets_to_delete_pbbs[inc].push_back(enc_triplet);
+							cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << endl;
 						  }
 
 						});

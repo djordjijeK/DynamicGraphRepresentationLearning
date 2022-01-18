@@ -848,36 +848,36 @@ cout << "11" << endl;
 	std::cout << "Merge all the walk-trees time: " << MergeAll.get_total() << std::endl;
 
 
-//	auto flat_graph = malin.flatten_vertex_tree();
-//	for (auto i = 0; i < malin.number_of_vertices(); i++)
-//	{
-//		cout << "vertex " << i << endl;
-////		flat_graph[i].compressed_edges.iter_elms(i, [&](auto edge){
-////			cout << edge << " ";
-////		});
-////		cout << endl;
-//
-//		cout << "size of walk-tree vector " << flat_graph[i].compressed_walks.size() << endl;
-//		int inc = 0;
-//		for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // print the walk-trees in chronological order
-//		{
-////			inc++;
-//			cout << "walk-tree " << inc << endl;
+	auto flat_graph = malin.flatten_vertex_tree();
+	for (auto i = 0; i < malin.number_of_vertices(); i++)
+	{
+		cout << "vertex " << i << endl;
+//		flat_graph[i].compressed_edges.iter_elms(i, [&](auto edge){
+//			cout << edge << " ";
+//		});
+//		cout << endl;
+
+		cout << "size of walk-tree vector " << flat_graph[i].compressed_walks.size() << endl;
+		int inc = 0;
+		for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // print the walk-trees in chronological order
+		{
 //			inc++;
-//			wt->iter_elms(i, [&](auto enc_triplet){
-//			  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
-//
-//			  auto walk_id  = pair.first / config::walk_length;                  // todo: needs floor?
-//			  auto position = pair.first - (walk_id * config::walk_length); // todo: position here starts from 0. verify this one!
-//			  auto next_vertex   = pair.second;
-////				cout << enc_triplet << " ";
-////			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
-//			});
-//			cout << endl;
-//			cout << "size of walk-tree " << wt->size() << endl;
-//		}
-//	}
-//
+			cout << "walk-tree " << inc << endl;
+			inc++;
+			wt->iter_elms(i, [&](auto enc_triplet){
+			  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
+
+			  auto walk_id  = pair.first / config::walk_length;                  // todo: needs floor?
+			  auto position = pair.first - (walk_id * config::walk_length); // todo: position here starts from 0. verify this one!
+			  auto next_vertex   = pair.second;
+			  cout << enc_triplet << " ";
+			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
+			});
+			cout << endl;
+			cout << "size of walk-tree " << wt->size() << endl;
+		}
+	}
+
 //// ----------------------------------------------
 	cout << "(NEW) WALKS" << endl;
 	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
