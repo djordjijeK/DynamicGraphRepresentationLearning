@@ -1222,7 +1222,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     fork_join_scheduler::Job insert_job = [&] ()
                     {
-                        if (index == 2) // only for walk 2
+                        if (index == 3) // only for walk 2
                             cout << "batch-* -> ";
 
 						if (graph[current_vertex_new_walk].degree == 0)
@@ -1278,7 +1278,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							else
                                 state = temp_state;
 
-	                        if (index == 2) // only for walk 2
+	                        if (index == 3) // only for walk 2
 		                        cout << state.first << " ";
 							number_sampled_vertices++;
 
@@ -1312,7 +1312,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             // Then, change the current vertex in the new walk
                             current_vertex_new_walk = state.first;
                         }
-						if (index == 2)
+						if (index == 3)
 							cout << endl;
 
                     };
