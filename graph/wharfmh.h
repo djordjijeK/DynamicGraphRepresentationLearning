@@ -271,8 +271,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     }
 
 //                    this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length)); // do not initialize like this because it inserts zeros
-					this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
-
+					if (!this->walk_storage.contains(walk_id))
+						this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
 
                     auto random = config::random;
 					if (config::determinism)
