@@ -310,6 +310,7 @@ void throughput(commandLine& command_line)
 		read_access_MAV.reset();
 		bdown_create_vertex_entries.reset();
 		apply_multiinsert_ctrees.reset();
+		linear_cuckoo_acc_scann.reset();
 		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -422,6 +423,7 @@ void throughput(commandLine& command_line)
 		              walk_insert_2accs.get_total()) << "%)" << std::endl;
 		cout <<  "Multiinsert: " << apply_multiinsert_ctrees.get_total() / n_batches << endl;
 		cout <<  "Create Vertex Entries (for loop with lock_table): " << bdown_create_vertex_entries.get_total() / n_batches << endl;
+		cout <<  "Linear cuckoo-hashmap scan: " << linear_cuckoo_acc_scann.get_total() / n_batches << endl;
 		std::cout << "}" << std::endl;
 		// --- profiling ---
 

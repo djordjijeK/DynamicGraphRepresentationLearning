@@ -1632,26 +1632,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 // fj.parfor or parallel_for
 				bdown_create_vertex_entries.start();
-	            auto ind = 0;
-                for(auto& item : inserts.lock_table()) // todo: pardo and lock_table?
-                {
-                    auto sequence = pbbs::sequence<types::Vertex>(item.second.size());
-
-//                    for(auto i = 0; i < item.second.size(); i++)
-//                        sequence[i] = item.second[i];
-	                parallel_for(0, item.second.size(), [&](auto i){
-						sequence[i] = item.second[i];
-					});
-
-                    pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
-					vector<dygrl::CompressedWalks> vec_compwalks;
-					vec_compwalks.push_back(dygrl::CompressedWalks(sequence, item.first, next_min_wtree_I[item.first], next_max_wtree_I[item.first], batch_num));
-                    insert_walks[ind++] = std::make_pair(item.first,VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
-                }
-
-//	            atomic<uintV> ind = 0;
-//				inserts.lock_table().operator[]()
-//				parallel_for(0, inserts.size(), [&](auto j){
+//	            auto ind = 0;
+//                for(auto& item : inserts.lock_table()) // todo: pardo and lock_table?
+//                {
 //                    auto sequence = pbbs::sequence<types::Vertex>(item.second.size());
 //
 ////                    for(auto i = 0; i < item.second.size(); i++)
@@ -1664,7 +1647,33 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //					vector<dygrl::CompressedWalks> vec_compwalks;
 //					vec_compwalks.push_back(dygrl::CompressedWalks(sequence, item.first, next_min_wtree_I[item.first], next_max_wtree_I[item.first], batch_num));
 //                    insert_walks[ind++] = std::make_pair(item.first,VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
-//                });
+//                }
+
+				// Iterate and put the Insert accumulator into a pbbs:sequence
+				auto temp_inserts = pbbs::sequence<std::pair<types::Vertex, std::vector<types::PairedTriplet>>>(inserts.size());
+				auto skatindex = 0;
+				linear_cuckoo_acc_scann.start();
+				for (auto& item: inserts.lock_table()) // TODO: This cannot be in parallel. Cuckoo-hashmap limitation
+				{
+					temp_inserts[skatindex++] = std::make_pair(item.first, item.second);
+				}
+				linear_cuckoo_acc_scann.stop();
+
+//	            atomic<uintV> ind = 0;
+				parallel_for(0, temp_inserts.size(), [&](auto j){
+                    auto sequence = pbbs::sequence<types::Vertex>(temp_inserts[j].second.size());
+
+//                    for(auto i = 0; i < item.second.size(); i++)
+//                        sequence[i] = item.second[i];
+	                parallel_for(0, temp_inserts[j].second.size(), [&](auto i){
+						sequence[i] = temp_inserts[j].second[i];
+					});
+
+                    pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
+					vector<dygrl::CompressedWalks> vec_compwalks;
+					vec_compwalks.push_back(dygrl::CompressedWalks(sequence, temp_inserts[j].first, next_min_wtree_I[temp_inserts[j].first], next_max_wtree_I[temp_inserts[j].first], batch_num));
+                    insert_walks[j] = std::make_pair(temp_inserts[j].first,VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
+                });
 				bdown_create_vertex_entries.stop();
 
                 pbbs::sample_sort_inplace(pbbs::make_range(insert_walks.begin(), insert_walks.end()), [&](auto& x, auto& y) {

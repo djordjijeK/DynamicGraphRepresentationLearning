@@ -25,6 +25,7 @@ auto read_access_MAV             = timer("ReadAccessMAV", false);
 // ---
 auto bdown_create_vertex_entries = timer("VertexEntries", false);
 auto apply_multiinsert_ctrees    = timer("ApplyAccumulators", false);
+auto linear_cuckoo_acc_scann     = timer("LinearCuckooAccScan", false);
 
 auto graph_update_time_on_delete = timer("GraphUpdateTimeOnDelete", false);
 auto walk_update_time_on_delete  = timer("WalkUpdateTimeOnDelete", false);
