@@ -308,6 +308,8 @@ void throughput(commandLine& command_line)
 		fnir_tree_search.reset();
 		MAV_time.reset();
 		read_access_MAV.reset();
+		bdown_create_vertex_entries.reset();
+		apply_multiinsert_ctrees.reset();
 		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -418,6 +420,8 @@ void throughput(commandLine& command_line)
 		             (walk_insert_init.get_total() +
 		              walk_insert_2jobs.get_total() +
 		              walk_insert_2accs.get_total()) << "%)" << std::endl;
+		cout <<  "Multiinsert: " << apply_multiinsert_ctrees.get_total() / n_batches << endl;
+		cout <<  "Create Vertex Entries (for loop with lock_table): " << bdown_create_vertex_entries.get_total() / n_batches << endl;
 		std::cout << "}" << std::endl;
 		// --- profiling ---
 

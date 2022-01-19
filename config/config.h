@@ -23,6 +23,8 @@ auto MAV_time                    = timer("MAVTime", false);
 auto fnir_tree_search            = timer("FNIR_TreeSearchTime", false);
 auto read_access_MAV             = timer("ReadAccessMAV", false);
 // ---
+auto bdown_create_vertex_entries = timer("VertexEntries", false);
+auto apply_multiinsert_ctrees    = timer("ApplyAccumulators", false);
 
 auto graph_update_time_on_delete = timer("GraphUpdateTimeOnDelete", false);
 auto walk_update_time_on_delete  = timer("WalkUpdateTimeOnDelete", false);
