@@ -25,6 +25,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
         public:
             using Graph = aug_map<dygrl::Vertex>;
             std::atomic<int> number_of_sampled_vertices;
+//            int number_of_sampled_vertices;
 
             /**
              * @brief Malin constructor.
@@ -1466,19 +1467,19 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 types::ChangeAccumulator inserts = types::ChangeAccumulator();
 
                 // --------------  Range Search Code Part  --------------------------------------------------
-                constexpr const size_t array_next_size = 20;
-                types::Vertex next_min_I_stack[array_next_size], next_max_I_stack[array_next_size];
-                types::Vertex* next_min_wtree_I = next_min_I_stack;
-                types::Vertex* next_max_wtree_I = next_max_I_stack;
-                if (this->number_of_vertices() > array_next_size)
-                {
-                    next_min_wtree_I = pbbs::new_array<types::Vertex>(this->number_of_vertices());
-                    next_max_wtree_I = pbbs::new_array<types::Vertex>(this->number_of_vertices());
-                }
-                parallel_for(0, this->number_of_vertices(), [&] (types::Vertex i) {
-                    next_min_wtree_I[i] = std::numeric_limits<uint32_t>::max();
-                    next_max_wtree_I[i] = 0;
-                });
+//                constexpr const size_t array_next_size = 20;
+//                types::Vertex next_min_I_stack[array_next_size], next_max_I_stack[array_next_size];
+//                types::Vertex* next_min_wtree_I = next_min_I_stack;
+//                types::Vertex* next_max_wtree_I = next_max_I_stack;
+//                if (this->number_of_vertices() > array_next_size)
+//                {
+//                    next_min_wtree_I = pbbs::new_array<types::Vertex>(this->number_of_vertices());
+//                    next_max_wtree_I = pbbs::new_array<types::Vertex>(this->number_of_vertices());
+//                }
+//                parallel_for(0, this->number_of_vertices(), [&] (types::Vertex i) {
+//                    next_min_wtree_I[i] = std::numeric_limits<uint32_t>::max();
+//                    next_max_wtree_I[i] = 0;
+//                });
                 // -----------------------------------------------------------------------------------------
 
                 uintV index = 0;
@@ -1542,8 +1543,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                         // ------------------------- Search In Range Code -----------------------------------------------------------------------
                         // Refine the (min, max) I for the walk-tree of current_vertex_new_walk -------------------------------------------------
-                        next_min_wtree_I[current_vertex_new_walk] = std::min(next_min_wtree_I[current_vertex_new_walk], current_vertex_new_walk);
-                        next_max_wtree_I[current_vertex_new_walk] = std::max(next_max_wtree_I[current_vertex_new_walk], current_vertex_new_walk);
+//                        next_min_wtree_I[current_vertex_new_walk] = std::min(next_min_wtree_I[current_vertex_new_walk], current_vertex_new_walk);
+//                        next_max_wtree_I[current_vertex_new_walk] = std::max(next_max_wtree_I[current_vertex_new_walk], current_vertex_new_walk);
                         // ----------------------------------------------------------------------------------------------------------------------
 
                         return;
@@ -1602,7 +1603,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         });
 
                         // ------------------------- Search In Range Code ----- todo: ensure correctness!
-                        if (position != config::walk_length - 1)
+/*                        if (position != config::walk_length - 1)
                         {
                             next_min_wtree_I[current_vertex_new_walk] = std::min(next_min_wtree_I[current_vertex_new_walk], state.first);
                             next_max_wtree_I[current_vertex_new_walk] = std::max(next_max_wtree_I[current_vertex_new_walk], state.first);
@@ -1612,7 +1613,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             next_min_wtree_I[current_vertex_new_walk] = std::min(next_min_wtree_I[current_vertex_new_walk], current_vertex_new_walk);
                             next_max_wtree_I[current_vertex_new_walk] = std::max(next_max_wtree_I[current_vertex_new_walk], current_vertex_new_walk);
 //                                cout << "NEW wid=" << affected_walks[index] << " inserted last paired triplet" << endl;
-                        }
+                        }*/
                         // -------------------------------------------------------------------------
 
                         // Then, change the current vertex in the new walk
@@ -1671,7 +1672,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
 					vector<dygrl::CompressedWalks> vec_compwalks;
-					vec_compwalks.push_back(dygrl::CompressedWalks(sequence, temp_inserts[j].first, next_min_wtree_I[temp_inserts[j].first], next_max_wtree_I[temp_inserts[j].first], batch_num));
+					vec_compwalks.push_back(dygrl::CompressedWalks(sequence, temp_inserts[j].first, 666, 666, /*next_min_wtree_I[temp_inserts[j].first], next_max_wtree_I[temp_inserts[j].first],*/ batch_num));
                     insert_walks[j] = std::make_pair(temp_inserts[j].first,VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
                 });
 				bdown_create_vertex_entries.stop();
