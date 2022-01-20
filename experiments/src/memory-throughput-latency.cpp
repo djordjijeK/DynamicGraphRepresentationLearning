@@ -311,6 +311,8 @@ void throughput(commandLine& command_line)
 		bdown_create_vertex_entries.reset();
 		apply_multiinsert_ctrees.reset();
 		linear_cuckoo_acc_scann.reset();
+		merge_calc_triplets_to_delete.reset();
+		merge_create_delete_walks.reset();
 		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -447,6 +449,9 @@ void throughput(commandLine& command_line)
 	malin.merge_walk_trees_all_vertices_parallel(n_batches); // use the parallel merging
 	MergeAll.stop();
 	std::cout << "Merge all the walk-trees time: " << MergeAll.get_total() << std::endl;
+	cout << "merge_triplets_to_delete calculation: " << merge_calc_triplets_to_delete.get_total() << endl;
+	cout << "merge_delete_walks       calculation: " << merge_create_delete_walks.get_total() << endl;
+	cout << "merge_multiinsert        calculation: " << merge_multiinsert_ctress.get_total() << endl;
 
 
 //	auto flat_graph = malin.flatten_vertex_tree();
@@ -481,7 +486,7 @@ void throughput(commandLine& command_line)
 //
 //// ----------------------------------------------
 //	cout << "(NEW) WALKS" << endl;
-//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
+//	for (auto i = 0; i < n * config::walks_per_vertex; i++)
 //		cout << malin.walk_simple_find(i) << endl;
 //// ----------------------------------------------
 

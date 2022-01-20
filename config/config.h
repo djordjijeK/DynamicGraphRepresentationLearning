@@ -30,4 +30,8 @@ auto linear_cuckoo_acc_scann     = timer("LinearCuckooAccScan", false);
 auto graph_update_time_on_delete = timer("GraphUpdateTimeOnDelete", false);
 auto walk_update_time_on_delete  = timer("WalkUpdateTimeOnDelete", false);
 
+auto merge_calc_triplets_to_delete = timer("MergeCalcTripletsToDelete", false);
+auto merge_create_delete_walks     = timer("CreateDeleteWalks", false);
+auto merge_multiinsert_ctress      = timer("MergeMultiinsertCtrees", false);
+
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_CONFIG_H
