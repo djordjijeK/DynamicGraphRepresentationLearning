@@ -275,7 +275,7 @@ void throughput(commandLine& command_line)
 //    << generate_initial_walks.get_total() / n_trials << std::endl;
 
 //	malin.generate_initial_random_walks();
-	int n_batches = 3; // todo: how many batches per batch size?
+	int n_batches = 10; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
@@ -342,9 +342,11 @@ void throughput(commandLine& command_line)
 //			for (auto i = 0; i < edges.second; i++)
 //				cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
+//cout << "1" << endl;
 			insert_timer.start();
 			auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
+//cout << "11" << endl;
 
 			total_insert_walks_affected += x.size();
 

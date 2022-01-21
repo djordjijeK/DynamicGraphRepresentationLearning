@@ -75,7 +75,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 				// Initialize the MAVs vector. 1 MAV for each batch
 //				MAVS = libcuckoo::cuckoohash_map<int, types::MapAffectedVertices>();
-				for (auto i = 0; i < 10; i++)
+				for (auto i = 0; i < 50; i++) // TODO: hached initial size of MAVS 50
 					MAVS2.push_back(types::MapAffectedVertices());
 
 				number_of_sampled_vertices = 0;
@@ -850,11 +850,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager
                 };
-//cout << "1" << endl;
+//cout << "2" << endl;
                 graph_update_time_on_insert.start();
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace,true, run_seq);
                 graph_update_time_on_insert.stop();
-//cout << "2" << endl;
+//cout << "3" << endl;
 				// Store/cache the MAV of each batch
 //				MAVS.insert(batch_num, rewalk_points);
 //cout << "rewalk_points before: " << rewalk_points.size() << endl;
@@ -868,13 +868,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 //				MAVS2[batch_num] = rewalk_points;
 //cout << "rewalk_points  after: " << rewalk_points.size() << endl;
-//cout << "3" << endl;
+//cout << "4" << endl;
                 walk_update_time_on_insert.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 if (apply_walk_updates)
                         this->batch_walk_update(rewalk_points, affected_walks, batch_num); // todo: deactivated the walks
                 walk_update_time_on_insert.stop();
-//cout << "4" << endl;
+//cout << "10" << endl;
                 // 6. Deallocate memory
                 if (num_starts > stack_size) pbbs::free_array(new_verts);
                 if (edges_deduped)           pbbs::free_array(edges_deduped);
@@ -1506,6 +1506,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 }
 	            walk_insert_init.stop();
 
+//cout << "5" << endl;
 				// Most time-consuming part of the process
 	            walk_insert_2jobs.start();
                 // Parallel Update of Affected Walks
@@ -1631,6 +1632,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 });
 	            walk_insert_2jobs.stop();
+//cout << "6" << endl;
 
 	            walk_insert_2accs.start();
 	            using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
@@ -1681,6 +1683,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     insert_walks[j] = std::make_pair(temp_inserts[j].first,VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
                 });
 				bdown_create_vertex_entries.stop();
+//cout << "7" << endl;
 
                 pbbs::sample_sort_inplace(pbbs::make_range(insert_walks.begin(), insert_walks.end()), [&](auto& x, auto& y) {
                     return x.first < y.first;
@@ -1706,11 +1709,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     return VertexEntry(x.compressed_edges, x_prime, x.sampler_manager);
                 };
 
+//cout << "8" << endl;
                 // Then, apply the batch insertions
 				apply_multiinsert_ctrees.start();
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, insert_walks.begin(), insert_walks.size(), replaceI, true);
 				apply_multiinsert_ctrees.stop();
 				walk_insert_2accs.stop();
+//cout << "9" << endl;
 
             } // End of batch walk update procedure
 
