@@ -878,8 +878,6 @@ cout << "5" << endl;
 							number_sampled_vertices++;
 						}
                     }
-cout << "6" << endl;
-
 
 //					for (types::Position position = 0/*current_position*/; position < config::walk_length; position++)
 //                    {
@@ -955,6 +953,8 @@ cout << "6" << endl;
 //                        state = graph[state.first].samplers->find(state.second).sample(state, model);
 //                    }
                 });
+cout << "6" << endl;
+
             }
 
 		/**
