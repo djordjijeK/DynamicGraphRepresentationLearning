@@ -779,9 +779,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //											p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
 //									}
 
-									if (MAVS2[mav].template contains(walk_id))
+									if (MAVS2[mav].contains(walk_id))
 									{
-										auto temp_pos = get<0>((MAVS2[mav]).template find(walk_id)); // it does not always contain this wid
+										auto temp_pos = get<0>((MAVS2[mav]).find(walk_id)); // it does not always contain this wid
 										if (temp_pos < p_min_global)
 											p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
 									}
@@ -795,9 +795,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 								{
 //									cout << "hey" << endl;
 									// take the triplet under consideration for the MAV and proceed normally
-									if (!rewalk_points.template contains(walk_id))
+									if (!rewalk_points.contains(walk_id))
 									{
-										rewalk_points.template insert(walk_id, std::make_tuple(position, v, false));
+										rewalk_points.insert(walk_id, std::make_tuple(position, v, false));
 									}
 									else
 									{
@@ -805,7 +805,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 										if (current_min_pos > position)
 										{
-											rewalk_points.template update(walk_id, std::make_tuple(position, v, false));
+											rewalk_points.update(walk_id, std::make_tuple(position, v, false));
 										}
 									}
 								}
