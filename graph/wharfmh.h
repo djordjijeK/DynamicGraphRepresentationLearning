@@ -540,8 +540,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     graph_update_time.start();
                 #endif
 
+cout << "2" << endl;
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace, true, run_seq);
-
+cout << "3" << endl;
                 #ifdef WHARFMH_TIMER
                     graph_update_time.stop();
                 #endif
@@ -549,11 +550,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 #ifdef WHARFMH_TIMER
                     walk_update_time.start();
                 #endif
-
+cout << "4" << endl;
 				walk_update_time_on_insert.start();
                 if (apply_walk_updates) this->update_walks(rewalk_points);
 				walk_update_time_on_insert.stop();
-
+cout << "9" << endl;
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
                 #endif
@@ -805,7 +806,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         std::cerr << "Unrecognized random walking model" << std::endl;
                         std::exit(1);
                 }
-
+cout << "5" << endl;
                 parallel_for(0, affected_walks.size(), [&](auto index)
                 {
                     auto current_position = rewalk_points.template find(affected_walks[index]);
@@ -877,7 +878,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							number_sampled_vertices++;
 						}
                     }
-
+cout << "6" << endl;
 
 
 //					for (types::Position position = 0/*current_position*/; position < config::walk_length; position++)
