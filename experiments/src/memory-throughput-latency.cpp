@@ -313,6 +313,8 @@ void throughput(commandLine& command_line)
 		linear_cuckoo_acc_scann.reset();
 		merge_calc_triplets_to_delete.reset();
 		merge_create_delete_walks.reset();
+		ij_sampling.reset();
+		ij_szudzik.reset();
 		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -407,6 +409,9 @@ void throughput(commandLine& command_line)
 		              walk_insert_2accs.get_total()) << "%)" << std::endl;
 		std::cout << "InsertJob: " << ij.get_total() / n_batches
 		          << " | DeleteJob: " << dj.get_total() / n_batches << std::endl;
+		cout << "insertJob sampling: " << ij_sampling.get_total() / n_batches << endl;
+		cout << "insertJob szudzik : " << ij_szudzik.get_total() / n_batches << endl;
+
 		std::cout << "FindInVertexTree in DeleteJob total: "
 		          << walk_find_in_vertex_tree.get_total() / n_batches
 		          << std::endl;

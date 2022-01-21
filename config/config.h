@@ -33,5 +33,8 @@ auto walk_update_time_on_delete  = timer("WalkUpdateTimeOnDelete", false);
 auto merge_calc_triplets_to_delete = timer("MergeCalcTripletsToDelete", false);
 auto merge_create_delete_walks     = timer("CreateDeleteWalks", false);
 auto merge_multiinsert_ctress      = timer("MergeMultiinsertCtrees", false);
+// ---
+auto ij_sampling                   = timer("IJsampling", false);
+auto ij_szudzik                    = timer("IJszudzik", false);
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_CONFIG_H
