@@ -788,13 +788,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //					}
 
 				// Print the elements to delete
-				cout << endl;
-				cout << "vertex-" << v << endl;
-				for (int j = 0; j < a.compressed_walks.size(); j++)
-				{
-					cout << a.compressed_walks[j].size() << "(" << triplets_to_delete_pbbs[j].size() << ") ";
-				}
-                cout << endl;
+//				cout << endl;
+//				cout << "vertex-" << v << endl;
+//				for (int j = 0; j < a.compressed_walks.size(); j++)
+//				{
+//					cout << a.compressed_walks[j].size() << "(" << triplets_to_delete_pbbs[j].size() << ") ";
+//				}
+//                cout << endl;
 
 				// Create a new vector of compressed walks
 				vector<dygrl::CompressedWalks> vec_compwalks;
@@ -807,9 +807,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				    pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
 
 				    vec_compwalks.push_back(dygrl::CompressedWalks(sequence, v, 666, 666, 666)); // dummy min,max, batch_num
-					cout << vec_compwalks.back().size() << " ";
+//					cout << vec_compwalks.back().size() << " ";
 				}
-				cout << endl;
+//				cout << endl;
 
 				// Do the differences
 				std::vector<dygrl::CompressedWalks> new_compressed_vector;
@@ -824,27 +824,57 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				//                            lists::deallocate(y.compressed_walks[ind].plus);
 				//                            walk_plus::Tree_GC::decrement_recursive(y.compressed_walks[ind].root);
 //					cout << vec_compwalks.back().size() << " "; // TODO: CHECK memory-wise. These are empty after the difference
-					cout << new_compressed_vector.back().size() << " ";
+//					cout << new_compressed_vector.back().size() << " ";
 				}
-				cout << endl;
+//				cout << endl;
 
 				// Merge all the end trees into one
                 std::vector<dygrl::CompressedWalks> final_compressed_vector;
-                final_compressed_vector.push_back(CompressedWalks(batch_num));
+                final_compressed_vector.push_back(CompressedWalks(batch_num-1));
                 for (auto ind = 0; ind < new_compressed_vector.size(); ind++)
                 {
                     auto union_all_tree = walk_plus::uniont(new_compressed_vector[ind], final_compressed_vector[0], v);
 
                     // deallocate the memory
                     lists::deallocate(new_compressed_vector[ind].plus);
-                    walk_plus::Tree_GC::decrement_recursive(new_compressed_vector[ind].root);
+                    walk_plus::Tree_GC::decrement_recursive(new_compressed_vector[ind].root); // deallocation is important for performance
                     lists::deallocate(final_compressed_vector[0].plus);
                     walk_plus::Tree_GC::decrement_recursive(final_compressed_vector[0].root);
 
-                    final_compressed_vector[0] = dygrl::CompressedWalks(union_all_tree.plus, union_all_tree.root, 666, 666, batch_num); // refine the batch num after merging this node
-					cout << final_compressed_vector.back().size() << " ";
+                    final_compressed_vector[0] = dygrl::CompressedWalks(union_all_tree.plus, union_all_tree.root, 666, 666, batch_num-1); // refine the batch num after merging this node
+//					cout << final_compressed_vector.back().size() << " ";
                 }
-				cout << endl;
+//				cout << endl;
+
+				// ALL IN ONE LOOP
+/*                std::vector<dygrl::CompressedWalks> final_compressed_vector;
+                final_compressed_vector.push_back(CompressedWalks(batch_num-1));
+                for (auto j = 0; j < a.compressed_walks.size(); j++)
+                {
+					auto sequence = pbbs::sequence<types::Vertex>(triplets_to_delete_pbbs[j].size());
+					parallel_for(0, triplets_to_delete_pbbs[j].size(), [&](auto k){
+				        sequence[k] = triplets_to_delete_pbbs[j][k];
+				    });
+				    pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
+
+//				    vec_compwalks.push_back(dygrl::CompressedWalks(sequence, v, 666, 666, 666)); // dummy min,max, batch_num
+
+
+	                auto refined_walk_tree = walk_plus::difference(dygrl::CompressedWalks(sequence, v, 666, 666, 666), a.compressed_walks[j], v);
+
+                    auto union_all_tree = walk_plus::uniont(refined_walk_tree, final_compressed_vector[0], v);
+
+                    // deallocate the memory
+//                    lists::deallocate(new_compressed_vector[ind].plus);
+//                    walk_plus::Tree_GC::decrement_recursive(new_compressed_vector[ind].root);
+//                    lists::deallocate(final_compressed_vector[0].plus);
+//                    walk_plus::Tree_GC::decrement_recursive(final_compressed_vector[0].root);
+
+                    final_compressed_vector[0] = dygrl::CompressedWalks(union_all_tree.plus, union_all_tree.root, 666, 666, batch_num-1); // refine the batch num after merging this node
+//					cout << final_compressed_vector.back().size() << " ";
+                }
+//				cout << endl;*/
+
 
 
 				// OLD CODE
