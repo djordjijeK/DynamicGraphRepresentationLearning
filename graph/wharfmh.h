@@ -834,7 +834,14 @@ cout << "5" << endl;
 					// Insert all entries of the walk into the walk index
 					for (types::Position position = 0; position < config::walk_length; position++)
                     {
-						if (position <= current_position)
+	                    // check
+						if (graph[state.first].degrees == 0) // TODO: Check this for walks with only one vertex
+						{
+//							cout << "ZERO DEGREES!" << endl;
+							break;
+						}
+
+						if (position < current_position)
 						{
 							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
 							this->walk_index.update_fn(cur_vertex, [&](auto &set) {
@@ -842,7 +849,7 @@ cout << "5" << endl;
 //							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
 							});
 						}
-						else // position > current_position
+						else // position >= current_position
 						{
 
 							this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
@@ -855,13 +862,6 @@ cout << "5" << endl;
 							  set.insert(affected_walks[index]);
 //							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << state.first << endl;
 							});
-
-							// check
-//							if (graph[state.first].degrees == 0)
-//							{
-//								cout << "ZERO DEGREES!" << endl;
-//								break;
-//							}
 
 							if (!graph[state.first].samplers->contains(state.second))
 							{
