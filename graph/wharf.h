@@ -724,15 +724,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(b.compressed_edges.plus);
                     edge_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
-					// todo: which among all the walk-trees will we search?
-//					for (auto it = a.compressed_walks.rend())
-//                    a.compressed_walks.iter_elms(v, [&](auto value)
 					MAV_time.start();
-					int num_walk_trees = a.compressed_walks.size();
-//					int wt_num = 0;
-//					cout << "vertex " << v << " has " << num_walk_trees << " walk-trees" << endl;
-//					for (auto wt = a.compressed_walks.rbegin(); wt != a.compressed_walks.rend(); wt++)
-					// todo: at which batch_num each of the existing walk-trees was inserted?
+                    auto triplets_to_delete_pbbs   = pbbs::new_array<std::vector<types::PairedTriplet>>(a.compressed_walks.size());
+                    auto triplets_to_delete_vector = std::vector<std::vector<types::PairedTriplet>>();
 //					for (auto wt = a.compressed_walks.begin(); wt != a.compressed_walks.end(); wt++) // TODO: this could be a parallel for
 					parallel_for(0, a.compressed_walks.size(), [&](int index)
 					{
@@ -744,84 +738,116 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							auto position = pair.first - (walk_id * config::walk_length);
 							auto next = pair.second;
 
-//							if (MAVS.empty())
-//							{
-////								cout << "empty MAV, operating on walk-tree 0" << endl;
-//								// proceed as before and construct the first MAV
-//								if (!rewalk_points.template contains(walk_id))
-//		                        {
-//		                            rewalk_points.template insert(walk_id, std::make_tuple(position, v, false));
-//		                        }
-//		                        else
-//		                        {
-//		                            types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
-//
-//		                            if (current_min_pos > position)
-//		                            {
-//		                                rewalk_points.template update(walk_id, std::make_tuple(position, v, false));
-//		                            }
-//		                        }
-//							}
-//							else // it is not the first batch of edges. there are previous MAVs. runs in case of batch_num >= 2
-//							{
-								auto p_min_global = config::walk_length;
-								// find the p_min_global among all existing MAVS for w
-//								for (auto& entry : MAVS.lock_table())  // TODO: NOT ALL MAVS! + no need to lock, as we do only reads
-								for (auto mav = a.compressed_walks[index].created_at_batch+1; mav < batch_num; mav++)
+
+							auto p_min_global = config::walk_length;
+							// find the p_min_global among all existing MAVS for w
+							for (auto mav = a.compressed_walks[index].created_at_batch+1; mav < batch_num; mav++)
+							{
+								read_access_MAV.start();
+
+								if (MAVS2[mav].contains(walk_id))
 								{
-//									cout << "aa" << endl;
-//									cout << "checking MAV-" << mav << endl;
-									read_access_MAV.start();
-//									if (MAVS.template find(mav).template contains(walk_id))
-//									{//MAVS.template find_fn()
-//										auto temp_pos = get<0>((MAVS.template find(mav)).template find(walk_id)); // it does not always contain this wid
-//										if (temp_pos < p_min_global)
-//											p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
-//									}
+									auto temp_pos = get<0>((MAVS2[mav]).find(walk_id)); // it does not always contain this wid
+									if (temp_pos < p_min_global)
+										p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
+								}
+								read_access_MAV.stop();
+							} // constructed the p_min_global for this w. preffix of MAVS. preffix tree (trie data structure?)
 
-									if (MAVS2[mav].contains(walk_id))
-									{
-										auto temp_pos = get<0>((MAVS2[mav]).find(walk_id)); // it does not always contain this wid
-										if (temp_pos < p_min_global)
-											p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
-									}
-									read_access_MAV.stop();
-//									cout << "bb" << endl;
-								} // constructed the p_min_global for this w. preffix of MAVS. preffix tree (trie data structure?)
-
-								// Check the relationship of the triplet with respect to the p_min_global or the w
+							// Check the relationship of the triplet with respect to the p_min_global or the w
 //								if ((position < p_min_global) && (p_min_global != config::walk_length))
-								if (position < p_min_global) // TODO: this accepts all?
-								{
+							if (position < p_min_global) // TODO: this accepts all?
+							{
 //									cout << "hey" << endl;
-									// take the triplet under consideration for the MAV and proceed normally
-									if (!rewalk_points.contains(walk_id))
-									{
-										rewalk_points.insert(walk_id, std::make_tuple(position, v, false));
-									}
-									else
-									{
-										types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
-
-										if (current_min_pos > position)
-										{
-											rewalk_points.update(walk_id, std::make_tuple(position, v, false));
-										}
-									}
+								// take the triplet under consideration for the MAV and proceed normally
+								if (!rewalk_points.contains(walk_id))
+								{
+									rewalk_points.insert(walk_id, std::make_tuple(position, v, false));
 								}
 								else
 								{
-									;
-									// todo: DELETE THE TRIPLET FROM THE CURRENT WALK-TREE
+									types::Position current_min_pos = get<0>(rewalk_points.find(walk_id));
+
+									if (current_min_pos > position)
+									{
+										rewalk_points.update(walk_id, std::make_tuple(position, v, false));
+									}
 								}
-//							}
+							}
+							else
+							{
+								;
+								// todo: DELETE THE TRIPLET FROM THE CURRENT WALK-TREE
+								triplets_to_delete_pbbs[index].push_back(value);
+							}
 
 						});
 
 //						cout << "walk-tree " << num_walk_trees << " CHECKED!" << endl;
-
 					});
 //					}
+
+				// Print the elements to delete
+				cout << endl;
+				cout << "vertex-" << v << endl;
+				for (int j = 0; j < a.compressed_walks.size(); j++)
+				{
+					cout << a.compressed_walks[j].size() << "(" << triplets_to_delete_pbbs[j].size() << ") ";
+				}
+                cout << endl;
+
+				// Create a new vector of compressed walks
+				vector<dygrl::CompressedWalks> vec_compwalks;
+				for (auto j = 0; j < a.compressed_walks.size(); j++)
+				{
+					auto sequence = pbbs::sequence<types::Vertex>(triplets_to_delete_pbbs[j].size());
+					parallel_for(0, triplets_to_delete_pbbs[j].size(), [&](auto k){
+				        sequence[k] = triplets_to_delete_pbbs[j][k];
+				    });
+				    pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
+
+				    vec_compwalks.push_back(dygrl::CompressedWalks(sequence, v, 666, 666, 666)); // dummy min,max, batch_num
+					cout << vec_compwalks.back().size() << " ";
+				}
+				cout << endl;
+
+				// Do the differences
+				std::vector<dygrl::CompressedWalks> new_compressed_vector;
+				for (auto ind = 0; ind < a.compressed_walks.size(); ind++)
+				{
+			        auto refined_walk_tree = walk_plus::difference(vec_compwalks[ind], a.compressed_walks[ind], v);
+					new_compressed_vector.push_back(dygrl::CompressedWalks(refined_walk_tree.plus, refined_walk_tree.root, 666, 666, 666)); // use dummy min, max, batch_num for now
+
+				  // deallocate the memory
+				//                            lists::deallocate(x.compressed_walks[ind].plus);
+				//                            walk_plus::Tree_GC::decrement_recursive(x.compressed_walks[ind].root);
+				//                            lists::deallocate(y.compressed_walks[ind].plus);
+				//                            walk_plus::Tree_GC::decrement_recursive(y.compressed_walks[ind].root);
+//					cout << vec_compwalks.back().size() << " "; // TODO: CHECK memory-wise. These are empty after the difference
+					cout << new_compressed_vector.back().size() << " ";
+				}
+				cout << endl;
+
+				// Merge all the end trees into one
+                std::vector<dygrl::CompressedWalks> final_compressed_vector;
+                final_compressed_vector.push_back(CompressedWalks(batch_num));
+                for (auto ind = 0; ind < new_compressed_vector.size(); ind++)
+                {
+                    auto union_all_tree = walk_plus::uniont(new_compressed_vector[ind], final_compressed_vector[0], v);
+
+                    // deallocate the memory
+                    lists::deallocate(new_compressed_vector[ind].plus);
+                    walk_plus::Tree_GC::decrement_recursive(new_compressed_vector[ind].root);
+                    lists::deallocate(final_compressed_vector[0].plus);
+                    walk_plus::Tree_GC::decrement_recursive(final_compressed_vector[0].root);
+
+                    final_compressed_vector[0] = dygrl::CompressedWalks(union_all_tree.plus, union_all_tree.root, 666, 666, batch_num); // refine the batch num after merging this node
+					cout << final_compressed_vector.back().size() << " ";
+                }
+				cout << endl;
+
+
+				// OLD CODE
 
 //                    a.compressed_walks.front().iter_elms(v, [&](auto value) // todo: CAUTION: to check only the last walk-tree
 //                    {
@@ -848,7 +874,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 					MAV_time.stop();
 
-                    return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager
+                    return VertexEntry(union_edge_tree, final_compressed_vector, b.sampler_manager); // todo: check this sampler manager
+//                    return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager
                 };
 //cout << "2" << endl;
                 graph_update_time_on_insert.start();
@@ -2105,7 +2132,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 			 * @brief Merges the walk-trees of each vertex in the hybrid-tree such that in the end each vertex has only one walk-tree
 			 */
 			 void merge_walk_trees_all_vertices_parallel(int num_batches_so_far)
-			{
+			 {
 			    libcuckoo::cuckoohash_map<types::Vertex, std::vector<std::vector<types::PairedTriplet>>> all_to_delete; // let's use a vector
 
 	            auto flat_graph = this->flatten_vertex_tree();
