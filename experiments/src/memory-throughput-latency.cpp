@@ -203,7 +203,7 @@ void throughput(commandLine& command_line)
 //	WharfMH.memory_footprint();
 //	// ----
 
-	int n_batches = 3; // todo: how many batches per batch size?
+	int n_batches = 10; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 

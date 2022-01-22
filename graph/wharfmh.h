@@ -834,7 +834,7 @@ cout << "5" << endl;
 					// Insert all entries of the walk into the walk index
 					for (types::Position position = 0; position < config::walk_length; position++)
                     {
-						if (position < current_position)
+						if (position <= current_position)
 						{
 							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
 							this->walk_index.update_fn(cur_vertex, [&](auto &set) {
@@ -842,7 +842,7 @@ cout << "5" << endl;
 //							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
 							});
 						}
-						else // position >= current_position
+						else // position > current_position
 						{
 
 							this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
