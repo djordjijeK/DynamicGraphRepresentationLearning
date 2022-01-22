@@ -251,8 +251,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 {
                     if (graph[walk_id % total_vertices].degrees == 0)
                     {
-//                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
-                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
+                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
+//                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
 
                         this->walk_storage.update_fn(walk_id, [&](auto& vector)
                         {
@@ -271,8 +271,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     }
 
 //                    this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length)); // do not initialize like this because it inserts zeros
-					if (!this->walk_storage.contains(walk_id))
-						this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
+					this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
 
                     auto random = config::random;
 					if (config::determinism)
@@ -834,12 +833,12 @@ cout << "5" << endl;
 					// Insert all entries of the walk into the walk index
 					for (types::Position position = 0; position < config::walk_length; position++)
                     {
-	                    // check
-						if (graph[state.first].degrees == 0) // TODO: Check this for walks with only one vertex
-						{
-//							cout << "ZERO DEGREES!" << endl;
-							break;
-						}
+//	                    // check
+//						if (graph[state.first].degrees == 0) // TODO: Check this for walks with only one vertex
+//						{
+////							cout << "ZERO DEGREES!" << endl;
+//							break;
+//						}
 
 						if (position < current_position)
 						{
