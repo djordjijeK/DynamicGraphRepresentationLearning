@@ -1622,10 +1622,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 
 
-                    ij.start();
+//                    ij.start();
                     for (types::Position position = current_position; position < config::walk_length; position++)
                     {
-						ij_sampling.start();
+//						ij_sampling.start();
                         if (!graph[state.first].samplers->contains(state.second))
                             graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
 
@@ -1647,18 +1647,18 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //							if (index == 3) // only for walk 2
 //								cout << state.first << " "; // print the sampled vertex
 						number_of_sampled_vertices++;
-	                    ij_sampling.stop();
+//	                    ij_sampling.stop();
 
 
-						szudzik_hash.start();
-                        ij_szudzik.start();
+//						szudzik_hash.start();
+//                        ij_szudzik.start();
 						types::PairedTriplet hash = (position != config::walk_length - 1) ?
                             pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
                             pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, current_vertex_new_walk});
 //                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, std::numeric_limits<uint32_t>::max() - 1});
 //                            cout << "Insertion wid=" << index << ", pos=" << (int) position << ", next=" << ((position != config::walk_length - 1) ? state.first : cached_current_vertex) << " ===> pairedTriplet=" << hash << endl;
-						ij_szudzik.stop();
-						szudzik_hash.stop();
+//						ij_szudzik.stop();
+//						szudzik_hash.stop();
 
                         if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
                         inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
@@ -1685,7 +1685,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //						if (index == 3)
 //							cout << endl; // change line for the next batch
 
-					ij.stop();
+//					ij.stop();
 
                 });
 	            walk_insert_2jobs.stop();
