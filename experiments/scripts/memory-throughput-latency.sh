@@ -11,7 +11,6 @@ sampler_init_strategy="weight"    # random | burnin | weight
 declare -a graphs=("flickr-graph")
 declare -a walks_per_node=(10)
 declare -a walk_length=(80)
-number_of_batches=10              # number of batches
 range_search="true"               # range search mode
 determinism="true"                # determinism
 
@@ -43,7 +42,7 @@ for wpv in "${walks_per_node[@]}"; do
         for graph in "${graphs[@]}"; do
             printf "\n"
             printf "Graph: ${graph} \n"
-            ./memory-throughput-latency -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" -nb "${number_of_batches}" #| tee data/latency_throughput/${graph}-${walk_model}.txt
+            ./memory-throughput-latency -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" #| tee data/latency_throughput/${graph}-${walk_model}.txt
         done
     done
 done

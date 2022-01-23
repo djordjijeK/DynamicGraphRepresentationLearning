@@ -18,7 +18,6 @@ void throughput(commandLine& command_line)
 
     string determinism      = string(command_line.getOptionValue("-d", "false"));
     string range_search     = string(command_line.getOptionValue("-rs", "true"));
-    size_t num_of_batches   = command_line.getOptionIntValue("-nb", 5);  //string(command_line.getOptionValue("-rs", "true"));
 
     config::walks_per_vertex = walks_per_vertex;
     config::walk_length      = length_of_walks;
@@ -276,16 +275,16 @@ void throughput(commandLine& command_line)
 //    << generate_initial_walks.get_total() / n_trials << std::endl;
 
 //	malin.generate_initial_random_walks();
-	int n_batches = num_of_batches; // todo: how many batches per batch size?
+	int n_batches = 3; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 5; //5;
+	batch_sizes[0] = 100; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
-//	batch_sizes[4] = 50000; // maximum 100.000 edges
+//	batch_sizes[4] = 50000;
 //  batch_sizes[5] = 500000;
 
 	for (short int i = 0; i < batch_sizes.size(); i++)
@@ -334,7 +333,7 @@ void throughput(commandLine& command_line)
 
 		for (short int b = 0; b < n_batches; b++)
 		{
-//			cout << "batch-" << b << " and batch_seed-" << batch_seed[b] << endl;
+			cout << "batch-" << b << " and batch_seed-" << batch_seed[b] << endl;
 
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[b], false, false);
@@ -355,12 +354,6 @@ void throughput(commandLine& command_line)
 			latency_insert[b] = (double) last_insert_time / x.size();
 
 			latency[b] = latency_insert[b];
-
-//			// ------------------------------------------------------
-////			delete_timer.start(); // TODO: Delete the batch of edges
-//            auto y = malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false); // do not change walks
-////            delete_timer.stop();
-//            // ------------------------------------------------------
 
 			// free edges
 			pbbs::free_array(edges.first);
