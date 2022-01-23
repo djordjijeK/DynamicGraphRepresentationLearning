@@ -1590,9 +1590,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     if (graph[current_vertex_new_walk].degree == 0)
                     {
-                        szudzik_hash.start();
+//                        szudzik_hash.start();
 						types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
-						szudzik_hash.stop();
+//						szudzik_hash.stop();
 
                         if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
                         inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
