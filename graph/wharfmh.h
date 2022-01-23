@@ -24,7 +24,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             using Graph       = aug_map<dygrl::Vertex>;
             using WalkStorage = libcuckoo::cuckoohash_map<types::WalkID, std::vector<types::Vertex>>;
 			using WalkIndex   = libcuckoo::cuckoohash_map<types::Vertex, std::set<types::WalkID>>;
-            std::atomic<int> number_sampled_vertices;
+            std::atomic<unsigned long> number_sampled_vertices;
 
             /**
              * @brief WharfMH constructor.
