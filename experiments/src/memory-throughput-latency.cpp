@@ -280,12 +280,12 @@ void throughput(commandLine& command_line)
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
-	auto batch_sizes = pbbs::sequence<size_t>(5);
+	auto batch_sizes = pbbs::sequence<size_t>(1);
 	batch_sizes[0] = 5; //5;
-	batch_sizes[1] = 50;
-	batch_sizes[2] = 500;
-	batch_sizes[3] = 5000;
-	batch_sizes[4] = 50000; // maximum 100.000 edges
+//	batch_sizes[1] = 50;
+//	batch_sizes[2] = 500;
+//	batch_sizes[3] = 5000;
+//	batch_sizes[4] = 50000; // maximum 100.000 edges
 //  batch_sizes[5] = 500000;
 
 	for (short int i = 0; i < batch_sizes.size(); i++)
