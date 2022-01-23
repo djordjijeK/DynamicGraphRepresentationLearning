@@ -24,7 +24,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
     {
         public:
             using Graph = aug_map<dygrl::Vertex>;
-            std::atomic<int> number_of_sampled_vertices;
+            std::atomic<unsigned long> number_of_sampled_vertices;
 //            int number_of_sampled_vertices;
 
             /**
