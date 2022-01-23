@@ -806,7 +806,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				    });
 				    pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
 
-				    vec_compwalks.push_back(dygrl::CompressedWalks(sequence, v, 666, 666, 666)); // dummy min,max, batch_num
+				    vec_compwalks.push_back(dygrl::CompressedWalks(sequence, v, 666, 666, batch_num-1)); // dummy min,max, batch_num
 //					cout << vec_compwalks.back().size() << " ";
 				}
 //				cout << endl;
@@ -816,7 +816,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				for (auto ind = 0; ind < a.compressed_walks.size(); ind++)
 				{
 			        auto refined_walk_tree = walk_plus::difference(vec_compwalks[ind], a.compressed_walks[ind], v);
-					new_compressed_vector.push_back(dygrl::CompressedWalks(refined_walk_tree.plus, refined_walk_tree.root, 666, 666, 666)); // use dummy min, max, batch_num for now
+					new_compressed_vector.push_back(dygrl::CompressedWalks(refined_walk_tree.plus, refined_walk_tree.root, 666, 666, batch_num-1)); // use dummy min, max, batch_num for now
 
 				  // deallocate the memory
 				//                            lists::deallocate(x.compressed_walks[ind].plus);
