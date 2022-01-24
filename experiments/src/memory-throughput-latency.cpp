@@ -275,12 +275,12 @@ void throughput(commandLine& command_line)
 //    << generate_initial_walks.get_total() / n_trials << std::endl;
 
 //	malin.generate_initial_random_walks();
-	int n_batches = 3; // todo: how many batches per batch size?
+	int n_batches = 10; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 100; //5;
+	batch_sizes[0] = 3500; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -315,6 +315,8 @@ void throughput(commandLine& command_line)
 		merge_create_delete_walks.reset();
 		ij_sampling.reset();
 		ij_szudzik.reset();
+		mav_deletions_obsolete.reset();
+		mav_iteration.reset();
 		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -389,6 +391,9 @@ void throughput(commandLine& command_line)
 		std::cout << "Average Read Access Time MAV = "
 		          << read_access_MAV.get_total() / n_batches
 		          << std::endl;
+
+		cout << "avg mav_iteration: " << mav_iteration.get_total() / n_batches << endl;
+		cout << "avg mav_deletions: " << mav_deletions_obsolete.get_total() / n_batches << endl;
 
 		std::cout << "Total MAV (we are not deleting obsolete parts) = " << MAV_time.get_total() << std::endl;
 		std::cout << "Total Read Access Time MAV = " << read_access_MAV.get_total() << std::endl;

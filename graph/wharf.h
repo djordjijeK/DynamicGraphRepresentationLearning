@@ -725,6 +725,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     edge_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
 					MAV_time.start();
+
+					mav_iteration.start();
+
                     auto triplets_to_delete_pbbs   = pbbs::new_array<std::vector<types::PairedTriplet>>(a.compressed_walks.size());
                     auto triplets_to_delete_vector = std::vector<std::vector<types::PairedTriplet>>();
 //					for (auto wt = a.compressed_walks.begin(); wt != a.compressed_walks.end(); wt++) // TODO: this could be a parallel for
@@ -743,7 +746,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							// find the p_min_global among all existing MAVS for w
 							for (auto mav = a.compressed_walks[index].created_at_batch+1; mav < batch_num; mav++)
 							{
-								read_access_MAV.start();
+//								read_access_MAV.start();
 
 								if (MAVS2[mav].contains(walk_id))
 								{
@@ -751,7 +754,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 									if (temp_pos < p_min_global)
 										p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
 								}
-								read_access_MAV.stop();
+//								read_access_MAV.stop();
 							} // constructed the p_min_global for this w. preffix of MAVS. preffix tree (trie data structure?)
 
 							// Check the relationship of the triplet with respect to the p_min_global or the w
@@ -787,6 +790,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					});
 //					}
 
+					mav_iteration.stop();
+
 				// Print the elements to delete
 //				cout << endl;
 //				cout << "vertex-" << v << endl;
@@ -795,6 +800,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //					cout << a.compressed_walks[j].size() << "(" << triplets_to_delete_pbbs[j].size() << ") ";
 //				}
 //                cout << endl;
+
+                mav_deletions_obsolete.start();
+
 
 				// Create a new vector of compressed walks
 				vector<dygrl::CompressedWalks> vec_compwalks;
@@ -845,6 +853,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //					cout << final_compressed_vector.back().size() << " ";
                 }
 //				cout << endl;
+
+				mav_deletions_obsolete.stop();
 
 				// ALL IN ONE LOOP
 /*                std::vector<dygrl::CompressedWalks> final_compressed_vector;
