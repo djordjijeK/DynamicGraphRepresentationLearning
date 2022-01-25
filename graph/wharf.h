@@ -276,19 +276,19 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 auto vertices       = pbbs::sequence<VertexStruct>(total_vertices);
 
                 // ------- Code for (min, max) of the next of each vertex -------------------------
-                constexpr const size_t array_next_size = 20;
-                types::Vertex next_min_stack[array_next_size], next_max_stack[array_next_size];
-                types::Vertex* next_min = next_min_stack; types::Vertex* next_max = next_max_stack;
-                if (total_vertices > array_next_size)
-                {
-                    next_min = pbbs::new_array<types::Vertex>(total_vertices);
-                    next_max = pbbs::new_array<types::Vertex>(total_vertices);
-                }
-                // Initialize all mins to max integer 32 bits and all maxs to zero
-                parallel_for(0, total_vertices, [&] (types::Vertex i) {
-                    next_min[i] = std::numeric_limits<uint32_t>::max();
-                    next_max[i] = 0;
-                });
+//                constexpr const size_t array_next_size = 20;
+//                types::Vertex next_min_stack[array_next_size], next_max_stack[array_next_size];
+//                types::Vertex* next_min = next_min_stack; types::Vertex* next_max = next_max_stack;
+//                if (total_vertices > array_next_size)
+//                {
+//                    next_min = pbbs::new_array<types::Vertex>(total_vertices);
+//                    next_max = pbbs::new_array<types::Vertex>(total_vertices);
+//                }
+//                // Initialize all mins to max integer 32 bits and all maxs to zero
+//                parallel_for(0, total_vertices, [&] (types::Vertex i) {
+//                    next_min[i] = std::numeric_limits<uint32_t>::max();
+//                    next_max[i] = 0;
+//                });
                 // ---------------------------------------------------------------------------------
 
                 RandomWalkModel* model;
@@ -311,16 +311,20 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     if (graph[walk_id % total_vertices].degree == 0)
                     {
 //                        types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({walk_id*config::walk_length,std::numeric_limits<uint32_t>::max() - 1});
-                        types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + 0, walk_id % total_vertices});
+                        /*types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + 0, walk_id % total_vertices});*/
                         cuckoo.insert(walk_id % total_vertices, std::vector<types::Vertex>());
                         cuckoo.update_fn(walk_id % total_vertices, [&](auto& vector) {
-                            vector.push_back(hash);
+//                            vector.push_back(hash);
+                            vector.push_back(walk_id*config::walk_length);
                         });
+
+						// Update NXTs
+//	                    NXTs.insert(walk_id*config::walk_length, walk_id % total_vertices);
 
                         // ---------------------------------------------------------------
                         // Refine the next (min, max) for the current vertex -------------
-                        next_min[walk_id % total_vertices] = std::min(next_min[walk_id % total_vertices], walk_id % total_vertices);
-                        next_max[walk_id % total_vertices] = std::max(next_max[walk_id % total_vertices], walk_id % total_vertices);
+//                        next_min[walk_id % total_vertices] = std::min(next_min[walk_id % total_vertices], walk_id % total_vertices);
+//                        next_max[walk_id % total_vertices] = std::max(next_max[walk_id % total_vertices], walk_id % total_vertices);
 //                        cout << "--- first node with degree zero, next min=" << next_min[walk_id % total_vertices] << " and max=" << next_max[walk_id % total_vertices] << endl;
                         // ---------------------------------------------------------------
 
@@ -355,29 +359,40 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         if (!cuckoo.contains(state.first))
                             cuckoo.insert(state.first, std::vector<types::Vertex>());
 
-                        types::PairedTriplet hash = (position != config::walk_length - 1) ?
+/*                        types::PairedTriplet hash = (position != config::walk_length - 1) ?
                                 pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, new_state.first}) :
-                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, state.first}); // assign the current as next if EOW
+                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, state.first});*/ // assign the current as next if EOW
 //                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position,std::numeric_limits<uint32_t>::max() - 1});
 
+	                    auto hash = (position != config::walk_length - 1) ?
+                                new_state.first : //pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, new_state.first}) :
+                                state.first; //pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, state.first});
+
+	                    // Update NXTs
+//	                    if (!NXTs.contains(walk_id*config::walk_length+position))
+//		                    NXTs.insert(walk_id*config::walk_length+position, 666);
+//						NXTs.update_fn(walk_id*config::walk_length+position, [&](auto& next) {
+//						  next = hash;
+//						});
+
                         cuckoo.update_fn(state.first, [&](auto& vector) {
-                            vector.push_back(hash);
+                            vector.push_back(walk_id*config::walk_length+position);
                         });
 
                         // ----------------------------------------------------------------------
-                        // Refine the next (min, max) for the current vertex --------------------
-                        if (position != config::walk_length - 1)
-                        {
-                            next_min[state.first] = std::min(next_min[state.first], new_state.first);
-                            next_max[state.first] = std::max(next_max[state.first], new_state.first);
-//                            cout << "*** next in the walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
-                        }
-                        else
-                        {
-                            next_min[state.first] = std::min(next_min[state.first], state.first);
-                            next_max[state.first] = std::max(next_max[state.first], state.first);
-                            //                            cout << "*** next in the walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
-                        }
+//                        // Refine the next (min, max) for the current vertex --------------------
+//                        if (position != config::walk_length - 1)
+//                        {
+//                            next_min[state.first] = std::min(next_min[state.first], new_state.first);
+//                            next_max[state.first] = std::max(next_max[state.first], new_state.first);
+////                            cout << "*** next in the walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
+//                        }
+//                        else
+//                        {
+//                            next_min[state.first] = std::min(next_min[state.first], state.first);
+//                            next_max[state.first] = std::max(next_max[state.first], state.first);
+//                            //                            cout << "*** next in the walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
+//                        }
                         // ---------------------------------------------------------------
 
                         // Assign the new state to the sampler
@@ -407,7 +422,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
 						// assume the initial random walks are created at batch 0
 						vector<dygrl::CompressedWalks> vec_compwalks;
-						vec_compwalks.push_back(dygrl::CompressedWalks(sequence, vertex, next_min[vertex], next_max[vertex], 0));
+						vec_compwalks.push_back(dygrl::CompressedWalks(sequence, vertex, 666, 666, 0)); // place dummy nexts next_min[vertex], next_max[vertex]
                         vertices[vertex] = std::make_pair(vertex, VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
                     }
                     else
@@ -736,10 +751,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //						cout << "iterating wt-" << a.compressed_walks[index].created_at_batch << "(created on batch-" << a.compressed_walks[index].created_at_batch << ")" << endl;
 					    a.compressed_walks[index].iter_elms(v, [&](auto value)
 						{
-							auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
-							auto walk_id = pair.first / config::walk_length;
-							auto position = pair.first - (walk_id * config::walk_length);
-							auto next = pair.second;
+//							auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
+							auto walk_id = value / config::walk_length; // pair.first / config::walk_length;
+							auto position = /*pair.first*/ value - (walk_id * config::walk_length);
+//							auto next = pair.second; // TODO: info is in the NXTs hashmap
 
 
 							auto p_min_global = config::walk_length;
@@ -814,7 +829,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				    });
 				    pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
 
-				    vec_compwalks.push_back(dygrl::CompressedWalks(sequence, v, 666, 666, batch_num-1)); // dummy min,max, batch_num
+				    vec_compwalks.push_back(dygrl::CompressedWalks(sequence, v, 666, 666, batch_num)); // dummy min,max, batch_num
 //					cout << vec_compwalks.back().size() << " ";
 				}
 //				cout << endl;
@@ -824,7 +839,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				for (auto ind = 0; ind < a.compressed_walks.size(); ind++)
 				{
 			        auto refined_walk_tree = walk_plus::difference(vec_compwalks[ind], a.compressed_walks[ind], v);
-					new_compressed_vector.push_back(dygrl::CompressedWalks(refined_walk_tree.plus, refined_walk_tree.root, 666, 666, batch_num-1)); // use dummy min, max, batch_num for now
+					new_compressed_vector.push_back(dygrl::CompressedWalks(refined_walk_tree.plus, refined_walk_tree.root, 666, 666, batch_num)); // use dummy min, max, batch_num for now
 
 				  // deallocate the memory
 				//                            lists::deallocate(x.compressed_walks[ind].plus);
@@ -838,7 +853,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 				// Merge all the end trees into one
                 std::vector<dygrl::CompressedWalks> final_compressed_vector;
-                final_compressed_vector.push_back(CompressedWalks(batch_num-1));
+                final_compressed_vector.push_back(CompressedWalks(batch_num));
                 for (auto ind = 0; ind < new_compressed_vector.size(); ind++)
                 {
                     auto union_all_tree = walk_plus::uniont(new_compressed_vector[ind], final_compressed_vector[0], v);
@@ -849,7 +864,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     lists::deallocate(final_compressed_vector[0].plus);
                     walk_plus::Tree_GC::decrement_recursive(final_compressed_vector[0].root);
 
-                    final_compressed_vector[0] = dygrl::CompressedWalks(union_all_tree.plus, union_all_tree.root, 666, 666, batch_num-1); // refine the batch num after merging this node
+                    final_compressed_vector[0] = dygrl::CompressedWalks(union_all_tree.plus, union_all_tree.root, 666, 666, batch_num); // refine the batch num after merging this node
 //					cout << final_compressed_vector.back().size() << " ";
                 }
 //				cout << endl;
@@ -917,11 +932,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     return VertexEntry(union_edge_tree, final_compressed_vector, b.sampler_manager); // todo: check this sampler manager
 //                    return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager
                 };
-//cout << "2" << endl;
+cout << "2" << endl;
                 graph_update_time_on_insert.start();
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace,true, run_seq);
                 graph_update_time_on_insert.stop();
-//cout << "3" << endl;
+cout << "3" << endl;
 				// Store/cache the MAV of each batch
 //				MAVS.insert(batch_num, rewalk_points);
 //cout << "rewalk_points before: " << rewalk_points.size() << endl;
@@ -935,13 +950,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 //				MAVS2[batch_num] = rewalk_points;
 //cout << "rewalk_points  after: " << rewalk_points.size() << endl;
-//cout << "4" << endl;
+cout << "4" << endl;
                 walk_update_time_on_insert.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 if (apply_walk_updates)
                         this->batch_walk_update(rewalk_points, affected_walks, batch_num); // todo: deactivated the walks
                 walk_update_time_on_insert.stop();
-//cout << "10" << endl;
+cout << "10" << endl;
                 // 6. Deallocate memory
                 if (num_starts > stack_size) pbbs::free_array(new_verts);
                 if (edges_deduped)           pbbs::free_array(edges_deduped);
@@ -1573,7 +1588,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 }
 	            walk_insert_init.stop();
 
-//cout << "5" << endl;
+cout << "5" << endl;
 				// Most time-consuming part of the process
 	            walk_insert_2jobs.start();
                 // Parallel Update of Affected Walks
@@ -1600,14 +1615,18 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     if (graph[current_vertex_new_walk].degree == 0)
                     {
-                        szudzik_hash.start();
-						types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
-						szudzik_hash.stop();
+//                        szudzik_hash.start();
+//						types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
+//						szudzik_hash.stop();
+						auto hash = affected_walks[index] * config::walk_length;
 
                         if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
                         inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
                             vector.push_back(hash);
                         });
+
+	                    // Update NXTs
+//	                    NXTs.insert(affected_walks[index] * config::walk_length, current_vertex_new_walk);
 
                         // ------------------------- Search In Range Code -----------------------------------------------------------------------
                         // Refine the (min, max) I for the walk-tree of current_vertex_new_walk -------------------------------------------------
@@ -1662,18 +1681,28 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 //						szudzik_hash.start();
 //                        ij_szudzik.start();
-						types::PairedTriplet hash = (position != config::walk_length - 1) ?
+/*						types::PairedTriplet hash = (position != config::walk_length - 1) ?
                             pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
-                            pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, current_vertex_new_walk});
+                            pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, current_vertex_new_walk});*/
 //                                pairings::Szudzik<types::Vertex>::pair({affected_walks[index]*config::walk_length + position, std::numeric_limits<uint32_t>::max() - 1});
 //                            cout << "Insertion wid=" << index << ", pos=" << (int) position << ", next=" << ((position != config::walk_length - 1) ? state.first : cached_current_vertex) << " ===> pairedTriplet=" << hash << endl;
 //						ij_szudzik.stop();
 //						szudzik_hash.stop();
+	                    auto hash = (position != config::walk_length - 1) ? state.first : current_vertex_new_walk;
 
-                        if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
+	                    if (!inserts.contains(current_vertex_new_walk))
+							inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
                         inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
-                            vector.push_back(hash);
+                            vector.push_back(affected_walks[index] * config::walk_length + position);
                         });
+
+	                    // Update NXTs
+//	                    if (!NXTs.contains(affected_walks[index] * config::walk_length + position))
+//		                    NXTs.insert(affected_walks[index] * config::walk_length + position, 666);
+//	                    NXTs.update_fn(affected_walks[index] * config::walk_length + position, [&](auto& next) {
+//	                      next = hash;
+//	                    });
+
 
                         // ------------------------- Search In Range Code ----- todo: ensure correctness!
 /*                        if (position != config::walk_length - 1)
@@ -1699,7 +1728,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 });
 	            walk_insert_2jobs.stop();
-//cout << "6" << endl;
+cout << "6" << endl;
 
 	            walk_insert_2accs.start();
 	            using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
@@ -1746,25 +1775,26 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
 					vector<dygrl::CompressedWalks> vec_compwalks;
+//					cout << "batch_num: " << batch_num << endl;
 					vec_compwalks.push_back(dygrl::CompressedWalks(sequence, temp_inserts[j].first, 666, 666, /*next_min_wtree_I[temp_inserts[j].first], next_max_wtree_I[temp_inserts[j].first],*/ batch_num));
                     insert_walks[j] = std::make_pair(temp_inserts[j].first,VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
                 });
 				bdown_create_vertex_entries.stop();
-//cout << "7" << endl;
-
+cout << "7" << endl;
+cout << "insert_walks size: " << insert_walks.size() << endl;
                 pbbs::sample_sort_inplace(pbbs::make_range(insert_walks.begin(), insert_walks.end()), [&](auto& x, auto& y) {
                     return x.first < y.first;
                 });
-
+cout << "7.5" << endl;
                 auto replaceI = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
                 {
 //                    auto tree_plus = walk_plus::uniont(x.compressed_walks, y.compressed_walks, src); // x + y
 
 					// add compressed walks of y to x
 					// todo: is this correct?
-					auto x_prime = x.compressed_walks;
+/*					auto x_prime = x.compressed_walks;
 					if (y.compressed_walks.back().size() != 0)
-						x_prime.push_back(y.compressed_walks.back()); // y has only one walk tree
+						x_prime.push_back(y.compressed_walks.back()); // y has only one walk tree*/
 
                     // deallocate the memory
 //                    lists::deallocate(x.compressed_walks.plus);
@@ -1772,17 +1802,42 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                    lists::deallocate(y.compressed_walks.front().plus);
 //                    walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.front().root);
 
+					// TODO: Here we must also delete the current walk-tree from all previous trees
+                    // Do the differences
+                    std::vector<dygrl::CompressedWalks> new_compressed_vector;
+                    for (auto ind = 0; ind < x.compressed_walks.size(); ind++)
+					{
+                        auto refined_walk_tree = walk_plus::difference(y.compressed_walks.back(), x.compressed_walks[ind], src);
+	                    new_compressed_vector.push_back(dygrl::CompressedWalks(refined_walk_tree.plus, refined_walk_tree.root, 666, 666, x.compressed_walks[ind].created_at_batch)); // use dummy min, max, batch_num for now
+
+	                  // deallocate the memory
+//	                    lists::deallocate(x.compressed_walks[ind].plus);
+//                        walk_plus::Tree_GC::decrement_recursive(x.compressed_walks[ind].root);
+//                        lists::deallocate(y.compressed_walks[ind].plus);
+//                        walk_plus::Tree_GC::decrement_recursive(y.compressed_walks[ind].root);
+//					cout << vec_compwalks.back().size() << " "; // TODO: CHECK memory-wise. These are empty after the difference
+//					cout << new_compressed_vector.back().size() << " ";
+                    }
+//				cout << endl;
+
+  					if (y.compressed_walks.back().size() != 0)
+						new_compressed_vector.push_back(y.compressed_walks.back());
+//
+//                    lists::deallocate(y.compressed_walks.back().plus);
+//                    walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.back().root);
+
 //                    return VertexEntry(x.compressed_edges, dygrl::CompressedWalks(tree_plus.plus, tree_plus.root, new_next_min, new_next_max), x.sampler_manager);
-                    return VertexEntry(x.compressed_edges, x_prime, x.sampler_manager);
+//                    return VertexEntry(x.compressed_edges, x_prime, x.sampler_manager);
+                    return VertexEntry(x.compressed_edges, new_compressed_vector, x.sampler_manager);
                 };
 
-//cout << "8" << endl;
+cout << "8" << endl;
                 // Then, apply the batch insertions
 				apply_multiinsert_ctrees.start();
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, insert_walks.begin(), insert_walks.size(), replaceI, true);
 				apply_multiinsert_ctrees.stop();
 				walk_insert_2accs.stop();
-//cout << "9" << endl;
+cout << "9" << endl;
 
             } // End of batch walk update procedure
 
@@ -2199,9 +2254,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						{
 						  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
 
-						  auto walk_id  = pair.first / config::walk_length;
-						  auto position = pair.first - (walk_id * config::walk_length);
-						  auto next_vertex   = pair.second;
+						  auto walk_id  = /*pair.first*/ enc_triplet / config::walk_length;
+						  auto position = /*pair.first*/ enc_triplet - (walk_id * config::walk_length);
+//						  auto next_vertex   = pair.second; // TODO: info in NXTs
 			//				cout << enc_triplet << " ";
 			//			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
 
@@ -2563,6 +2618,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //            libcuckoo::cuckoohash_map<int, types::MapAffectedVertices> MAVS; // batch_num, MAV[batch_num]
 //			types::MapAffectedVertices MAVS2[10];
 			std::vector<types::MapAffectedVertices> MAVS2;
+			// Oracle that has the nxt nid for each {w,p} pair.
+			libcuckoo::cuckoohash_map<types::Vertex, types::Vertex> NXTs; // key: wxl+p, value: next TODO: pairing functions are not necessary now
 
             /**
             * Initializes memory pools for underlying lists.
