@@ -95,17 +95,19 @@ void throughput(commandLine& command_line)
     auto time_form_scratch_initial_walks = initial_walks_from_scratch_timer.get_total();
 
 //	malin.generate_initial_random_walks();
-	int n_batches = 5; // todo: how many batches per batch size?
+	int n_batches = 10; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 50; //5;
+	batch_sizes[0] = 3500; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
 //	batch_sizes[4] = 50000;
 //  batch_sizes[5] = 500000;
+
+	timer MergeAll("MergeAllTimer", false);
 
 	for (short int i = 0; i < batch_sizes.size(); i++)
 	{
@@ -176,6 +178,11 @@ void throughput(commandLine& command_line)
 			latency_insert[b] = (double) last_insert_time / x.size();
 
 			latency[b] = latency_insert[b];
+
+			MergeAll.start();
+			if (b > 0)
+				malin.merge_walk_trees_all_vertices_parallel(b+1); // use the parallel merging
+			MergeAll.stop();
 
 			// free edges
 			pbbs::free_array(edges.first);
@@ -276,10 +283,10 @@ void throughput(commandLine& command_line)
 	}
 
 	// Merge all walks after the bathes
-	timer MergeAll("MergeAllTimer", false);
-	MergeAll.start();
-	malin.merge_walk_trees_all_vertices_parallel(n_batches); // use the parallel merging
-	MergeAll.stop();
+//	timer MergeAll("MergeAllTimer", false);
+//	MergeAll.start();
+//	malin.merge_walk_trees_all_vertices_parallel(n_batches); // use the parallel merging
+//	MergeAll.stop();
 	std::cout << "Merge all the walk-trees time: " << MergeAll.get_total() << std::endl;
 	cout << "merge_triplets_to_delete calculation: " << merge_calc_triplets_to_delete.get_total() << endl;
 	cout << "merge_delete_walks       calculation: " << merge_create_delete_walks.get_total() << endl;
