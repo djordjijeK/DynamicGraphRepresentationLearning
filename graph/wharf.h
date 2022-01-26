@@ -626,11 +626,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				        auto refined_walk_tree = walk_plus::difference(vec_compwalks[ind], a.compressed_walks[ind], v);
 						new_compressed_vector.push_back(dygrl::CompressedWalks(refined_walk_tree.plus, refined_walk_tree.root, 666, 666, batch_num-1)); // use dummy min, max, batch_num for now
 
-					  // deallocate the memory
-					//                            lists::deallocate(x.compressed_walks[ind].plus);
-					//                            walk_plus::Tree_GC::decrement_recursive(x.compressed_walks[ind].root);
-					//                            lists::deallocate(y.compressed_walks[ind].plus);
-					//                            walk_plus::Tree_GC::decrement_recursive(y.compressed_walks[ind].root);
+					    // deallocate the memory
+                        lists::deallocate(vec_compwalks[ind].plus);
+                        walk_plus::Tree_GC::decrement_recursive(vec_compwalks[ind].root);
+                        lists::deallocate(a.compressed_walks[ind].plus);
+                        walk_plus::Tree_GC::decrement_recursive(a.compressed_walks[ind].root);
 	//					cout << vec_compwalks.back().size() << " "; // TODO: CHECK memory-wise. These are empty after the difference
 	//					cout << new_compressed_vector.back().size() << " ";
 					}
@@ -1195,11 +1195,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				        auto refined_walk_tree = walk_plus::difference(y.compressed_walks[ind], x.compressed_walks[ind], src);
 					    new_compressed_vector.push_back(dygrl::CompressedWalks(refined_walk_tree.plus, refined_walk_tree.root, 666, 666, num_batches_so_far)); // use dummy min, max, batch_num for now
 
-					  // deallocate the memory
-//                            lists::deallocate(x.compressed_walks[ind].plus);
-//                            walk_plus::Tree_GC::decrement_recursive(x.compressed_walks[ind].root);
-//                            lists::deallocate(y.compressed_walks[ind].plus);
-//                            walk_plus::Tree_GC::decrement_recursive(y.compressed_walks[ind].root);
+					    // deallocate the memory
+                        lists::deallocate(x.compressed_walks[ind].plus);
+		                walk_plus::Tree_GC::decrement_recursive(x.compressed_walks[ind].root);
+		                lists::deallocate(y.compressed_walks[ind].plus);
+		                walk_plus::Tree_GC::decrement_recursive(y.compressed_walks[ind].root);
 				    }
 
 				    // merge the refined walk-trees here
