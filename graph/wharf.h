@@ -4,7 +4,6 @@
 #include <graph/api.h>
 #include <cuckoohash_map.hh>
 #include <pbbslib/utilities.h>
-//#include <concurrentqueue.h>
 
 #include <config.h>
 #include <pairings.h>
@@ -223,21 +222,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             {
                 auto map_func = [&] (Graph::E& entry, size_t ind)
                 {
-                    // delete compressed walks - plus part
-//                    if (entry.second.compressed_walks.plus)
-//                    {
-//                        lists::deallocate(entry.second.compressed_walks.plus);
-//                        entry.second.compressed_walks.plus = nullptr;
-//                    }
-//                    // delete compresed walks - tree part
-//                    if (entry.second.compressed_walks.root)
-//                    {
-//                        auto T = walk_plus::edge_list();
-//
-//                        T.root = entry.second.compressed_walks.root;
-//                        entry.second.compressed_walks.root = nullptr;
-//                    }
-
 					for (auto cw : entry.second.compressed_walks)
 					{
 						if (cw.plus)
@@ -275,22 +259,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto vertices       = pbbs::sequence<VertexStruct>(total_vertices);
 
-                // ------- Code for (min, max) of the next of each vertex -------------------------
-                constexpr const size_t array_next_size = 20;
-                types::Vertex next_min_stack[array_next_size], next_max_stack[array_next_size];
-                types::Vertex* next_min = next_min_stack; types::Vertex* next_max = next_max_stack;
-                if (total_vertices > array_next_size)
-                {
-                    next_min = pbbs::new_array<types::Vertex>(total_vertices);
-                    next_max = pbbs::new_array<types::Vertex>(total_vertices);
-                }
-                // Initialize all mins to max integer 32 bits and all maxs to zero
-                parallel_for(0, total_vertices, [&] (types::Vertex i) {
-                    next_min[i] = std::numeric_limits<uint32_t>::max();
-                    next_max[i] = 0;
-                });
-                // ---------------------------------------------------------------------------------
-
                 RandomWalkModel* model;
                 switch (config::random_walk_model)
                 {
@@ -316,13 +284,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         cuckoo.update_fn(walk_id % total_vertices, [&](auto& vector) {
                             vector.push_back(hash);
                         });
-
-                        // ---------------------------------------------------------------
-                        // Refine the next (min, max) for the current vertex -------------
-                        next_min[walk_id % total_vertices] = std::min(next_min[walk_id % total_vertices], walk_id % total_vertices);
-                        next_max[walk_id % total_vertices] = std::max(next_max[walk_id % total_vertices], walk_id % total_vertices);
-//                        cout << "--- first node with degree zero, next min=" << next_min[walk_id % total_vertices] << " and max=" << next_max[walk_id % total_vertices] << endl;
-                        // ---------------------------------------------------------------
 
                         return;
                     }
@@ -364,22 +325,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             vector.push_back(hash);
                         });
 
-                        // ----------------------------------------------------------------------
-                        // Refine the next (min, max) for the current vertex --------------------
-                        if (position != config::walk_length - 1)
-                        {
-                            next_min[state.first] = std::min(next_min[state.first], new_state.first);
-                            next_max[state.first] = std::max(next_max[state.first], new_state.first);
-//                            cout << "*** next in the walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
-                        }
-                        else
-                        {
-                            next_min[state.first] = std::min(next_min[state.first], state.first);
-                            next_max[state.first] = std::max(next_max[state.first], state.first);
-                            //                            cout << "*** next in the walk, min=" << next_min[state.first] << " and max=" << next_max[state.first] << endl;
-                        }
-                        // ---------------------------------------------------------------
-
                         // Assign the new state to the sampler
                         state = new_state;
                     }
@@ -407,7 +352,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
 						// assume the initial random walks are created at batch 0
 						vector<dygrl::CompressedWalks> vec_compwalks;
-						vec_compwalks.push_back(dygrl::CompressedWalks(sequence, vertex, next_min[vertex], next_max[vertex], 0));
+						vec_compwalks.push_back(dygrl::CompressedWalks(sequence, vertex, 666, 666, /*next_min[vertex], next_max[vertex],*/ 0)); // this is created at time 0
                         vertices[vertex] = std::make_pair(vertex, VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
                     }
                     else
@@ -428,8 +373,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 {
 //                    auto tree_plus = walk_plus::uniont(x.compressed_walks, y.compressed_walks, src);
 
-					// add compressed walks of y to x
-					// todo: is this correct?
 					auto x_prime = x;
 					x_prime.compressed_walks.push_back(y.compressed_walks.back()); // y has only one walk tree
 
@@ -439,116 +382,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                    lists::deallocate(y.compressed_walks.front().plus);
 //                    walk_plus::Tree_GC::decrement_recursive(y.compressed_walks.front().root);
 
-
 					return x_prime;
-//                    return VertexEntry(x.compressed_edges,
-//                                       CompressedWalks(tree_plus.plus, tree_plus.root, y.compressed_walks.vnext_min, y.compressed_walks.vnext_max),
-//                                       x.sampler_manager);
                 };
 
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, vertices.begin(), vertices.size(), replace, true);
                 delete model;
             }
-
-            /**
-             * @brief Walks through the walk given walk id WITHOUT PRINTING IT.
-             *
-             * @param walk_id - unique walk ID
-             *
-             * @return - walk string representation
-             */
- /*           std::string traverse_walk(types::WalkID walk_id)
-            {
-                // 1. Grab the first vertex in the walk
-                types::Vertex current_vertex = walk_id % this->number_of_vertices();
-                std::stringstream string_stream;
-                types::Position position = 0;
-
-                // 2. Walk
-                types::Vertex previous_vertex = -1;
-//                while (current_vertex != std::numeric_limits<uint32_t>::max() - 1)
-                while (previous_vertex != current_vertex)
-//                while (true)
-                {
-//                    string_stream << current_vertex << " "; // DO NOT PRINT ANYTHING
-
-                    auto tree_node = this->graph_tree.find(current_vertex);
-
-                    #ifdef MALIN_DEBUG
-                        if (!tree_node.valid)
-                        {
-                            std::cerr << "Malin debug error! Malin::Walk::Vertex="
-                                      << current_vertex << " is not found in the vertex tree!"
-                                      << std::endl;
-
-                            std::exit(1);
-                        }
-                    #endif
-
-                    // Cache the previous current vertex before going to the next
-                    previous_vertex = current_vertex;
-
-                    if (config::range_search_mode)
-                        current_vertex = tree_node.value.compressed_walks.find_next_in_range(walk_id, position++, current_vertex);
-                    else
-                        current_vertex = tree_node.value.compressed_walks.find_next(walk_id, position++, current_vertex);
-
-//                    if (current_vertex == previous_vertex)
-//                        break; //Assumption: The datasets do not have self-loops.
-                }
-
-                return string_stream.str();
-            }*/
-
-            /**
-             * @brief Walks through the walk given walk id.
-             *
-             * @param walk_id - unique walk ID
-             *
-             * @return - walk string representation
-             */
- /*           std::string walk(types::WalkID walk_id)
-            {
-                // 1. Grab the first vertex in the walk
-                types::Vertex current_vertex = walk_id % this->number_of_vertices();
-                std::stringstream string_stream;
-                types::Position position = 0;
-
-                // 2. Walk
-                types::Vertex previous_vertex = -1;
-//                while (current_vertex != std::numeric_limits<uint32_t>::max() - 1)
-                while (previous_vertex != current_vertex)
-//                while (true)
-                {
-                    string_stream << current_vertex << " ";
-
-                    auto tree_node = this->graph_tree.find(current_vertex);
-
-                    #ifdef MALIN_DEBUG
-                        if (!tree_node.valid)
-                        {
-                            std::cerr << "Malin debug error! Malin::Walk::Vertex="
-                                      << current_vertex << " is not found in the vertex tree!"
-                                      << std::endl;
-
-                            std::exit(1);
-                        }
-                    #endif
-
-                    // Cache the previous current vertex before going to the next
-                    previous_vertex = current_vertex;
-
-                    if (config::range_search_mode)
-                        current_vertex = tree_node.value.compressed_walks.find_next_in_range(walk_id, position++, current_vertex);
-                    else
-                        current_vertex = tree_node.value.compressed_walks.find_next(walk_id, position++, current_vertex);
-
-//                    if (current_vertex == previous_vertex)
-//                        break; //Assumption: The datasets do not have self-loops.
-                }
-
-                return string_stream.str();
-            }*/
 
             /**
              * @brief Walks through the walk given walk id.
@@ -566,7 +405,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 // 2. Walk
                 types::Vertex previous_vertex;
-//                while (current_vertex != std::numeric_limits<uint32_t>::max() - 1)
                 while (true)
                 {
                     string_stream << current_vertex << " ";
@@ -596,37 +434,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 return string_stream.str();
             }
-
-            // todo: left to right traversal to find the previous vertex in a walk (highly inefficient)
-            // todo: (Solution 1) extend wharf to support right to left traversal too
-            // todo: (Solution 2) cache somehow in each node of a walk the previous node id as well (tailored to 2nd order walks)
- /*           types::Vertex vertex_at_walk(types::WalkID walk_id, types::Position position)
-            {
-                types::Vertex current_vertex = walk_id % this->number_of_vertices();
-
-                for (types::Position pos = 0; pos < position; pos++)
-                {
-                    auto tree_node = this->graph_tree.find(current_vertex);
-
-                    #ifdef MALIN_DEBUG
-                        if (!tree_node.valid)
-                        {
-                            std::cerr << "Malin debug error! Malin::Walk::Vertex="
-                                      << current_vertex << " is not found in the vertex tree!"
-                                      << std::endl;
-
-                            std::exit(1);
-                        }
-                    #endif
-
-                    if (config::range_search_mode)
-                        current_vertex = tree_node.value.compressed_walks.find_next_in_range(walk_id, pos, current_vertex);
-                    else
-                        current_vertex = tree_node.value.compressed_walks.find_next(walk_id, pos, current_vertex);
-                }
-
-                return current_vertex;
-            }*/
 
             /**
             * @brief Inserts a batch of edges in the graph.
@@ -747,7 +554,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							for (auto mav = a.compressed_walks[index].created_at_batch+1; mav < batch_num; mav++)
 							{
 //								read_access_MAV.start();
-
 								if (MAVS2[mav].contains(walk_id))
 								{
 									auto temp_pos = get<0>((MAVS2[mav]).find(walk_id)); // it does not always contain this wid
