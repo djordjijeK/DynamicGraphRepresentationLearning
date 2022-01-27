@@ -39,5 +39,8 @@ auto ij_szudzik                    = timer("IJszudzik", false);
 // ---
 auto mav_deletions_obsolete        = timer("MAVdeletions", false);
 auto mav_iteration                 = timer("MAViteration", false);
+// ---
+auto MergeAll                      = timer("MergeAllTimer", false);
+
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_CONFIG_H

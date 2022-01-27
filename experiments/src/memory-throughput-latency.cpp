@@ -107,7 +107,6 @@ void throughput(commandLine& command_line)
 //	batch_sizes[4] = 50000;
 //  batch_sizes[5] = 500000;
 
-	timer MergeAll("MergeAllTimer", false);
 
 	for (short int i = 0; i < batch_sizes.size(); i++)
 	{
@@ -139,6 +138,7 @@ void throughput(commandLine& command_line)
 		ij_szudzik.reset();
 		mav_deletions_obsolete.reset();
 		mav_iteration.reset();
+		MergeAll.reset();
 		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -179,10 +179,10 @@ void throughput(commandLine& command_line)
 
 			latency[b] = latency_insert[b];
 
-			MergeAll.start();
+/*			MergeAll.start();
 			if (b > 0)
 				malin.merge_walk_trees_all_vertices_parallel(b+1); // use the parallel merging
-			MergeAll.stop();
+			MergeAll.stop();*/
 
 			// Run insert and merge in parallel
 /*			fj.pardo([&]()
