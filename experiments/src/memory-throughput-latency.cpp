@@ -100,7 +100,7 @@ void throughput(commandLine& command_line)
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 3500; //5;
+	batch_sizes[0] = 3500; //00; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -183,6 +183,28 @@ void throughput(commandLine& command_line)
 			if (b > 0)
 				malin.merge_walk_trees_all_vertices_parallel(b+1); // use the parallel merging
 			MergeAll.stop();
+
+			// Run insert and merge in parallel
+/*			fj.pardo([&]()
+	         {
+	           insert_timer.start();
+	           auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
+	           insert_timer.stop();
+//cout << "11" << endl;
+
+	           total_insert_walks_affected += x.size();
+
+	           last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
+	           latency_insert[b] = (double) last_insert_time / x.size();
+
+	           latency[b] = latency_insert[b];
+	         }, [&]()
+	         {
+	           MergeAll.start();
+	           if (b > 0)
+		           malin.merge_walk_trees_all_vertices_parallel(b+1); // use the parallel merging
+	           MergeAll.stop();
+	         });*/
 
 			// free edges
 			pbbs::free_array(edges.first);

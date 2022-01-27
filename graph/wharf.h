@@ -1058,6 +1058,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     return VertexEntry(x.compressed_edges, x_prime, x.sampler_manager);
                 };
 
+				cout << "For batch-" << batch_num << " we are touching " << insert_walks.size() << " / " << number_of_vertices() << " vertices" << endl;
+
 //cout << "8" << endl;
                 // Then, apply the batch insertions
 				apply_multiinsert_ctrees.start();
