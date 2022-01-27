@@ -1060,6 +1060,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 				cout << "For batch-" << batch_num << " we are touching " << insert_walks.size() << " / " << number_of_vertices() << " vertices" << endl;
 
+				// merge nonfull
+				MergeAll.start();
+//				merge_walk_trees_all_vertices_nonfull(batch_num, touched_vertices);
+				merge_walk_trees_all_vertices_parallel(batch_num); // better one pass over all the tree, than findNext() to find obsolete parts
+				MergeAll.stop();
+
 //cout << "8" << endl;
                 // Then, apply the batch insertions
 				apply_multiinsert_ctrees.start();
@@ -1073,11 +1079,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				parallel_for(0, insert_walks.size(), [&](size_t i){
 				  touched_vertices[i] = insert_walks[i].first;
 				});
-
-				// merge nonfull
-				MergeAll.start();
-				merge_walk_trees_all_vertices_nonfull(batch_num, touched_vertices);
-				MergeAll.stop();
 
             } // End of batch walk update procedure
 
