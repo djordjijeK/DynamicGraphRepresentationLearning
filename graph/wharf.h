@@ -923,8 +923,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 //cout << "5" << endl;
 
-				fj.pardo([&]()
-	            {
+/*				fj.pardo([&]()
+	            {*/
 					walk_insert_2jobs.start();
 	                // Parallel Update of Affected Walks
 	                parallel_for(0, affected_walks.size(), [&](auto index)
@@ -1003,15 +1003,19 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 	                });
 		            walk_insert_2jobs.stop();
-	            }, [&]()
+/*	            }, [&]()
 	            {
 					// ------------
 					// --- Merge non-MAV vertices
 					// ------------
-					MergeAll.start();
-	                merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
-	                MergeAll.stop();
-				});
+
+				});*/
+
+				MergeAll.start();
+//				if (batch_num % 3 == 0)
+					merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
+//                    merge_walk_trees_all_vertices_nonMAV(batch_num); // ok merge all old nodes
+				MergeAll.stop();
 
 //cout << "6" << endl;
 

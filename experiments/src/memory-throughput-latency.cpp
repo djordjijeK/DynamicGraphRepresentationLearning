@@ -100,7 +100,7 @@ void throughput(commandLine& command_line)
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 3500; //00; //5;
+	batch_sizes[0] = 200; //00; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -251,42 +251,42 @@ void throughput(commandLine& command_line)
 
 		// --- profiling ---
 		std::cout << "{ total profiling for insert and delete" << std::endl;
-		std::cout << "Initialization: "
-		          << walk_insert_init.get_total() / n_batches << " ("
+		std::cout << "Initialization total: "
+		          << walk_insert_init.get_total() /*/ n_batches*/ << /*" ("
 		          << (walk_insert_init.get_total() * 100) /
 		             (walk_insert_init.get_total() +
 		              walk_insert_2jobs.get_total() +
-		              walk_insert_2accs.get_total()) << "%)" << std::endl;
-		std::cout << "Insert/Delete Jobs: "
-		          << walk_insert_2jobs.get_total() / n_batches << " ("
+		              walk_insert_2accs.get_total()) << "%)" <<*/ std::endl;
+		std::cout << "Insert Job (Sampling + Szudzik) total: "
+		          << walk_insert_2jobs.get_total() /*/ n_batches << " ("
 		          << (walk_insert_2jobs.get_total() * 100) /
 		             (walk_insert_init.get_total() +
 		              walk_insert_2jobs.get_total() +
-		              walk_insert_2accs.get_total()) << "%)" << std::endl;
-		std::cout << "InsertJob: " << ij.get_total() / n_batches
-		          << " | DeleteJob: " << dj.get_total() / n_batches << std::endl;
-		cout << "insertJob sampling: " << ij_sampling.get_total() / n_batches << endl;
-		cout << "insertJob szudzik : " << ij_szudzik.get_total() / n_batches << endl;
+		              walk_insert_2accs.get_total()) << "%)"*/ << std::endl;
+//		std::cout << "InsertJob: " << ij.get_total() / n_batches
+//		          << " | DeleteJob: " << dj.get_total() / n_batches << std::endl;
+//		cout << "insertJob sampling: " << ij_sampling.get_total() / n_batches << endl;
+//		cout << "insertJob szudzik : " << ij_szudzik.get_total() / n_batches << endl;
 
-		std::cout << "FindInVertexTree in DeleteJob total: "
-		          << walk_find_in_vertex_tree.get_total() / n_batches
-		          << std::endl;
-		std::cout << "FindNext in DeleteJob total: "
-		          << walk_find_next_tree.get_total() / n_batches << std::endl;
-		std::cout << "FindNext (search of the tree): "
-		          << fnir_tree_search.get_total() / n_batches << std::endl;
-		std::cout << "Sudzik total: " << szudzik_hash.get_total() / n_batches
-		          << std::endl;
+//		std::cout << "FindInVertexTree in DeleteJob total: "
+//		          << walk_find_in_vertex_tree.get_total() / n_batches
+//		          << std::endl;
+//		std::cout << "FindNext in DeleteJob total: "
+//		          << walk_find_next_tree.get_total() / n_batches << std::endl;
+//		std::cout << "FindNext (search of the tree): "
+//		          << fnir_tree_search.get_total() / n_batches << std::endl;
+//		std::cout << "Sudzik total: " << szudzik_hash.get_total() / n_batches
+//		          << std::endl;
 
-		std::cout << "Accumulators: "
-		          << walk_insert_2accs.get_total() / n_batches << " ("
+		std::cout << "Accumulators total: "
+		          << walk_insert_2accs.get_total() /*/ n_batches << " ("
 		          << (walk_insert_2accs.get_total() * 100) /
 		             (walk_insert_init.get_total() +
 		              walk_insert_2jobs.get_total() +
-		              walk_insert_2accs.get_total()) << "%)" << std::endl;
-		cout <<  "Multiinsert: " << apply_multiinsert_ctrees.get_total() / n_batches << endl;
-		cout <<  "Create Vertex Entries (for loop with lock_table): " << bdown_create_vertex_entries.get_total() / n_batches << endl;
-		cout <<  "Linear cuckoo-hashmap scan: " << linear_cuckoo_acc_scann.get_total() / n_batches << endl;
+		              walk_insert_2accs.get_total()) << "%)"*/ << std::endl;
+//		cout <<  "Multiinsert: " << apply_multiinsert_ctrees.get_total() / n_batches << endl;
+//		cout <<  "Create Vertex Entries (for loop with lock_table): " << bdown_create_vertex_entries.get_total() / n_batches << endl;
+//		cout <<  "Linear cuckoo-hashmap scan: " << linear_cuckoo_acc_scann.get_total() / n_batches << endl;
 		std::cout << "}" << std::endl;
 		// --- profiling ---
 
