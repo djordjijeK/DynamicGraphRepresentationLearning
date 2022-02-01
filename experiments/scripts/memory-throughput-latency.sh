@@ -8,9 +8,9 @@ walk_model="deepwalk"             # deepwalk | node2vec
 paramP=0.5                        # node2vec paramP
 paramQ=2.0                        # node2vec paramQ
 sampler_init_strategy="weight"    # random | burnin | weight
-declare -a graphs=("aspen-paper-graph")
-declare -a walks_per_node=(1)
-declare -a walk_length=(5)
+declare -a graphs=("flickr-graph")
+declare -a walks_per_node=(10)
+declare -a walk_length=(80)
 range_search="true"               # range search mode
 determinism="true"                # determinism
 
