@@ -95,12 +95,12 @@ void throughput(commandLine& command_line)
     auto time_form_scratch_initial_walks = initial_walks_from_scratch_timer.get_total();
 
 //	malin.generate_initial_random_walks();
-	int n_batches = 10; // todo: how many batches per batch size?
+	int n_batches = 1; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 200; //00; //5;
+	batch_sizes[0] = 5; //00; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;

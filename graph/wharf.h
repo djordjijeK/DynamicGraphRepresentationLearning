@@ -12,6 +12,7 @@
 
 #include <models/deepwalk.h>
 #include <models/node2vec.h>
+#include <set>
 
 namespace dynamic_graph_representation_learning_with_metropolis_hastings
 {
@@ -1013,8 +1014,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 				MergeAll.start();
 //				if (batch_num % 3 == 0)
-					merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
+//					merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
+//					merge_walk_trees_rewalkvisitonce(rewalk_points, affected_walks, batch_num);
 //                    merge_walk_trees_all_vertices_nonMAV(batch_num); // ok merge all old nodes
+				merge_x(rewalk_points, affected_walks, batch_num);
 				MergeAll.stop();
 
 //cout << "6" << endl;
@@ -1430,20 +1433,207 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //					cout << flat_graph[i].compressed_walks[0].size() << " is equal to " << this->graph_tree.find(i).value.compressed_walks[0].size() << endl; // print out the size of the final single walk-tree
 			}
 
+			void merge_x(types::MapAffectedVertices& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks, int num_batches_so_far)
+			{
+				auto flat_graph = this->flatten_vertex_tree();
+
+				libcuckoo::cuckoohash_map<types::WalkID, std::pair<types::Vertex, types::Vertex>> cache; // key: w * l+p, value: {cur_nid, nxt_nid}
+
+				libcuckoo::cuckoohash_map<types::Position, std::set<std::pair<types::WalkID, types::Vertex>>> walks_at_position;
+				for (auto i = 0; i < config::walk_length; i++)
+					walks_at_position.insert(i, set<std::pair<types::WalkID, types::Vertex>>()); // initialization
+
+			    types::Position p_min_min = 255;
+				for (auto i = 0; i < affected_walks.size(); i++)
+				{
+					auto walk_id = affected_walks[i];
+					auto p_min   = std::get<0>(rewalk_points.find(affected_walks[i]));
+					auto v_min   = std::get<1>(rewalk_points.find(affected_walks[i]));
+
+					if (p_min < p_min_min)
+						p_min_min = p_min;
+
+					// populate
+					walks_at_position.update_fn(p_min, [&](auto& set) {
+					  set.insert({walk_id, v_min});
+					});
+				}
+				cout << "MIN{p_min}: " << (int) p_min_min << endl;
+				for (auto entry : walks_at_position.lock_table())
+					cout << "p=" << (int)entry.first << " size: " << entry.second.size() << endl;
+
+				std::set<types::Vertex> touched_vertices;
+
+				// Rewalking the old parts and parallel scanning (only once) the corresponding walk-trees
+				for (auto p = p_min_min; p < config::walk_length; p++)
+				{
+//					std::set<types::Vertex> touched_vertices;
+					for (auto& w : walks_at_position.find(p))
+					{
+						if (touched_vertices.find(w.second) == touched_vertices.end())
+						{
+							touched_vertices.insert(w.second);
+							cout << "(" << w.first << ", " << (int)p << ") -- iterating in " << w.second << endl;
+
+							cout << "-------------------------- (v=" << w.second << ") #triplets " << flat_graph[w.second].compressed_walks.back().size() << endl;
+
+							// Search the walk-tree of w.second
+							flat_graph[w.second].compressed_walks.back().iter_elms(w.second, [&](auto value)
+							{
+				                auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
+							    auto _walk_id = pair.first / config::walk_length;
+							    auto _position = pair.first - (_walk_id * config::walk_length);
+							    auto _next = pair.second;
+
+						        if (_walk_id == w.first && _position == p)
+						        {
+//						            walks_at_position.update_fn(p+1, [&](auto& set) { // TODO: at the next position
+//							          set.insert({w.first, _next});
+//							        });
+
+							        // cache it
+//							        types::WalkID encoding = _walk_id * config::walk_length + _position; // wxl+p
+//							        cache.insert(encoding, make_pair(w.second, _next));
+//							        cout << "*** inserting (w=" << _walk_id << ", " << (int)_position << ") to cache. cur=" << w.second << " and nxt=" << _next << endl;
+									cout << "reading *** (w=" << w.first << ", " << "p=" << (unsigned int)p << ") of nid=" << w.second << " with nxt=" << _next << endl;
+						        }
+								else
+						        {
+									// Cache the info related to the affected walks
+							        if (rewalk_points.contains(_walk_id))
+								    {
+							            auto mav_entry = rewalk_points.find(_walk_id);
+									    auto mav_entry_position = std::get<0>(mav_entry);
+
+								        if (_position >= mav_entry_position && _position >= p) // if after p_min
+									    {
+								            // cache it
+//										    types::WalkID encoding = _walk_id * config::walk_length + _position; // wxl+p
+//											cache.insert(encoding, make_pair(w.second, _next));
+//											cout << "inserting (w=" << _walk_id << ", p=" << (int)_position << ") to cache. cur=" << w.second << " and nxt=" << _next << endl;
+									        cout << "reading ??? (w=" << _walk_id << ", " << "p=" << (unsigned int)_position << ") of nid=" << w.second << " with nxt=" << _next << endl;
+
+									        if (touched_vertices.find(_next) == touched_vertices.end())
+									        {
+										        walks_at_position.update_fn(p+1, [&](auto& set) { // TODO: at the next position
+										          set.insert({_walk_id, _next}); // TODO: adds many times the same walk_id
+										        });
+									        }
+									    }
+								    }
+								}
+							});
+						}
+						else
+						{
+							cout << "(" << w.first << ", " << (int)p << ") -- have already iterated in " << w.second << endl;
+
+							// Vertex is touched already. The info should be in cache
+//							cout << "trying to find a (w=" << w.first << ", " << "p=" << (int)p << ")-element in the cache " << endl;
+//							auto pair = cache.find(w.first * config::walk_length + p); // cur_nid, nxt_nid
+//							cout << "cur: " << pair.first << " nxt: " << pair.second << endl;
+
+//							walks_at_position.update_fn(p+1, [&](auto& set) { // TODO: at the next position
+//							  set.insert(make_pair(w.first, pair.second));
+//							});
+						}
+					}
+				}
 
 
+
+			}
 
 			/**
 			 * @brief Merges the walk-trees of each vertex in the hybrid-tree such that in the end each vertex has only one walk-tree
 			 */
-			 void merge_walk_trees_rewalkvisitonce(int num_batches_so_far)
+			 void merge_walk_trees_rewalkvisitonce(types::MapAffectedVertices& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks, int num_batches_so_far)
 			 {
-
+			    types::ChangeAccumulator deletes = types::ChangeAccumulator();
 			    libcuckoo::cuckoohash_map<types::Vertex, std::vector<std::vector<types::PairedTriplet>>> all_to_delete; // let's use a vector
 
 	            auto flat_graph = this->flatten_vertex_tree();
 
-				merge_calc_triplets_to_delete.start();
+				std::set<types::Vertex> visited_vertices;
+				std::unordered_map<types::WalkID, types::Vertex> cached_nexts;
+
+				// TODO: Not parallel for
+				for (auto i = 0; i < affected_walks.size(); i++)
+				{
+					auto entry = rewalk_points.find(affected_walks[i]);
+					auto current_position        = std::get<0>(entry);
+					auto current_vertex_old_walk = std::get<1>(entry);
+//					auto should_reset            = std::get<2>(entry);
+
+					// current walk id
+					auto walk_id = affected_walks[i];
+
+					types::Position position = current_position;
+
+					types::Vertex cached_current_vertex = -1;
+//                        while (current_vertex_old_walk != std::numeric_limits<uint32_t>::max() - 1)
+					while (current_vertex_old_walk != cached_current_vertex)
+					{
+						types::Vertex next_old_walk;
+						// TODO: Only with the front
+
+						if (visited_vertices.find(current_vertex_old_walk) == visited_vertices.end())
+						{
+							// We are just visiting this one
+							visited_vertices.insert(current_vertex_old_walk);
+
+							flat_graph[current_vertex_old_walk].compressed_walks.front().iter_elms(current_vertex_old_walk, [&](auto value)
+							{
+						        auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
+							    auto _walk_id = pair.first / config::walk_length;
+							    auto _position = pair.first - (walk_id * config::walk_length);
+							    auto _next = pair.second;
+
+							    if (_walk_id == walk_id && _position == position)
+									next_old_walk = _next; // Found the next, but we continue
+								else
+							    {
+									// Cache the info related to the affected walks
+									if (rewalk_points.contains(_walk_id))
+									{
+										auto mav_entry = rewalk_points.find(_walk_id);
+										auto mav_entry_position   = std::get<0>(entry);
+//										auto mav_entry_vertex_min = std::get<1>(entry);
+
+										if (_position > mav_entry_position) // if after p_min
+										{
+											// cache it
+											auto encoding = _walk_id * config::walk_length + _position; // wxl+p
+											cached_nexts.insert({encoding, _next});
+										}
+									}
+								}
+							});
+						}
+						else
+						{
+							// Fetch the next vertex id from the old walk todo: we do not search again here
+							next_old_walk = cached_nexts[walk_id * config::walk_length + current_vertex_old_walk];
+						}
+
+						szudzik_hash.start();
+						types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[i] * config::walk_length + position, next_old_walk});
+//                            cout << "Deletion wid=" << index << ", pos=" << (int) position << ", next=" << next_old_walk << " ===> pairedTriplet=" << hash << endl;
+						szudzik_hash.stop();
+
+						if (!deletes.contains(current_vertex_old_walk)) deletes.insert(current_vertex_old_walk, std::vector<types::PairedTriplet>());
+						deletes.update_fn(current_vertex_old_walk, [&](auto& vector) {
+						  vector.push_back(hash);
+						});
+
+						// Then, transition to the next vertex in the old walk
+						position++;
+						cached_current_vertex   = current_vertex_old_walk; // cache the current vertex
+						current_vertex_old_walk = next_old_walk;
+					}
+				}
+
+/*				merge_calc_triplets_to_delete.start();
 //				for (auto i = 0; i < this->number_of_vertices(); i++) // TODO: make this parallel for
 				parallel_for(0, this->number_of_vertices(), [&](size_t i)
 				{
@@ -1596,10 +1786,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 				merge_multiinsert_ctress.start();
 				this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, delete_walks.begin(), delete_walks.size(), replaceI, true);
-				merge_multiinsert_ctress.stop();
+				merge_multiinsert_ctress.stop();*/
 
-				// merge all "updated" walk-trees into one walk-tree
-//					cout << flat_graph[i].compressed_walks[0].size() << " is equal to " << this->graph_tree.find(i).value.compressed_walks[0].size() << endl; // print out the size of the final single walk-tree
 			}
 
 
