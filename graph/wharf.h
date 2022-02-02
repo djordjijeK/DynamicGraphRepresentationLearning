@@ -13,6 +13,9 @@
 #include <models/deepwalk.h>
 #include <models/node2vec.h>
 #include <set>
+//#include <tbb/concurrent_unordered_set.h>
+//#include <ppl.h>
+//#include <cds/container/cuckoo_map.h>
 
 namespace dynamic_graph_representation_learning_with_metropolis_hastings
 {
@@ -1017,7 +1020,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //					merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
 //					merge_walk_trees_rewalkvisitonce(rewalk_points, affected_walks, batch_num);
 //                    merge_walk_trees_all_vertices_nonMAV(batch_num); // ok merge all old nodes
-				merge_x(rewalk_points, affected_walks, batch_num);
+
+//				merge_x(rewalk_points, affected_walks, batch_num);
+				merge_x_parallel(rewalk_points, affected_walks, batch_num);
 				MergeAll.stop();
 
 //cout << "6" << endl;
@@ -1612,8 +1617,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 				auto flat_graph = this->flatten_vertex_tree();
 
-//				libcuckoo::cuckoohash_map<types::WalkID, std::pair<types::Vertex, types::Vertex>> cache; // key: w * l+p, value: {cur_nid, nxt_nid}
-
 				libcuckoo::cuckoohash_map<types::Position, std::set<std::pair<types::WalkID, types::Vertex>>> walks_at_position;
 				for (auto i = 0; i < config::walk_length; i++)
 					walks_at_position.insert(i, set<std::pair<types::WalkID, types::Vertex>>()); // initialization
@@ -1633,75 +1636,107 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					  set.insert({walk_id, v_min});
 					});
 				}
-//				cout << "MIN{p_min}: " << (int) p_min_min << endl;
-//				for (auto entry : walks_at_position.lock_table())
-//					cout << "p=" << (int)entry.first << " size: " << entry.second.size() << endl;
+				cout << "MIN{p_min}: " << (int) p_min_min << endl;
+				for (auto entry : walks_at_position.lock_table())
+					cout << "p=" << (int)entry.first << " size: " << entry.second.size() << endl;
 
-				std::set<types::Vertex> touched_vertices;
+//				std::set<types::Vertex> touched_vertices; // use cuckoohashmap as a hashset for lock-free concurrent structure
+				libcuckoo::cuckoohash_map<types::Vertex, std::set<types::Vertex>> touched_vertices;
+
 
 				// Rewalking the old parts and parallel scanning (only once) the corresponding walk-trees
 				for (auto p = p_min_min; p < config::walk_length; p++)
 				{
+					// Group by distinct vertex id
+					libcuckoo::cuckoohash_map<types::Vertex, std::set<types::WalkID>> per_vertex_wids;
 					for (auto& w : walks_at_position.find(p))
 					{
-						if (touched_vertices.find(w.second) == touched_vertices.end())
+						if (!per_vertex_wids.contains(w.second))
+							per_vertex_wids.insert(w.second, std::set<types::WalkID>());
+						per_vertex_wids.update_fn(w.second, [&](auto& set) {
+						  set.insert(w.first);
+						});
+					} // TODO: this loop will happen many times - make it parallel
+
+					auto distinct_vertices = pbbs::new_array<types::Vertex>(per_vertex_wids.size());
+					auto i = 0;
+					for (auto entry : per_vertex_wids.lock_table())
+					{
+						distinct_vertices[i] = entry.first;
+						i++;
+					}
+
+					cout << "#distinct vertices: " <<  per_vertex_wids.size() << endl;
+
+					parallel_for(0, per_vertex_wids.size(), [&](auto index)
+//					for (auto& w : walks_at_position.find(p)) // TODO: Parallel for for distint values of vertex id
+					{
+//						if (touched_vertices.find(distinct_vertices[index]) == touched_vertices.end())
+						if (!touched_vertices.contains(distinct_vertices[index]))
 						{
-							touched_vertices.insert(w.second);
+//							touched_vertices.insert(distinct_vertices[index]);
+							touched_vertices.insert(distinct_vertices[index], std::set<types::Vertex>()); // only include a dummy set
 //							cout << "(" << w.first << ", " << (int)p << ") -- iterating in " << w.second << endl;
 //							cout << "-------------------------- (v=" << w.second << ") #triplets " << flat_graph[w.second].compressed_walks.back().size() << endl;
 
 							// Search the walk-tree of w.second
-							flat_graph[w.second].compressed_walks.back().iter_elms(w.second, [&](auto value)
+							flat_graph[distinct_vertices[index]].compressed_walks.back().iter_elms(distinct_vertices[index], [&](auto value)
 							{
 				                auto pair = pairings::Szudzik<types::PairedTriplet>::unpair(value);
 							    auto _walk_id = pair.first / config::walk_length;
 							    auto _position = pair.first - (_walk_id * config::walk_length);
 							    auto _next = pair.second;
 
-						        if (_walk_id == w.first && _position == p)
-						        {
-//									cout << "reading *** (w=" << w.first << ", " << "p=" << (unsigned int)p << ") of nid=" << w.second << " with nxt=" << _next << endl;
-
-							        if (!deletes.contains(w.second))
-										deletes.insert(w.second, std::vector<types::PairedTriplet>());
-							        deletes.update_fn(w.second, [&](auto& vector) {
-							          vector.push_back(value);
-							        });
-						        }
-								else
-						        {
-									// Cache the info related to the affected walks
-							        if (rewalk_points.contains(_walk_id))
-								    {
-							            auto mav_entry = rewalk_points.find(_walk_id);
-									    auto mav_entry_position = std::get<0>(mav_entry);
-
-								        if (_position >= mav_entry_position && _position >= p) // if after p_min
+//								for (auto wid : per_vertex_wids.find(distinct_vertices[index]))
+//								{
+//							        if (_walk_id == wid && _position == p)
+//							        {
+////										cout << "reading *** (w=" << wid << ", " << "p=" << (unsigned int)p << ") of nid=" << wid << " with nxt=" << _next << endl;
+//
+//								        if (!deletes.contains(distinct_vertices[index]))
+//											deletes.insert(distinct_vertices[index], std::vector<types::PairedTriplet>());
+//								        deletes.update_fn(distinct_vertices[index], [&](auto& vector) {
+//								          vector.push_back(value);
+//								        });
+//							        }
+//									else
+//							        {
+										// Cache the info related to the affected walks
+								        if (rewalk_points.contains(_walk_id))
 									    {
-//									        cout << "reading ??? (w=" << _walk_id << ", " << "p=" << (unsigned int)_position << ") of nid=" << w.second << " with nxt=" << _next << endl;
+								            auto mav_entry = rewalk_points.find(_walk_id);
+										    auto mav_entry_position = std::get<0>(mav_entry);
 
-									        if (!deletes.contains(w.second))
-										        deletes.insert(w.second, std::vector<types::PairedTriplet>());
-									        deletes.update_fn(w.second, [&](auto& vector) {
-									          vector.push_back(value);
-									        });
+									        if (_position >= mav_entry_position && _position >= p) // if after p_min
+										    {
+//										        cout << "reading ??? (w=" << _walk_id << ", " << "p=" << (unsigned int)_position << ") of nid=" << wid << " with nxt=" << _next << endl;
 
-									        if (touched_vertices.find(_next) == touched_vertices.end())
-									        {
-										        walks_at_position.update_fn(p+1, [&](auto& set) { // TODO: at the next position
-										          set.insert({_walk_id, _next}); // TODO: adds many times the same walk_id
+										        if (!deletes.contains(distinct_vertices[index]))
+											        deletes.insert(distinct_vertices[index], std::vector<types::PairedTriplet>());
+										        deletes.update_fn(distinct_vertices[index], [&](auto& vector) {
+										          vector.push_back(value);
 										        });
-									        }
+
+//										        if (touched_vertices.find(_next) == touched_vertices.end())
+										        if (!touched_vertices.contains(_next))
+										        {
+											        walks_at_position.update_fn(p+1, [&](auto& set) { // TODO: at the next position
+											          set.insert({_walk_id, _next}); // TODO: adds many times the same walk_id
+											        });
+										        }
+										    }
 									    }
-								    }
-								}
+//									}
+//								}
 							});
 						}
 //						else
 //						{
 //							cout << "(" << w.first << ", " << (int)p << ") -- have already iterated in " << w.second << endl;
 //						}
-					}
+
+					});
+//					}
 				}
 
 	            using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
