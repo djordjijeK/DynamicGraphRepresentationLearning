@@ -95,7 +95,7 @@ void throughput(commandLine& command_line)
     auto time_form_scratch_initial_walks = initial_walks_from_scratch_timer.get_total();
 
 //	malin.generate_initial_random_walks();
-	int n_batches = 1; // todo: how many batches per batch size?
+	int n_batches = 10; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
@@ -139,6 +139,8 @@ void throughput(commandLine& command_line)
 		mav_deletions_obsolete.reset();
 		mav_iteration.reset();
 		MergeAll.reset();
+		sortAtMergeAll.reset();
+		accumultinsert.reset();
 		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -313,6 +315,8 @@ void throughput(commandLine& command_line)
 	cout << "merge_triplets_to_delete calculation: " << merge_calc_triplets_to_delete.get_total() << endl;
 	cout << "merge_delete_walks       calculation: " << merge_create_delete_walks.get_total() << endl;
 	cout << "merge_multiinsert        calculation: " << merge_multiinsert_ctress.get_total() << endl;
+	cout << "for loops at merge all: " << sortAtMergeAll.get_total() << endl;
+	cout << "accum + multinsert at merge all: " << accumultinsert.get_total() << endl;
 
 
 //	auto flat_graph = malin.flatten_vertex_tree();

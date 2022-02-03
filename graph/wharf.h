@@ -927,8 +927,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 //cout << "5" << endl;
 
-/*				fj.pardo([&]()
-	            {*/
+				fj.pardo([&]()
+	            {
 					walk_insert_2jobs.start();
 	                // Parallel Update of Affected Walks
 	                parallel_for(0, affected_walks.size(), [&](auto index)
@@ -1007,23 +1007,26 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 	                });
 		            walk_insert_2jobs.stop();
-/*	            }, [&]()
+	            }, [&]()
 	            {
 					// ------------
 					// --- Merge non-MAV vertices
 					// ------------
+					MergeAll.start();
+				    merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
+					MergeAll.stop();
+			  });
 
-				});*/
-
-				MergeAll.start();
+/*				MergeAll.start();
 //				if (batch_num % 3 == 0)
-//					merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
 //					merge_walk_trees_rewalkvisitonce(rewalk_points, affected_walks, batch_num);
 //                    merge_walk_trees_all_vertices_nonMAV(batch_num); // ok merge all old nodes
 
+			  // all working solutions
+			    merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
 //				merge_x(rewalk_points, affected_walks, batch_num);
-				merge_x_parallel(rewalk_points, affected_walks, batch_num);
-				MergeAll.stop();
+//				merge_x_parallel(rewalk_points, affected_walks, batch_num);
+			    MergeAll.stop();*/
 
 //cout << "6" << endl;
 
@@ -1062,7 +1065,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     return x.first < y.first;
                 });
 
-                /*auto replaceI = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
+				// TODO: this when simple merge
+                auto replaceI = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
                 {
 //                    auto tree_plus = walk_plus::uniont(x.compressed_walks, y.compressed_walks, src); // x + y
 
@@ -1079,9 +1083,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 //                    return VertexEntry(x.compressed_edges, dygrl::CompressedWalks(tree_plus.plus, tree_plus.root, new_next_min, new_next_max), x.sampler_manager);
                     return VertexEntry(x.compressed_edges, x_prime, x.sampler_manager);
-                };*/
+                };
 
-                auto replaceI = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
+                // TODO: this when merge_x
+                /*auto replaceI = [&] (const uintV& src, const VertexEntry& x, const VertexEntry& y)
                 {
                     auto tree_plus = walk_plus::uniont(x.compressed_walks.back(), y.compressed_walks.back(), src); // x + y
 
@@ -1100,7 +1105,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					ret_compwalks.push_back(dygrl::CompressedWalks(tree_plus.plus, tree_plus.root, 666, 666, batch_num));
                     return VertexEntry(x.compressed_edges, ret_compwalks, x.sampler_manager);
 //                    return VertexEntry(x.compressed_edges, x_prime, x.sampler_manager);
-                };
+                };*/
 
 				cout << "\n(insert) -- For batch-" << batch_num << " we are touching " << insert_walks.size() << " / " << number_of_vertices() << " vertices" << endl;
 
@@ -1647,6 +1652,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				// Rewalking the old parts and parallel scanning (only once) the corresponding walk-trees
 				for (auto p = p_min_min; p < config::walk_length; p++)
 				{
+					sortAtMergeAll.start();
 					// Group by distinct vertex id
 					libcuckoo::cuckoohash_map<types::Vertex, std::set<types::WalkID>> per_vertex_wids;
 					for (auto& w : walks_at_position.find(p))
@@ -1665,6 +1671,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						distinct_vertices[i] = entry.first;
 						i++;
 					}
+					sortAtMergeAll.stop();
 
 					cout << "#distinct vertices: " <<  per_vertex_wids.size() << endl;
 
@@ -1739,6 +1746,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //					}
 				}
 
+				accumultinsert.start();
 	            using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto delete_walks  = pbbs::sequence<VertexStruct>(deletes.size());
 
@@ -1787,7 +1795,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 // Then, apply the batch deletetions
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, delete_walks.begin(), delete_walks.size(), replaceD, true);
-
+				accumultinsert.stop();
 			}
 
 

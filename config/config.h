@@ -41,6 +41,7 @@ auto mav_deletions_obsolete        = timer("MAVdeletions", false);
 auto mav_iteration                 = timer("MAViteration", false);
 // ---
 auto MergeAll                      = timer("MergeAllTimer", false);
-
+auto sortAtMergeAll                = timer("SortAtMergeAll", false);
+auto accumultinsert                = timer("Accumultinsert", false);
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_CONFIG_H
