@@ -1455,6 +1455,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //				  return VertexEntry(x.compressed_edges, return_vector, x.sampler_manager);
 				};
 
+				cout << "\n(merge) -- For batch-" << num_batches_so_far << " we are touching " << delete_walks.size() << " / " << number_of_vertices() << " vertices" << endl;
+
 				merge_multiinsert_ctress.start();
 				this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, delete_walks.begin(), delete_walks.size(), replaceI, true);
 				merge_multiinsert_ctress.stop();
