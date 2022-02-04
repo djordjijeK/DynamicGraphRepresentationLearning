@@ -1013,7 +1013,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					// --- Merge non-MAV vertices
 					// ------------
 					MergeAll.start();
-				    merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
+					if (batch_num == 1)
+				        merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
+					else
+						merge_walk_trees_partial_vertices(batch_num, previousTouchedVertices);
 					MergeAll.stop();
 			  });
 
@@ -1056,7 +1059,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     pbbs::sample_sort_inplace(pbbs::make_range(sequence.begin(), sequence.end()), std::less<>());
 					vector<dygrl::CompressedWalks> vec_compwalks;
 					vec_compwalks.push_back(dygrl::CompressedWalks(sequence, temp_inserts[j].first, 666, 666, batch_num));
-                    insert_walks[j] = std::make_pair(temp_inserts[j].first,VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
+                    insert_walks[j] = std::make_pair(temp_inserts[j].first, VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
                 });
 				bdown_create_vertex_entries.stop();
 //cout << "7" << endl;
@@ -1115,6 +1118,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //				merge_walk_trees_all_vertices_parallel(batch_num); // better one pass over all the tree, than findNext() to find obsolete parts
 //				MergeAll.stop();
 
+				// TODO: Verify that this is correct
+				previousTouchedVertices.clear();
+				previousTouchedVertices = pbbs::sequence<types::Vertex>(insert_walks.size());
+				parallel_for(0, insert_walks.size(), [&](auto i){
+					 previousTouchedVertices[i] = get<0>(insert_walks[i]); //.first;
+				});
+
 //cout << "8" << endl;
                 // Then, apply the batch insertions
 				apply_multiinsert_ctrees.start();
@@ -1129,7 +1139,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 			/**
 			 * @brief Merges the walk-trees of each vertex in the hybrid-tree such that in the end each vertex has only one walk-tree
 			 */
-			 void merge_walk_trees_all_vertices_nonMAV(int num_batches_so_far, pbbs::sequence<types::Vertex>& touched_vertices)
+			 void merge_walk_trees_partial_vertices(int num_batches_so_far, pbbs::sequence<types::Vertex>& touched_vertices)
 			 {
 			    libcuckoo::cuckoohash_map<types::Vertex, std::vector<std::vector<types::PairedTriplet>>> all_to_delete; // let's use a vector
 
@@ -1285,6 +1295,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     return VertexEntry(x.compressed_edges, final_compressed_vector, x.sampler_manager);
 //				  return VertexEntry(x.compressed_edges, return_vector, x.sampler_manager);
 				};
+
+				cout << "\n(merge) -- For batch-" << num_batches_so_far << " we are touching " << delete_walks.size() << " / " << number_of_vertices() << " vertices" << endl;
 
 				merge_multiinsert_ctress.start();
 				this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, delete_walks.begin(), delete_walks.size(), replaceI, true);
@@ -1931,6 +1943,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //            libcuckoo::cuckoohash_map<int, types::MapAffectedVertices> MAVS; // batch_num, MAV[batch_num]
 //			types::MapAffectedVertices MAVS2[10];
 			std::vector<types::MapAffectedVertices> MAVS2;
+            pbbs::sequence<types::Vertex> previousTouchedVertices;
+
 
             /**
             * Initializes memory pools for underlying lists.

@@ -100,7 +100,7 @@ void throughput(commandLine& command_line)
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 50; //00; //5;
+	batch_sizes[0] = 3500; //00; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -141,6 +141,7 @@ void throughput(commandLine& command_line)
 		MergeAll.reset();
 		sortAtMergeAll.reset();
 		accumultinsert.reset();
+		LastMerge.reset();
 		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -318,6 +319,10 @@ void throughput(commandLine& command_line)
 	cout << "for loops at merge all: " << sortAtMergeAll.get_total() << endl;
 	cout << "accum + multinsert at merge all: " << accumultinsert.get_total() << endl;
 
+	LastMerge.start();
+	malin.merge_walk_trees_all_vertices_parallel(n_batches);
+	LastMerge.stop();
+	cout << "Last merge time: " << LastMerge.get_total() << endl;
 
 //	auto flat_graph = malin.flatten_vertex_tree();
 //	for (auto i = 0; i < malin.number_of_vertices(); i++)
