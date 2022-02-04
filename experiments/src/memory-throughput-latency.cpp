@@ -319,10 +319,14 @@ void throughput(commandLine& command_line)
 	cout << "for loops at merge all: " << sortAtMergeAll.get_total() << endl;
 	cout << "accum + multinsert at merge all: " << accumultinsert.get_total() << endl;
 
+	// Last Merge
 	LastMerge.start();
 	malin.merge_walk_trees_all_vertices_parallel(n_batches);
 	LastMerge.stop();
 	cout << "Last merge time: " << LastMerge.get_total() << endl;
+
+	// Measure the memory after all batches
+	malin.memory_footprint();
 
 //	auto flat_graph = malin.flatten_vertex_tree();
 //	for (auto i = 0; i < malin.number_of_vertices(); i++)
