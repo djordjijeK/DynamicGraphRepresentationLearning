@@ -208,7 +208,7 @@ void throughput(commandLine& command_line)
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 5000; //5;
+	batch_sizes[0] = 3500; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -364,6 +364,9 @@ cout << "10" << endl;
 		}
 		std::cout << "}" << std::endl;
 	}
+
+	// Measure the total memory in the end
+	WharfMH.memory_footprint();
 
 	// Merge all walks after the bathes
 //	timer MergeAll("MergeAllTimer", false);
