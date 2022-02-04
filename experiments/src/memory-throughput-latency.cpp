@@ -321,9 +321,18 @@ void throughput(commandLine& command_line)
 
 	// Last Merge
 	LastMerge.start();
-	malin.merge_walk_trees_all_vertices_parallel(n_batches);
+//	malin.merge_walk_trees_all_vertices_parallel(n_batches);
+	malin.last_merge_all_vertices_parallel_with_minmax(n_batches);
 	LastMerge.stop();
 	cout << "Last merge time: " << LastMerge.get_total() << endl;
+
+	// Measure time to read-rewalk all walks
+	ReadWalks.start();
+	for (auto i = 0; i < n * config::walks_per_vertex; i++)
+//		cout << malin.walk_simple_find(i) << endl;
+		malin.walk_silent(i);
+	ReadWalks.stop();
+	cout << "Read all walks time: " << ReadWalks.get_total() << endl;
 
 	// Measure the memory after all batches
 	malin.memory_footprint();

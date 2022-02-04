@@ -44,5 +44,7 @@ auto MergeAll                      = timer("MergeAllTimer", false);
 auto sortAtMergeAll                = timer("SortAtMergeAll", false);
 auto accumultinsert                = timer("Accumultinsert", false);
 auto LastMerge                     = timer("LastMerge", false);
+// ---
+auto ReadWalks                     = timer("ReadWalks", false);
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_CONFIG_H
