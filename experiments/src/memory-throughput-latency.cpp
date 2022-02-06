@@ -365,6 +365,16 @@ cout << "10" << endl;
 		std::cout << "}" << std::endl;
 	}
 
+	// Measure read walk time
+	auto ReadWalks = timer("ReadWalks", false);
+	ReadWalks.start();
+	for (auto i = 0; i < WharfMH.number_of_vertices() * config::walks_per_vertex; i++)
+		WharfMH.walk_silent(i);
+//		cout << WharfMH.walk(i) << endl;
+
+	ReadWalks.stop();
+	cout << "Read all walks time: " << ReadWalks.get_total() << endl;
+
 	// Measure the total memory in the end
 	WharfMH.memory_footprint();
 

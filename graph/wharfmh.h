@@ -380,6 +380,29 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             }
 
             /**
+             * @brief Walks through the walk given walk id.
+             *
+             * @param walk_id - unique walk ID
+             *
+             * @return - walk string representation
+             */
+            void walk_silent(types::WalkID walk_id)
+            {
+                std::stringstream string_stream;
+                if (!this->walk_storage.contains(walk_id))
+//					return string_stream.str();
+					return;
+
+                for(auto& item : this->walk_storage.find(walk_id))
+                {
+//                    string_stream << item << " ";
+					;
+                }
+
+//                return string_stream.str();
+            }
+
+            /**
             * @brief Inserts a batch of edges in the graph.
             *
             * @param m - size of the batch
