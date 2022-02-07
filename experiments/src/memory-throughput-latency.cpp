@@ -194,9 +194,11 @@ void throughput(commandLine& command_line)
 			MAV_min = std::min(MAV_min, last_MAV_time);
 			MAV_max = std::max(MAV_max, last_MAV_time);
 			// Update the Merge min and max
-			last_Merge_time = Merge_time.get_total() - last_Merge_time;
-			Merge_min = std::min(Merge_min, last_Merge_time);
-			Merge_max = std::max(Merge_max, last_Merge_time);
+			if ((b+1) % config::merge_frequency == 0) {
+				last_Merge_time = Merge_time.get_total() - last_Merge_time;
+				Merge_min = std::min(Merge_min, last_Merge_time);
+				Merge_max = std::max(Merge_max, last_Merge_time);
+			}
 			// Update the Walk Update (without Merge) min and max
 			last_Walk_sampling_time = Walking_new_sampling_time.get_total() - last_Walk_sampling_time;
 			WalkSampling_min = std::min(WalkSampling_min, last_Walk_sampling_time);
