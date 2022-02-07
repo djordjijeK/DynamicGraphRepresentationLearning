@@ -215,7 +215,7 @@ void throughput(commandLine& command_line)
 		std::cout << "BWUP (avg, includes merge) = " << walk_update_time_on_insert.get_total() / n_batches << ", average walk affected = " << total_insert_walks_affected / n_batches << ", sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
 		std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / n_batches << "\t(sampling= " << Walking_new_sampling_time.get_total() / n_batches << ", inserting= " << Walking_insert_new_samples.get_total() / n_batches << ")" << endl;
 		std::cout << "MAV (avg)   = " << MAV_time.get_total() / n_batches << "\tMAV (min) = " << MAV_min << "\tMAV (max) = " << MAV_max << std::endl;
-		std::cout << "Merge (avg) = " << Merge_time.get_total() / n_batches << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
+		std::cout << "Merge (avg," << std::floor(n_batches / merge_frequency) << " times) = " << Merge_time.get_total() / std::floor(n_batches / merge_frequency) << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
 
 		// latencies
 		std::cout << "Average walk insert latency = { ";
