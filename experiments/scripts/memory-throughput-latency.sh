@@ -13,8 +13,11 @@ declare -a walks_per_node=(10)
 declare -a walk_length=(80)
 range_search="true"               # range search mode
 determinism="true"                # determinism
-num_of_batches=3                  # numbers of batches
-half_of_batch_size=3500            # batch_size / 2
+num_of_batches=10                  # numbers of batches
+half_of_batch_size=3500           # batch_size / 2
+merge_wu_exec_mode="serial"     # parallel | serial
+merge_frequency=1                 # every how many batches to merge
+
 
 # create the data dir
 #mkdir -p data/latency_throughput/
@@ -44,7 +47,7 @@ for wpv in "${walks_per_node[@]}"; do
         for graph in "${graphs[@]}"; do
             printf "\n"
             printf "Graph: ${graph} \n"
-            ./memory-throughput-latency -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" -numbatch "${num_of_batches}" -sizebatch "${half_of_batch_size}" #| tee data/latency_throughput/${graph}-${walk_model}.txt
+            ./memory-throughput-latency -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" -numbatch "${num_of_batches}" -sizebatch "${half_of_batch_size}" -mergefreq "${merge_frequency}$" -mergemode "${merge_wu_exec_mode}"
         done
     done
 done

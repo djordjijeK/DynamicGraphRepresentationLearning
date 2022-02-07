@@ -31,9 +31,11 @@ namespace config
     // determines whether to produce and update the walks in a deterministic way
     auto deterministic_mode    = true;
 
-    // use mini-batch walk update
-//    auto mini_batch_mode       = false;
-//    float mini_batch_size      = 0.2;  // 20% of the total amount of triplets need to be deleted. The same threshold holds for the new triplets that need to be added
+	// serial or parallel
+	auto parallel_merge_wu     = true;
+
+	// merge every x batches
+	int merge_frequency = 1; // default merge in every batch
 }
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_GLOBALS_H

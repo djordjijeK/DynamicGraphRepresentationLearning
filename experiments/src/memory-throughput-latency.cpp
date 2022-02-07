@@ -20,8 +20,21 @@ void throughput(commandLine& command_line)
     string range_search     = string(command_line.getOptionValue("-rs", "true"));
 	size_t num_of_batches   = command_line.getOptionIntValue("-numbatch", 10);
 	size_t half_of_bsize    = command_line.getOptionIntValue("-sizebatch", 5000);
+	size_t merge_frequency  = command_line.getOptionIntValue("-mergefreq", 1);
+	config::merge_frequency = merge_frequency;
+	string mergemode        = string(command_line.getOptionValue("-mergemode", "parallel"));
+	if (mergemode == "parallel")
+	{
+		config::parallel_merge_wu = true;
+		std::cout << "Parallel Merge and WU" << std::endl;
+	}
+	else
+	{
+		config::parallel_merge_wu = false;
+		std::cout << "Serial Merge and WU" << std::endl;
+	}
 
-    config::walks_per_vertex = walks_per_vertex;
+	config::walks_per_vertex = walks_per_vertex;
     config::walk_length      = length_of_walks;
 
     std::cout << "Walks per vertex: " << (int) config::walks_per_vertex << std::endl;
@@ -200,7 +213,7 @@ void throughput(commandLine& command_line)
 		std::cout << "Insert time (avg) = " << insert_timer.get_total() / n_batches << std::endl;
 		std::cout << "GUP (avg) = " << graph_update_time_on_insert.get_total() / n_batches << std::endl;
 		std::cout << "BWUP (avg, includes merge) = " << walk_update_time_on_insert.get_total() / n_batches << ", average walk affected = " << total_insert_walks_affected / n_batches << ", sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
-		std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / n_batches << endl;
+		std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / n_batches << "\t(sampling= " << Walking_new_sampling_time.get_total() / n_batches << ", inserting= " << Walking_insert_new_samples.get_total() / n_batches << ")" << endl;
 		std::cout << "MAV (avg)   = " << MAV_time.get_total() / n_batches << "\tMAV (min) = " << MAV_min << "\tMAV (max) = " << MAV_max << std::endl;
 		std::cout << "Merge (avg) = " << Merge_time.get_total() / n_batches << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
 
@@ -226,12 +239,12 @@ void throughput(commandLine& command_line)
 	cout << "Last merge (with MIN-MAX Ranges) time: " << LastMerge.get_total() << endl;
 
 	// Measure time to read-rewalk all walks
-	ReadWalks.start();
+/*	ReadWalks.start();
 	for (auto i = 0; i < n * config::walks_per_vertex; i++)
 //		cout << malin.walk_simple_find(i) << endl;
 		malin.walk_silent(i);
 	ReadWalks.stop();
-	cout << "Read all walks time: " << ReadWalks.get_total() << endl;
+	cout << "Read all walks time: " << ReadWalks.get_total() << endl;*/
 
 	// Measure the memory after all batches
 	malin.memory_footprint();

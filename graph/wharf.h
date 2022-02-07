@@ -971,98 +971,186 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 //cout << "5" << endl;
 
-//				fj.pardo([&]()
-//	            {
+				if (!config::parallel_merge_wu)
+				{
+					// -----------------------
+					// First the walk sampling
+					// -----------------------
 					Walking_new_sampling_time.start();
-	                // Parallel Update of Affected Walks
-	                parallel_for(0, affected_walks.size(), [&](auto index)
-	                {
-	                    auto entry = rewalk_points.template find(affected_walks[index]);
+					// Parallel Update of Affected Walks
+					parallel_for(0, affected_walks.size(), [&](auto index)
+					{
+					  auto entry = rewalk_points.template find(affected_walks[index]);
 
-	                    auto current_position        = std::get<0>(entry);
-	                    auto current_vertex_old_walk = std::get<1>(entry);
-	                    auto should_reset            = std::get<2>(entry);
-	//                    cout << "--- worker-" << worker_id() << " operates on walk-" << index << " from pos=" << (int) current_position << " and vertex=" << current_vertex_old_walk << endl;
+					  auto current_position        = std::get<0>(entry);
+					  auto current_vertex_old_walk = std::get<1>(entry);
+					  auto should_reset            = std::get<2>(entry);
+					  //                    cout << "--- worker-" << worker_id() << " operates on walk-" << index << " from pos=" << (int) current_position << " and vertex=" << current_vertex_old_walk << endl;
 
-	                    auto current_vertex_new_walk = current_vertex_old_walk;
+					  auto current_vertex_new_walk = current_vertex_old_walk;
 
-	                    if (should_reset) // todo: clear out if this is needed
-	                    {
-	                        current_position = 0;
-	                        current_vertex_new_walk = current_vertex_old_walk = affected_walks[index] % this->number_of_vertices();
-	                    }
+					  if (should_reset) // todo: clear out if this is needed
+					  {
+						  current_position = 0;
+						  current_vertex_new_walk = current_vertex_old_walk = affected_walks[index] % this->number_of_vertices();
+					  }
 
-	                    if (graph[current_vertex_new_walk].degree == 0)
-	                    {
-	                        szudzik_hash.start();
-							types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
-							szudzik_hash.stop();
+					  if (graph[current_vertex_new_walk].degree == 0)
+					  {
+						  szudzik_hash.start();
+						  types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
+						  szudzik_hash.stop();
 
-	                        if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
-	                        inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
-	                            vector.push_back(hash);
-	                        });
+						  if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
+						  inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
+							vector.push_back(hash);
+						  });
 
-	                        return;
-	                    }
+						  return;
+					  }
 
-	                    auto random = config::random; // By default random initialization
-	                    if (config::deterministic_mode)
-	                        random = utility::Random(affected_walks[index] / this->number_of_vertices());
-	                    auto state = model->initial_state(current_vertex_new_walk);
+					  auto random = config::random; // By default random initialization
+					  if (config::deterministic_mode)
+						  random = utility::Random(affected_walks[index] / this->number_of_vertices());
+					  auto state = model->initial_state(current_vertex_new_walk);
 
-	//                    ij.start();
-	                    for (types::Position position = current_position; position < config::walk_length; position++)
-	                    {
-	//						ij_sampling.start();
-	                        if (!graph[state.first].samplers->contains(state.second))
-	                            graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
+					  for (types::Position position = current_position; position < config::walk_length; position++)
+					  {
+						  if (!graph[state.first].samplers->contains(state.second))
+							  graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
 
-	//                            auto cached_current_vertex = state.first; // important for the correct access of the graph vertex
-	                        auto temp_state = graph[state.first].samplers->find(state.second).sample(state, model);
-	                        if (config::deterministic_mode)
-							{
-	//                            auto temporary_state_2 = state;
-	                            state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
-	                        }
-							else
-	                            state = temp_state;
+						  auto temp_state = graph[state.first].samplers->find(state.second).sample(state, model);
+						  if (config::deterministic_mode)
+						  {
+							  state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+						  }
+						  else
+							  state = temp_state;
 
-							number_of_sampled_vertices++;
-	//	                    ij_sampling.stop();
+						  number_of_sampled_vertices++;
+						  types::PairedTriplet hash = (position != config::walk_length - 1) ?
+						                              pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
+						                              pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, current_vertex_new_walk});
 
-	//						szudzik_hash.start();
-	//                        ij_szudzik.start();
-							types::PairedTriplet hash = (position != config::walk_length - 1) ?
-	                            pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
-	                            pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, current_vertex_new_walk});
-	//						ij_szudzik.stop();
-	//						szudzik_hash.stop();
+						  if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
+						  inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
+							vector.push_back(hash);
+						  });
 
-	                        if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
-	                        inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
-	                            vector.push_back(hash);
-	                        });
+						  // Then, change the current vertex in the new walk
+						  current_vertex_new_walk = state.first;
+					  }
 
-	                        // Then, change the current vertex in the new walk
-	                        current_vertex_new_walk = state.first;
-	                    }
-	//					ij.stop();
+					});
+					Walking_new_sampling_time.stop();
 
-	                });
-		            Walking_new_sampling_time.stop();
-//	            }, [&]()
-//	            {
-					// ------------
-					// --- Merge non-MAV vertices
-					// ------------
+					// -----------------------
+					// Then the merge process
+					// -----------------------
 					Merge_time.start();
-//					if (batch_num == 1)
-				        merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
-//					else
-//						merge_walk_trees_partial_vertices(batch_num, previousTouchedVertices);
-	                Merge_time.stop();
-//			  });
+					if (batch_num % config::merge_frequency == 0)
+					{
+						cout << "\n*** merge at batch-" << batch_num << endl;
+						merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
+					}
+					Merge_time.stop();
+				}
+				else // parallel up and then merge
+				{
+					fj.pardo([&]()
+			         {
+			           Walking_new_sampling_time.start();
+			           // Parallel Update of Affected Walks
+			           parallel_for(0, affected_walks.size(), [&](auto index)
+			           {
+				         auto entry = rewalk_points.template find(affected_walks[index]);
+
+				         auto current_position        = std::get<0>(entry);
+				         auto current_vertex_old_walk = std::get<1>(entry);
+				         auto should_reset            = std::get<2>(entry);
+				         //                    cout << "--- worker-" << worker_id() << " operates on walk-" << index << " from pos=" << (int) current_position << " and vertex=" << current_vertex_old_walk << endl;
+
+				         auto current_vertex_new_walk = current_vertex_old_walk;
+
+				         if (should_reset) // todo: clear out if this is needed
+				         {
+					         current_position = 0;
+					         current_vertex_new_walk = current_vertex_old_walk = affected_walks[index] % this->number_of_vertices();
+				         }
+
+				         if (graph[current_vertex_new_walk].degree == 0)
+				         {
+					         szudzik_hash.start();
+					         types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
+					         szudzik_hash.stop();
+
+					         if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
+					         inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
+					           vector.push_back(hash);
+					         });
+
+					         return;
+				         }
+
+				         auto random = config::random; // By default random initialization
+				         if (config::deterministic_mode)
+					         random = utility::Random(affected_walks[index] / this->number_of_vertices());
+				         auto state = model->initial_state(current_vertex_new_walk);
+
+				         //                    ij.start();
+				         for (types::Position position = current_position; position < config::walk_length; position++)
+				         {
+					         //						ij_sampling.start();
+					         if (!graph[state.first].samplers->contains(state.second))
+						         graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
+
+					         //                            auto cached_current_vertex = state.first; // important for the correct access of the graph vertex
+					         auto temp_state = graph[state.first].samplers->find(state.second).sample(state, model);
+					         if (config::deterministic_mode)
+					         {
+						         //                            auto temporary_state_2 = state;
+						         state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degree)]);
+					         }
+					         else
+						         state = temp_state;
+
+					         number_of_sampled_vertices++;
+					         //	                    ij_sampling.stop();
+
+					         //						szudzik_hash.start();
+					         //                        ij_szudzik.start();
+					         types::PairedTriplet hash = (position != config::walk_length - 1) ?
+					                                     pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
+					                                     pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, current_vertex_new_walk});
+					         //						ij_szudzik.stop();
+					         //						szudzik_hash.stop();
+
+					         if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
+					         inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
+					           vector.push_back(hash);
+					         });
+
+					         // Then, change the current vertex in the new walk
+					         current_vertex_new_walk = state.first;
+				         }
+				         //					ij.stop();
+
+			           });
+			           Walking_new_sampling_time.stop();
+			         }, [&]()
+			         {
+	                    // ------------
+			            // --- Merge non-MAV vertices
+			            // ------------
+			            Merge_time.start();
+					    if (batch_num % config::merge_frequency == 0)
+					    {
+						    cout << "\n*** merge at batch-" << batch_num << endl;
+			                merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
+						}
+			            Merge_time.stop();
+			         });
+				}
 
 /*				MergeAll.start();
 //				if (batch_num % 3 == 0)
