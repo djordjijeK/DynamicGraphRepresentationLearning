@@ -585,9 +585,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     edge_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
 
 					MAV_time.start();
-
-					mav_iteration.start();
-
                     auto triplets_to_delete_pbbs   = pbbs::new_array<std::vector<types::PairedTriplet>>(a.compressed_walks.size());
                     auto triplets_to_delete_vector = std::vector<std::vector<types::PairedTriplet>>();
 //					for (auto wt = a.compressed_walks.begin(); wt != a.compressed_walks.end(); wt++) // TODO: this could be a parallel for
@@ -606,14 +603,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							// find the p_min_global among all existing MAVS for w
 							for (auto mav = a.compressed_walks[index].created_at_batch+1; mav < batch_num; mav++)
 							{
-//								read_access_MAV.start();
 								if (MAVS2[mav].contains(walk_id))
 								{
 									auto temp_pos = get<0>((MAVS2[mav]).find(walk_id)); // it does not always contain this wid
 									if (temp_pos < p_min_global)
 										p_min_global = temp_pos; // TODO: an accumulated MAV with p_min up to that point might suffice
 								}
-//								read_access_MAV.stop();
 							} // constructed the p_min_global for this w. preffix of MAVS. preffix tree (trie data structure?)
 
 							// Check the relationship of the triplet with respect to the p_min_global or the w
@@ -645,8 +640,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					});
 //					}
 
-					mav_iteration.stop();
-
 				// Print the elements to delete
 //				cout << endl;
 //				cout << "vertex-" << v << endl;
@@ -656,7 +649,6 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //				}
 //                cout << endl;
 
-                    mav_deletions_obsolete.start();
 					// Create a new vector of compressed walks
 					vector<dygrl::CompressedWalks> vec_compwalks;
 					for (auto j = 0; j < a.compressed_walks.size(); j++)
@@ -706,8 +698,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 	//					cout << final_compressed_vector.back().size() << " ";
 	                }
 	//				cout << endl;
-					mav_deletions_obsolete.stop();
-					MAV_time.stop();
+//                    double MAV_for_this_batch = MAV_time.get_next();
+                    MAV_time.stop();
+					// Here set up the MAV min and max
+//					MAV_min = std::min(MAV_min, MAV_for_this_batch);
+//					MAV_max = std::max(MAV_max, MAV_for_this_batch);
 
 	                return VertexEntry(union_edge_tree, final_compressed_vector, b.sampler_manager); // todo: check this sampler manager
 	//              return VertexEntry(union_edge_tree, a.compressed_walks, b.sampler_manager); // todo: check this sampler manager
@@ -947,7 +942,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
              */
             void batch_walk_update(types::MapAffectedVertices& rewalk_points, pbbs::sequence<types::WalkID>& affected_walks, int batch_num)
             {
-				walk_insert_init.start();
+//				walk_insert_init.start();
                 types::ChangeAccumulator inserts = types::ChangeAccumulator();
 
                 uintV index = 0;
@@ -972,13 +967,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         std::cerr << "Unrecognized random walking model!" << std::endl;
                         std::exit(1);
                 }
-	            walk_insert_init.stop();
+//	            walk_insert_init.stop();
 
 //cout << "5" << endl;
 
-				fj.pardo([&]()
-	            {
-					walk_insert_2jobs.start();
+//				fj.pardo([&]()
+//	            {
+					Walking_new_sampling_time.start();
 	                // Parallel Update of Affected Walks
 	                parallel_for(0, affected_walks.size(), [&](auto index)
 	                {
@@ -1055,19 +1050,19 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 	//					ij.stop();
 
 	                });
-		            walk_insert_2jobs.stop();
-	            }, [&]()
-	            {
+		            Walking_new_sampling_time.stop();
+//	            }, [&]()
+//	            {
 					// ------------
 					// --- Merge non-MAV vertices
 					// ------------
-					MergeAll.start();
-					if (batch_num == 1)
+					Merge_time.start();
+//					if (batch_num == 1)
 				        merge_walk_trees_all_vertices_parallel(batch_num); // ok merge all old nodes
-					else
-						merge_walk_trees_partial_vertices(batch_num, previousTouchedVertices);
-					MergeAll.stop();
-			  });
+//					else
+//						merge_walk_trees_partial_vertices(batch_num, previousTouchedVertices);
+	                Merge_time.stop();
+//			  });
 
 /*				MergeAll.start();
 //				if (batch_num % 3 == 0)
@@ -1082,11 +1077,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 //cout << "6" << endl;
 
-	            walk_insert_2accs.start();
+	            Walking_insert_new_samples.start();
 	            using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto insert_walks  = pbbs::sequence<VertexStruct>(inserts.size());
 
-				bdown_create_vertex_entries.start();
+//				bdown_create_vertex_entries.start();
 
 				// Iterate and put the Insert accumulator into a pbbs:sequence
 				auto temp_inserts = pbbs::sequence<std::pair<types::Vertex, std::vector<types::PairedTriplet>>>(inserts.size());
@@ -1110,8 +1105,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					vec_compwalks.push_back(dygrl::CompressedWalks(sequence, temp_inserts[j].first, 666, 666, batch_num));
                     insert_walks[j] = std::make_pair(temp_inserts[j].first, VertexEntry(types::CompressedEdges(), vec_compwalks, new dygrl::SamplerManager(0)));
                 });
-				bdown_create_vertex_entries.stop();
-//cout << "7" << endl;
+//				bdown_create_vertex_entries.stop();
 
                 pbbs::sample_sort_inplace(pbbs::make_range(insert_walks.begin(), insert_walks.end()), [&](auto& x, auto& y) {
                     return x.first < y.first;
@@ -1161,27 +1155,18 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 				cout << "\n(insert) -- For batch-" << batch_num << " we are touching " << insert_walks.size() << " / " << number_of_vertices() << " vertices" << endl;
 
-//				// merge nonfull
-//				MergeAll.start();
-////				merge_walk_trees_all_vertices_nonfull(batch_num, touched_vertices);
-//				merge_walk_trees_all_vertices_parallel(batch_num); // better one pass over all the tree, than findNext() to find obsolete parts
-//				MergeAll.stop();
-
-				// TODO: Verify that this is correct
+/*				// TODO: Verify that this is correct
 				previousTouchedVertices.clear();
 				previousTouchedVertices = pbbs::sequence<types::Vertex>(insert_walks.size());
 				parallel_for(0, insert_walks.size(), [&](auto i){
 					 previousTouchedVertices[i] = get<0>(insert_walks[i]); //.first;
-				});
+				});*/
 
-//cout << "8" << endl;
                 // Then, apply the batch insertions
-				apply_multiinsert_ctrees.start();
+//				apply_multiinsert_ctrees.start();
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, insert_walks.begin(), insert_walks.size(), replaceI, true);
-				apply_multiinsert_ctrees.stop();
-				walk_insert_2accs.stop();
-//cout << "9" << endl;
-
+//				apply_multiinsert_ctrees.stop();
+				Walking_insert_new_samples.stop();
             } // End of batch walk update procedure
 
 
@@ -1703,7 +1688,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //				  return VertexEntry(x.compressed_edges, return_vector, x.sampler_manager);
 				};
 
-				cout << "\n(merge) -- For batch-" << num_batches_so_far << " we are touching " << delete_walks.size() << " / " << number_of_vertices() << " vertices" << endl;
+				cout << "\n(Last Merge) -- we are touching " << delete_walks.size() << " / " << number_of_vertices() << " vertices" << endl;
 
 				merge_multiinsert_ctress.start();
 				this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, delete_walks.begin(), delete_walks.size(), replaceI, true);

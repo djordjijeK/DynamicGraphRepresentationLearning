@@ -11,8 +11,8 @@ auto graph_update_time_on_insert = timer("GraphUpdateTimeOnInsert", false);
 auto walk_update_time_on_insert  = timer("WalkUpdateTimeOnInsert", false);
 // --- profiling
 auto walk_insert_init            = timer("WalkInsertTimeForInitialization", false);
-auto walk_insert_2jobs           = timer("WalkInsertTimeFor2Jobs", false);
-auto walk_insert_2accs           = timer("WalkInsertTimeFor2Accs", false);
+auto Walking_new_sampling_time           = timer("WalkInsertTimeFor2Jobs", false);
+auto Walking_insert_new_samples           = timer("WalkInsertTimeFor2Accs", false);
 auto ij                          = timer("WalkInsertJobTime", false);
 auto dj                          = timer("WalkDeleteJobTime", false);
 auto walk_find_in_vertex_tree    = timer("FindInVertexTreeTime", false);
@@ -37,14 +37,24 @@ auto merge_multiinsert_ctress      = timer("MergeMultiinsertCtrees", false);
 auto ij_sampling                   = timer("IJsampling", false);
 auto ij_szudzik                    = timer("IJszudzik", false);
 // ---
-auto mav_deletions_obsolete        = timer("MAVdeletions", false);
-auto mav_iteration                 = timer("MAViteration", false);
+//auto mav_deletions_obsolete        = timer("MAVdeletions", false);
+//auto mav_iteration                 = timer("MAViteration", false);
 // ---
-auto MergeAll                      = timer("MergeAllTimer", false);
+auto Merge_time                      = timer("MergeAllTimer", false);
 auto sortAtMergeAll                = timer("SortAtMergeAll", false);
 auto accumultinsert                = timer("Accumultinsert", false);
 auto LastMerge                     = timer("LastMerge", false);
 // ---
 auto ReadWalks                     = timer("ReadWalks", false);
+
+// Min and Max Measurements
+auto MAV_min = 1000.0;
+auto MAV_max = 0.0;
+auto Merge_min = 1000.0;
+auto Merge_max = 0.0;
+auto WalkSampling_min = 1000.0;
+auto WalkSampling_max = 0.0;
+auto WalkInsert_min = 1000.0;
+auto WalkInsert_max = 0.0;
 
 #endif // DYNAMIC_GRAPH_REPRESENTATION_LEARNING_WITH_METROPOLIS_HASTINGS_CONFIG_H

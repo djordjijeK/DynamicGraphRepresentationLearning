@@ -115,8 +115,8 @@ void throughput(commandLine& command_line)
 		walk_update_time_on_delete.reset();
 		// --- profiling initialization
 		walk_insert_init.reset();
-		walk_insert_2jobs.reset();
-		walk_insert_2accs.reset();
+		Walking_new_sampling_time.reset();
+		Walking_insert_new_samples.reset();
 		ij.reset();
 		dj.reset();
 		walk_find_in_vertex_tree.reset();
@@ -209,14 +209,14 @@ void throughput(commandLine& command_line)
 		          << walk_insert_init.get_total() / n_batches << " ("
 		          << (walk_insert_init.get_total() * 100) /
 		             (walk_insert_init.get_total() +
-		              walk_insert_2jobs.get_total() +
-		              walk_insert_2accs.get_total()) << "%)" << std::endl;
+		              Walking_new_sampling_time.get_total() +
+		              Walking_insert_new_samples.get_total()) << "%)" << std::endl;
 		std::cout << "Insert/Delete Jobs: "
-		          << walk_insert_2jobs.get_total() / n_batches << " ("
-		          << (walk_insert_2jobs.get_total() * 100) /
+		          << Walking_new_sampling_time.get_total() / n_batches << " ("
+		          << (Walking_new_sampling_time.get_total() * 100) /
 		             (walk_insert_init.get_total() +
-		              walk_insert_2jobs.get_total() +
-		              walk_insert_2accs.get_total()) << "%)" << std::endl;
+		              Walking_new_sampling_time.get_total() +
+		              Walking_insert_new_samples.get_total()) << "%)" << std::endl;
 		std::cout << "InsertJob: " << ij.get_total() / n_batches
 		          << " | DeleteJob: " << dj.get_total() / n_batches << std::endl;
 		std::cout << "FindInVertexTree in DeleteJob total: "
@@ -230,11 +230,11 @@ void throughput(commandLine& command_line)
 		          << std::endl;
 
 		std::cout << "Accumulators: "
-		          << walk_insert_2accs.get_total() / n_batches << " ("
-		          << (walk_insert_2accs.get_total() * 100) /
+		          << Walking_insert_new_samples.get_total() / n_batches << " ("
+		          << (Walking_insert_new_samples.get_total() * 100) /
 		             (walk_insert_init.get_total() +
-		              walk_insert_2jobs.get_total() +
-		              walk_insert_2accs.get_total()) << "%)" << std::endl;
+		              Walking_new_sampling_time.get_total() +
+		              Walking_insert_new_samples.get_total()) << "%)" << std::endl;
 		std::cout << "}" << std::endl;
 		// --- profiling ---
 

@@ -18,6 +18,8 @@ void throughput(commandLine& command_line)
 
     string determinism      = string(command_line.getOptionValue("-d", "false"));
     string range_search     = string(command_line.getOptionValue("-rs", "true"));
+	size_t num_of_batches   = command_line.getOptionIntValue("-numbatch", 10);
+	size_t half_of_bsize    = command_line.getOptionIntValue("-sizebatch", 5000);
 
     config::walks_per_vertex = walks_per_vertex;
     config::walk_length      = length_of_walks;
@@ -28,7 +30,6 @@ void throughput(commandLine& command_line)
     if (model == "deepwalk")
     {
         config::random_walk_model = types::RandomWalkModelType::DEEPWALK;
-
         std::cout << "Walking model: DEEPWALK" << std::endl;
     }
     else if (model == "node2vec")
@@ -36,7 +37,6 @@ void throughput(commandLine& command_line)
         config::random_walk_model = types::RandomWalkModelType::NODE2VEC;
         config::paramP = paramP;
         config::paramQ = paramQ;
-
         std::cout << "Walking model: NODE2VEC | Params (p,q) = " << "(" << config::paramP << "," << config::paramQ << ")" << std::endl;
     }
     else
@@ -48,19 +48,16 @@ void throughput(commandLine& command_line)
     if (init_strategy == "burnin")
     {
         config::sampler_init_strategy = types::SamplerInitStartegy::BURNIN;
-
         std::cout << "Sampler strategy: BURNIN" << std::endl;
     }
     else if (init_strategy == "weight")
     {
         config::sampler_init_strategy = types::SamplerInitStartegy::WEIGHT;
-
         std::cout << "Sampler strategy: WEIGHT" << std::endl;
     }
     else if (init_strategy == "random")
     {
         config::sampler_init_strategy = types::SamplerInitStartegy::RANDOM;
-
         std::cout << "Sampler strategy: RANDOM" << std::endl;
     }
     else
@@ -90,17 +87,18 @@ void throughput(commandLine& command_line)
 
     dygrl::Wharf malin = dygrl::Wharf(n, m, offsets, edges);
 
-    timer initial_walks_from_scratch_timer("GenerateInitialWalksFromScratch", false); initial_walks_from_scratch_timer.reset(); initial_walks_from_scratch_timer.start();
+    timer initial_walks_from_scratch_timer("GenerateInitialWalksFromScratch", false);
+	initial_walks_from_scratch_timer.start();
     malin.generate_initial_random_walks();
-    auto time_form_scratch_initial_walks = initial_walks_from_scratch_timer.get_total();
+	initial_walks_from_scratch_timer.stop();
+	cout << "Total time to generate the walk corpus from scratch: " << initial_walks_from_scratch_timer.get_total() << endl;
 
-//	malin.generate_initial_random_walks();
-	int n_batches = 10; // todo: how many batches per batch size?
+	int n_batches = num_of_batches; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 3500; //00; //5;
+	batch_sizes[0] = half_of_bsize;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -115,12 +113,10 @@ void throughput(commandLine& command_line)
 
 		graph_update_time_on_insert.reset();
 		walk_update_time_on_insert.reset();
-		graph_update_time_on_delete.reset();
-		walk_update_time_on_delete.reset();
 		// --- profiling initialization
 		walk_insert_init.reset();
-		walk_insert_2jobs.reset();
-		walk_insert_2accs.reset();
+		Walking_new_sampling_time.reset();
+		Walking_insert_new_samples.reset();
 		ij.reset();
 		dj.reset();
 		walk_find_in_vertex_tree.reset();
@@ -136,9 +132,7 @@ void throughput(commandLine& command_line)
 		merge_create_delete_walks.reset();
 		ij_sampling.reset();
 		ij_szudzik.reset();
-		mav_deletions_obsolete.reset();
-		mav_iteration.reset();
-		MergeAll.reset();
+		Merge_time.reset();
 		sortAtMergeAll.reset();
 		accumultinsert.reset();
 		LastMerge.reset();
@@ -147,6 +141,10 @@ void throughput(commandLine& command_line)
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
 
 		double last_insert_time = 0;
+		double last_MAV_time    = 0.0;
+		double last_Merge_time  = 0.0;
+		double last_Walk_sampling_time = 0.0;
+		double last_Walk_new_insert_time = 0.0;
 
 		auto latency_insert = pbbs::sequence<double>(n_batches);
 		auto latency = pbbs::sequence<double>(n_batches);
@@ -156,7 +154,7 @@ void throughput(commandLine& command_line)
 
 		int batch_seed[n_batches];
 		for (auto i = 0; i < n_batches; i++)
-			batch_seed[i] = i; // say the seed equals to the #batch todo: produce a different batch each time
+			batch_seed[i] = i; // say the seed equals to the #batch
 
 		for (short int b = 0; b < n_batches; b++)
 		{
@@ -166,14 +164,10 @@ void throughput(commandLine& command_line)
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[b], false, false);
 
 			std::cout << edges.second << " ";
-//			for (auto i = 0; i < edges.second; i++)
-//				cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
-//cout << "1" << endl;
 			insert_timer.start();
 			auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
-//cout << "11" << endl;
 
 			total_insert_walks_affected += x.size();
 
@@ -182,116 +176,33 @@ void throughput(commandLine& command_line)
 
 			latency[b] = latency_insert[b];
 
-/*			MergeAll.start();
-			if (b > 0)
-				malin.merge_walk_trees_all_vertices_parallel(b+1); // use the parallel merging
-			MergeAll.stop();*/
+			// Update the MAV min and max
+			last_MAV_time = MAV_time.get_total() - last_MAV_time;
+			MAV_min = std::min(MAV_min, last_MAV_time);
+			MAV_max = std::max(MAV_max, last_MAV_time);
+			// Update the Merge min and max
+			last_Merge_time = Merge_time.get_total() - last_Merge_time;
+			Merge_min = std::min(Merge_min, last_Merge_time);
+			Merge_max = std::max(Merge_max, last_Merge_time);
+			// Update the Walk Update (without Merge) min and max
+			last_Walk_sampling_time = Walking_new_sampling_time.get_total() - last_Walk_sampling_time;
+			WalkSampling_min = std::min(WalkSampling_min, last_Walk_sampling_time);
+			WalkSampling_max = std::max(WalkSampling_max, last_Walk_sampling_time);
+			last_Walk_new_insert_time = Walking_insert_new_samples.get_total() - last_Walk_new_insert_time;
+			WalkInsert_min = std::min(WalkInsert_min, last_Walk_new_insert_time);
+			WalkInsert_max = std::max(WalkInsert_max, last_Walk_new_insert_time);
 
-			// Run insert and merge in parallel
-/*			fj.pardo([&]()
-	         {
-	           insert_timer.start();
-	           auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
-	           insert_timer.stop();
-//cout << "11" << endl;
-
-	           total_insert_walks_affected += x.size();
-
-	           last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
-	           latency_insert[b] = (double) last_insert_time / x.size();
-
-	           latency[b] = latency_insert[b];
-	         }, [&]()
-	         {
-	           MergeAll.start();
-	           if (b > 0)
-		           malin.merge_walk_trees_all_vertices_parallel(b+1); // use the parallel merging
-	           MergeAll.stop();
-	         });*/
-
-			// free edges
 			pbbs::free_array(edges.first);
 		}
 		cout << fixed;
 		std::cout << std::endl;
 
-		std::cout << "Average insert time = "
-		          << insert_timer.get_total() / n_batches << std::endl;
-		std::cout << "Average graph update insert time = "
-		          << graph_update_time_on_insert.get_total() / n_batches
-		          << std::endl;
-		std::cout << "Average walk update insert time = "
-		          << walk_update_time_on_insert.get_total() / n_batches
-		          << ", average walk affected = "
-		          << total_insert_walks_affected / n_batches << std::endl;
-
-		std::cout << "Average delete time = "
-		          << delete_timer.get_total() / n_batches << std::endl;
-		std::cout << "Average graph update delete time = "
-		          << graph_update_time_on_delete.get_total() / n_batches
-		          << std::endl;
-		std::cout << "Average walk update delete time = "
-		          << walk_update_time_on_delete.get_total() / n_batches
-		          << ", average walk affected = "
-		          << total_delete_walks_affected / n_batches << std::endl;
-
-		// MAV time
-		std::cout << "Average MAV (we are not deleting obsolete parts) = "
-		          << MAV_time.get_total() / n_batches
-		          << std::endl;
-		// read access time MAV
-		std::cout << "Average Read Access Time MAV = "
-		          << read_access_MAV.get_total() / n_batches
-		          << std::endl;
-
-		cout << "avg mav_iteration: " << mav_iteration.get_total() / n_batches << endl;
-		cout << "avg mav_deletions: " << mav_deletions_obsolete.get_total() / n_batches << endl;
-
-		std::cout << "Total MAV (we are not deleting obsolete parts) = " << MAV_time.get_total() << std::endl;
-		std::cout << "Total Read Access Time MAV = " << read_access_MAV.get_total() << std::endl;
-		std::cout << "Total walk update insert time = " << walk_update_time_on_insert.get_total() << ", average walk affected = " << total_insert_walks_affected / n_batches << std::endl;
-		std::cout << "Total #sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
-
-		// --- profiling ---
-		std::cout << "{ total profiling for insert and delete" << std::endl;
-		std::cout << "Initialization total: "
-		          << walk_insert_init.get_total() /*/ n_batches*/ << /*" ("
-		          << (walk_insert_init.get_total() * 100) /
-		             (walk_insert_init.get_total() +
-		              walk_insert_2jobs.get_total() +
-		              walk_insert_2accs.get_total()) << "%)" <<*/ std::endl;
-		std::cout << "Insert Job (Sampling + Szudzik) total: "
-		          << walk_insert_2jobs.get_total() /*/ n_batches << " ("
-		          << (walk_insert_2jobs.get_total() * 100) /
-		             (walk_insert_init.get_total() +
-		              walk_insert_2jobs.get_total() +
-		              walk_insert_2accs.get_total()) << "%)"*/ << std::endl;
-//		std::cout << "InsertJob: " << ij.get_total() / n_batches
-//		          << " | DeleteJob: " << dj.get_total() / n_batches << std::endl;
-//		cout << "insertJob sampling: " << ij_sampling.get_total() / n_batches << endl;
-//		cout << "insertJob szudzik : " << ij_szudzik.get_total() / n_batches << endl;
-
-//		std::cout << "FindInVertexTree in DeleteJob total: "
-//		          << walk_find_in_vertex_tree.get_total() / n_batches
-//		          << std::endl;
-//		std::cout << "FindNext in DeleteJob total: "
-//		          << walk_find_next_tree.get_total() / n_batches << std::endl;
-//		std::cout << "FindNext (search of the tree): "
-//		          << fnir_tree_search.get_total() / n_batches << std::endl;
-//		std::cout << "Sudzik total: " << szudzik_hash.get_total() / n_batches
-//		          << std::endl;
-
-		std::cout << "Accumulators total: "
-		          << walk_insert_2accs.get_total() /*/ n_batches << " ("
-		          << (walk_insert_2accs.get_total() * 100) /
-		             (walk_insert_init.get_total() +
-		              walk_insert_2jobs.get_total() +
-		              walk_insert_2accs.get_total()) << "%)"*/ << std::endl;
-//		cout <<  "Multiinsert: " << apply_multiinsert_ctrees.get_total() / n_batches << endl;
-//		cout <<  "Create Vertex Entries (for loop with lock_table): " << bdown_create_vertex_entries.get_total() / n_batches << endl;
-//		cout <<  "Linear cuckoo-hashmap scan: " << linear_cuckoo_acc_scann.get_total() / n_batches << endl;
-		std::cout << "}" << std::endl;
-		// --- profiling ---
+		std::cout << "Insert time (avg) = " << insert_timer.get_total() / n_batches << std::endl;
+		std::cout << "GUP (avg) = " << graph_update_time_on_insert.get_total() / n_batches << std::endl;
+		std::cout << "BWUP (avg, includes merge) = " << walk_update_time_on_insert.get_total() / n_batches << ", average walk affected = " << total_insert_walks_affected / n_batches << ", sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
+		std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / n_batches << endl;
+		std::cout << "MAV (avg)   = " << MAV_time.get_total() / n_batches << "\tMAV (min) = " << MAV_min << "\tMAV (max) = " << MAV_max << std::endl;
+		std::cout << "Merge (avg) = " << Merge_time.get_total() / n_batches << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
 
 		// latencies
 		std::cout << "Average walk insert latency = { ";
@@ -300,31 +211,19 @@ void throughput(commandLine& command_line)
 		}
 		std::cout << "}" << std::endl;
 
-		std::cout << "Average walk update latency = { ";
-		for (int i = 0; i < n_batches; i++) {
-			std::cout << latency[i] << " ";
-		}
-		std::cout << "}" << std::endl;
+//		std::cout << "Average walk update latency = { ";
+//		for (int i = 0; i < n_batches; i++) {
+//			std::cout << latency[i] << " ";
+//		}
+//		std::cout << "}" << std::endl;
 	}
-
-	// Merge all walks after the bathes
-//	timer MergeAll("MergeAllTimer", false);
-//	MergeAll.start();
-//	malin.merge_walk_trees_all_vertices_parallel(n_batches); // use the parallel merging
-//	MergeAll.stop();
-	std::cout << "Merge all the walk-trees time: " << MergeAll.get_total() << std::endl;
-	cout << "merge_triplets_to_delete calculation: " << merge_calc_triplets_to_delete.get_total() << endl;
-	cout << "merge_delete_walks       calculation: " << merge_create_delete_walks.get_total() << endl;
-	cout << "merge_multiinsert        calculation: " << merge_multiinsert_ctress.get_total() << endl;
-	cout << "for loops at merge all: " << sortAtMergeAll.get_total() << endl;
-	cout << "accum + multinsert at merge all: " << accumultinsert.get_total() << endl;
 
 	// Last Merge
 	LastMerge.start();
 //	malin.merge_walk_trees_all_vertices_parallel(n_batches);
 	malin.last_merge_all_vertices_parallel_with_minmax(n_batches);
 	LastMerge.stop();
-	cout << "Last merge time: " << LastMerge.get_total() << endl;
+	cout << "Last merge (with MIN-MAX Ranges) time: " << LastMerge.get_total() << endl;
 
 	// Measure time to read-rewalk all walks
 	ReadWalks.start();
