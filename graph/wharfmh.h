@@ -1038,14 +1038,14 @@ cout << "6" << endl;
 			size_t walk_seq = 0;
 			for (const auto &it : walk_storage.lock_table())
 			{
-				walk_seq += sizeof(it.first); //sizeof(uint32_t); // sizeof(it.first);
+				walk_seq += sizeof(uint64_t); //sizeof(it.first); //sizeof(uint32_t); // sizeof(it.first);
 //				cout << "wid-" << it.first << " | ";
 //				for (auto i = it.second.begin(); i != it.second.end(); i++)
 //				{
 //					walk_seq += sizeof(*i); //sizeof(uint32_t); // sizeof(*i);
 ////					cout << *i << " ";
 //				}
-				walk_seq += sizeof(types::Vertex) * it.second.size();
+				walk_seq += /*sizeof(types::Vertex)*/ sizeof(uint64_t) * it.second.size();
 //				cout << endl;
 			}
 //			assert(new_walk_storage.size() == walk_storage.size());
@@ -1057,12 +1057,12 @@ cout << "6" << endl;
 			size_t walk_ind = 0;
 			for (const auto &it : walk_index.lock_table())
 			{
-				walk_ind += sizeof(it.first); //sizeof(uint32_t); // sizeof(it.first);
+				walk_ind += sizeof(uint64_t); //sizeof(it.first); //sizeof(uint32_t); // sizeof(it.first);
 //				for (auto i = it.second.begin(); i != it.second.end(); i++)
 //				{
 //					walk_ind += sizeof(*i); // sizeof(uint32_t); // sizeof(*i);
 //				}
-				walk_ind += sizeof(types::WalkID) * it.second.size();
+				walk_ind += /*sizeof(types::WalkID)*/ sizeof(uint64_t) * it.second.size();
 			}
 
 			std::cout << "Walks Inverted Index: \n\t"
