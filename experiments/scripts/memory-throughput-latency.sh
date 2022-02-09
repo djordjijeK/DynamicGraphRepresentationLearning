@@ -15,8 +15,8 @@ range_search="true"               # range search mode
 determinism="true"                # determinism
 num_of_batches=10                  # numbers of batches
 half_of_batch_size=3500           # batch_size / 2
-merge_wu_exec_mode="serial"     # parallel | serial
-merge_frequency=3                 # every how many batches to merge
+merge_wu_exec_mode="parallel"     # parallel | serial
+merge_frequency=1                 # every how many batches to merge
 
 
 # create the data dir
