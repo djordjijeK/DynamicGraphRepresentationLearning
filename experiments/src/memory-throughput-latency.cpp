@@ -229,7 +229,7 @@ void throughput(commandLine& command_line)
 		std::cout << "}" << std::endl;
 
 		cout << "(1) throughput: " << fixed << setprecision(8) << total_insert_walks_affected / (walk_update_time_on_insert.get_total() * 1.0) << endl;
-		cout << "(2) average latency: " << fixed << setprecision(8) << average_latency / n_batches << endl;
+		cout << "(2) average latency: " << fixed << setprecision(8) << average_latency / (n_batches * 1.0) << endl;
 
 //		std::cout << "Average walk update latency = { ";
 //		for (int i = 0; i < n_batches; i++) {
