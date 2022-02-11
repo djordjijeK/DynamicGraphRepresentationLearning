@@ -207,16 +207,19 @@ void throughput(commandLine& command_line)
 //	WharfMH.memory_footprint();
 //	// ----
 
-	int n_batches = 1; // todo: how many batches per batch size?
+	int n_batches = 5; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
-	auto batch_sizes = pbbs::sequence<size_t>(1);
+	auto batch_sizes = pbbs::sequence<size_t>(8);
 	batch_sizes[0] = 5; //5;
-//	batch_sizes[1] = 50;
-//	batch_sizes[2] = 500;
-//	batch_sizes[3] = 5000;
-//	batch_sizes[4] = 50000;
+	batch_sizes[1] = 50;
+	batch_sizes[2] = 500;
+	batch_sizes[3] = 5000;
+	batch_sizes[4] = 10000;
+	batch_sizes[5] = 15000;
+	batch_sizes[6] = 25000;
+	batch_sizes[7] = 50000;
 //  batch_sizes[5] = 500000;
 
 	for (short int i = 0; i < batch_sizes.size(); i++)
@@ -258,7 +261,7 @@ void throughput(commandLine& command_line)
 
 		for (short int b = 0; b < n_batches; b++)
 		{
-			cout << "batch-" << b << " and batch_seed-" << batch_seed[b] << endl;
+//			cout << "batch-" << b << " and batch_seed-" << batch_seed[b] << endl;
 
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[b], false, false);
@@ -267,11 +270,11 @@ void throughput(commandLine& command_line)
 //			for (auto i = 0; i < edges.second; i++)
 //				cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
-cout << "1" << endl;
+//cout << "1" << endl;
 			insert_timer.start();
 			auto x = WharfMH.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
-cout << "10" << endl;
+//cout << "10" << endl;
 
 			total_insert_walks_affected += x;
 
@@ -279,6 +282,8 @@ cout << "10" << endl;
 			latency_insert[b] = (double) last_insert_time / x;
 
 			latency[b] = latency_insert[b];
+
+			WharfMH.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
 
 			// free edges
 			pbbs::free_array(edges.first);
