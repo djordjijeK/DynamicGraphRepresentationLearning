@@ -278,9 +278,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						random = utility::Random(walk_id / total_vertices); // disable this if you need pure randomness
                     types::State state = model->initial_state(walk_id % total_vertices);
 
-                    for(types::Position position = 0; position < config::walk_length; position++)
+                  std::vector<types::Vertex> temp_walk_vector;
+                  for(types::Position position = 0; position < config::walk_length; position++)
                     {
-                        if (!graph[state.first].samplers->contains(state.second))
+	                    if (!graph[state.first].samplers->contains(state.second))
                         {
                             graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
                         }
@@ -289,10 +290,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 	                    if (config::determinism)
                             new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
 
-                        this->walk_storage.update_fn(walk_id, [&](auto& vector)
-                        {
-                            vector.push_back(state.first);
-                        });
+						temp_walk_vector.push_back(state.first);
+//                        this->walk_storage.update_fn(walk_id, [&](auto& vector)
+//                        {
+//                            vector.push_back(state.first);
+//                        });
 
 						// update the walk index as well --------------------------------
 //						if (position == 0)
@@ -305,6 +307,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                         state = new_state;
                     }
+
+					// Add new walk
+                    this->walk_storage.update_fn(walk_id, [&](auto& vector)
+                    {
+//	                    vector.push_back(state.first);
+						vector = temp_walk_vector;
+                    });
                 });
 
                 delete model;
