@@ -220,11 +220,16 @@ void throughput(commandLine& command_line)
 		std::cout << "Merge (avg," << std::floor(n_batches / merge_frequency) << " times) = " << Merge_time.get_total() / std::floor(n_batches / merge_frequency) << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
 
 		// latencies
+		auto average_latency = 0;
 		std::cout << "Average walk insert latency = { ";
 		for (int i = 0; i < n_batches; i++) {
+			average_latency += latency_insert[i];
 			std::cout << latency_insert[i] << " ";
 		}
 		std::cout << "}" << std::endl;
+
+		cout << "(1) throughput: " << total_insert_walks_affected / (walk_update_time_on_insert.get_total() * 1.0) << endl;
+		cout << "(2) average latency: " << average_latency / n_batches << endl;
 
 //		std::cout << "Average walk update latency = { ";
 //		for (int i = 0; i < n_batches; i++) {
