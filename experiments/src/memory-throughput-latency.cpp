@@ -86,7 +86,11 @@ void throughput(commandLine& command_line)
     std::tie(n, m, offsets, edges) = read_unweighted_graph(fname.c_str(), is_symmetric, mmap);
 
     dygrl::WharfMH WharfMH = dygrl::WharfMH(n, m, offsets, edges);
+	auto scratchWalks = timer("walksFromScratch", false);
+	scratchWalks.start();
     WharfMH.generate_initial_random_walks();
+	scratchWalks.stop();
+	cout << "Produce the initial walk corpus: " << scratchWalks.get_total() << endl;
 //	// --- add memory measurements here
 ////	WharfMH.memory_footprint();
 //	// ----
@@ -292,15 +296,15 @@ cout << "10" << endl;
 		          << ", average walk affected = "
 		          << total_insert_walks_affected / n_batches << std::endl;
 
-		std::cout << "Average delete time = "
-		          << delete_timer.get_total() / n_batches << std::endl;
-		std::cout << "Average graph update delete time = "
-		          << graph_update_time_on_delete.get_total() / n_batches
-		          << std::endl;
-		std::cout << "Average walk update delete time = "
-		          << walk_update_time_on_delete.get_total() / n_batches
-		          << ", average walk affected = "
-		          << total_delete_walks_affected / n_batches << std::endl;
+//		std::cout << "Average delete time = "
+//		          << delete_timer.get_total() / n_batches << std::endl;
+//		std::cout << "Average graph update delete time = "
+//		          << graph_update_time_on_delete.get_total() / n_batches
+//		          << std::endl;
+//		std::cout << "Average walk update delete time = "
+//		          << walk_update_time_on_delete.get_total() / n_batches
+//		          << ", average walk affected = "
+//		          << total_delete_walks_affected / n_batches << std::endl;
 
 //		// MAV time
 //		std::cout << "Average MAV (we are not deleting obsolete parts) = "
@@ -316,53 +320,17 @@ cout << "10" << endl;
 		std::cout << "Total walk update insert time = " << walk_update_time_on_insert.get_total() << ", average walk affected = " << total_insert_walks_affected / n_batches << std::endl;
 		std::cout << "Total #sampled vertices = " << WharfMH.number_sampled_vertices << std::endl;
 
-//		// --- profiling ---
-//		std::cout << "{ total profiling for insert and delete" << std::endl;
-//		std::cout << "Initialization: "
-//		          << walk_insert_init.get_total() / n_batches << " ("
-//		          << (walk_insert_init.get_total() * 100) /
-//		             (walk_insert_init.get_total() +
-//		              walk_insert_2jobs.get_total() +
-//		              walk_insert_2accs.get_total()) << "%)" << std::endl;
-//		std::cout << "Insert/Delete Jobs: "
-//		          << walk_insert_2jobs.get_total() / n_batches << " ("
-//		          << (walk_insert_2jobs.get_total() * 100) /
-//		             (walk_insert_init.get_total() +
-//		              walk_insert_2jobs.get_total() +
-//		              walk_insert_2accs.get_total()) << "%)" << std::endl;
-//		std::cout << "InsertJob: " << ij.get_total() / n_batches
-//		          << " | DeleteJob: " << dj.get_total() / n_batches << std::endl;
-//		std::cout << "FindInVertexTree in DeleteJob total: "
-//		          << walk_find_in_vertex_tree.get_total() / n_batches
-//		          << std::endl;
-//		std::cout << "FindNext in DeleteJob total: "
-//		          << walk_find_next_tree.get_total() / n_batches << std::endl;
-//		std::cout << "FindNext (search of the tree): "
-//		          << fnir_tree_search.get_total() / n_batches << std::endl;
-//		std::cout << "Sudzik total: " << szudzik_hash.get_total() / n_batches
-//		          << std::endl;
-//
-//		std::cout << "Accumulators: "
-//		          << walk_insert_2accs.get_total() / n_batches << " ("
-//		          << (walk_insert_2accs.get_total() * 100) /
-//		             (walk_insert_init.get_total() +
-//		              walk_insert_2jobs.get_total() +
-//		              walk_insert_2accs.get_total()) << "%)" << std::endl;
-//		std::cout << "}" << std::endl;
-//		// --- profiling ---
-
 		// latencies
+		double total_latency = 0.0;
 		std::cout << "Average walk insert latency = { ";
 		for (int i = 0; i < n_batches; i++) {
 			std::cout << latency_insert[i] << " ";
+			total_latency += latency_insert[i];
 		}
 		std::cout << "}" << std::endl;
 
-		std::cout << "Average walk update latency = { ";
-		for (int i = 0; i < n_batches; i++) {
-			std::cout << latency[i] << " ";
-		}
-		std::cout << "}" << std::endl;
+		cout << "(1) throughput: " << fixed << setprecision(8) << total_insert_walks_affected / (walk_update_time_on_insert.get_total() * 1.0) << endl;
+		cout << "(2) average latency: " << fixed << setprecision(8) << total_latency / n_batches << endl;
 	}
 
 	// Measure read walk time
