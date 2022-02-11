@@ -127,27 +127,27 @@ void throughput(commandLine& command_line)
 		graph_update_time_on_insert.reset();
 		walk_update_time_on_insert.reset();
 		// --- profiling initialization
-		walk_insert_init.reset();
+//		walk_insert_init.reset();
 		Walking_new_sampling_time.reset();
 		Walking_insert_new_samples.reset();
-		ij.reset();
-		dj.reset();
-		walk_find_in_vertex_tree.reset();
-		walk_find_next_tree.reset();
-		szudzik_hash.reset();
-		fnir_tree_search.reset();
+//		ij.reset();
+//		dj.reset();
+//		walk_find_in_vertex_tree.reset();
+//		walk_find_next_tree.reset();
+//		szudzik_hash.reset();
+//		fnir_tree_search.reset();
 		MAV_time.reset();
-		read_access_MAV.reset();
-		bdown_create_vertex_entries.reset();
-		apply_multiinsert_ctrees.reset();
-		linear_cuckoo_acc_scann.reset();
+//		read_access_MAV.reset();
+//		bdown_create_vertex_entries.reset();
+//		apply_multiinsert_ctrees.reset();
+//		linear_cuckoo_acc_scann.reset();
 		merge_calc_triplets_to_delete.reset();
 		merge_create_delete_walks.reset();
-		ij_sampling.reset();
-		ij_szudzik.reset();
+//		ij_sampling.reset();
+//		ij_szudzik.reset();
 		Merge_time.reset();
-		sortAtMergeAll.reset();
-		accumultinsert.reset();
+//		sortAtMergeAll.reset();
+//		accumultinsert.reset();
 		LastMerge.reset();
 		// ---
 

@@ -13,9 +13,11 @@ declare -a walks_per_node=(10)
 declare -a walk_length=(80)
 range_search="true"               # range search mode
 determinism="true"                # determinism
-
-# create the data dir
-#mkdir -p data/latency_throughput/
+num_of_batches=5                 # numbers of batches
+repeat_times=3                    # number of times to repeat the pipeline
+half_of_batch_size=50             # batch_size / 2
+merge_wu_exec_mode="parallel"     # parallel | serial
+merge_frequency=1                 # every how many batches to merge
 
 # 1. convert graphs in adjacency graph format if necessary
 for graph in "${graphs[@]}"; do
@@ -34,7 +36,7 @@ mkdir -p ../../build;
 cd ../../build;
 cmake -DCMAKE_BUILD_TYPE=Release ..;
 cd experiments;
-make insertonly-throughtput
+make all_exps
 
 # 3. execute experiments
 for wpv in "${walks_per_node[@]}"; do
@@ -42,7 +44,7 @@ for wpv in "${walks_per_node[@]}"; do
         for graph in "${graphs[@]}"; do
             printf "\n"
             printf "Graph: ${graph} \n"
-            ./insertonly-throughput -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" #| tee data/latency_throughput/${graph}-${walk_model}.txt
+            ./all_exps -s -f "data/${graph}.adj" -w "${wpv}" -l "${wl}" -model "${walk_model}" -paramP "${paramP}" -paramQ "${paramQ}" -init "${sampler_init_strategy}" -rs "${range_search}" -d "${determinism}" -numbatch "${num_of_batches}" -sizebatch "${half_of_batch_size}" -mergefreq "${merge_frequency}$" -mergemode "${merge_wu_exec_mode}" -repeat "${repeat_times}"
         done
     done
 done

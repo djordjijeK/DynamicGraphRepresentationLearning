@@ -12,7 +12,7 @@ set(OMPFLAGS     "-DOPENMP -fopenmp")
 set(CILKFLAGS    "-DCILK -fcilkplus")
 set(HGFLAGS      "-DHOMEGROWN -pthread")
 set(OPTIMIZATION "-O3 -g")
-    set(CFLAGS       "-DEDGELONG  -mcx16 ${OPTIMIZATION} -ldl -std=c++17 -march=native -Wall -Wno-subobject-linkage -DUSEMALLOC -DVERTEXLONG")
+set(CFLAGS       "-DEDGELONG  -mcx16 ${OPTIMIZATION} -ldl -std=c++17 -march=native -Wall -Wno-subobject-linkage -DUSEMALLOC -DVERTEXLONG")
 
 if(CLANG)
     set(CMAKE_CXX_COMPILER "clang++")
@@ -43,13 +43,8 @@ file(COPY bin/to_word2vec.pl DESTINATION .)
 file(COPY bin/inverted_index_pam DESTINATION .)
 
 # experiments executables
-#add_executable(throughput-latency src/throughput-latency.cpp)
-#add_executable(memory-footprint src/memory-footprint.cpp)
+add_executable(all_exps src/all_exp.cpp)
 add_executable(vertex-classification src/vertex-classification.cpp)
-#add_executable(chunk-size src/chunk_size.cpp)
-#add_executable(self-speedup src/self_speedup.cpp)
 add_executable(memory-throughput-latency src/memory-throughput-latency.cpp)
-#add_executable(insertonly-throughput src/insert-only-throughput.cpp)
-add_executable(insertonly-throughput src/insert-only-throughput.cpp)
 
 # -------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING WITH METROPOLIS HASTINGS ----------------------------

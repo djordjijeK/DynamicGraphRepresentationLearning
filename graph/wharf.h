@@ -997,9 +997,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 					  if (graph[current_vertex_new_walk].degree == 0)
 					  {
-						  szudzik_hash.start();
+//						  szudzik_hash.start();
 						  types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
-						  szudzik_hash.stop();
+//						  szudzik_hash.stop();
 
 						  if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
 						  inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
@@ -1082,9 +1082,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 							  if (graph[current_vertex_new_walk].degree == 0)
 							  {
-								  szudzik_hash.start();
+//								  szudzik_hash.start();
 								  types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
-								  szudzik_hash.stop();
+//								  szudzik_hash.stop();
 
 								  if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
 								  inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
@@ -1273,12 +1273,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				// Iterate and put the Insert accumulator into a pbbs:sequence
 				auto temp_inserts = pbbs::sequence<std::pair<types::Vertex, std::vector<types::PairedTriplet>>>(inserts.size());
 				auto skatindex = 0;
-				linear_cuckoo_acc_scann.start();
+//				linear_cuckoo_acc_scann.start();
 				for (auto& item: inserts.lock_table()) // TODO: This cannot be in parallel. Cuckoo-hashmap limitation
 				{
 					temp_inserts[skatindex++] = std::make_pair(item.first, item.second);
 				}
-				linear_cuckoo_acc_scann.stop();
+//				linear_cuckoo_acc_scann.stop();
 
 				parallel_for(0, temp_inserts.size(), [&](auto j){
                     auto sequence = pbbs::sequence<types::Vertex>(temp_inserts[j].second.size());
@@ -2074,7 +2074,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				// Rewalking the old parts and parallel scanning (only once) the corresponding walk-trees
 				for (auto p = p_min_min; p < config::walk_length; p++)
 				{
-					sortAtMergeAll.start();
+//					sortAtMergeAll.start();
 					// Group by distinct vertex id
 					libcuckoo::cuckoohash_map<types::Vertex, std::set<types::WalkID>> per_vertex_wids;
 					for (auto& w : walks_at_position.find(p))
@@ -2093,7 +2093,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						distinct_vertices[i] = entry.first;
 						i++;
 					}
-					sortAtMergeAll.stop();
+//					sortAtMergeAll.stop();
 
 					cout << "#distinct vertices: " <<  per_vertex_wids.size() << endl;
 
@@ -2168,7 +2168,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //					}
 				}
 
-				accumultinsert.start();
+//				accumultinsert.start();
 	            using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto delete_walks  = pbbs::sequence<VertexStruct>(deletes.size());
 
@@ -2217,7 +2217,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 // Then, apply the batch deletetions
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, delete_walks.begin(), delete_walks.size(), replaceD, true);
-				accumultinsert.stop();
+//				accumultinsert.stop();
 			}
 
 
