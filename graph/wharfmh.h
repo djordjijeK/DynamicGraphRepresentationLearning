@@ -11,6 +11,7 @@
 #include <models/deepwalk.h>
 #include <models/node2vec.h>
 #include <set>
+#include <map>
 
 namespace dynamic_graph_representation_learning_with_metropolis_hastings
 {
@@ -219,9 +220,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             void generate_initial_random_walks()
             {
                 auto graph            = this->flatten_graph();
-                auto total_vertices = this->number_of_vertices();
-                auto walks          = total_vertices * config::walks_per_vertex;
-//                auto cuckoo         = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices);
+                auto total_vertices   = this->number_of_vertices();
+                auto walks            = total_vertices * config::walks_per_vertex;
 
                 using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto vertices       = pbbs::sequence<VertexStruct>(total_vertices);
@@ -251,7 +251,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 {
                     if (graph[walk_id % total_vertices].degrees == 0)
                     {
-                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
+						return; // TODO: Let's see how this works out
+
+/*                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
 //                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
 
                         this->walk_storage.update_fn(walk_id, [&](auto& vector)
@@ -267,7 +269,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						}); // todo
 						// -------------------------------------------------------------------------------
 
-                        return;
+                        return;*/
                     }
 
 //                    this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length)); // do not initialize like this because it inserts zeros
@@ -275,11 +277,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     auto random = config::random;
 					if (config::determinism)
-						random = utility::Random(walk_id / total_vertices); // disable this if you need pure randomness
+						random = utility::Random(walk_id / total_vertices);
                     types::State state = model->initial_state(walk_id % total_vertices);
 
-                  std::vector<types::Vertex> temp_walk_vector;
-                  for(types::Position position = 0; position < config::walk_length; position++)
+                    std::vector<types::Vertex> temp_walk_vector;
+					std::map<types::Vertex, std::set<types::WalkID>> temp_walk_index;
+                    for(types::Position position = 0; position < config::walk_length; position++)
                     {
 	                    if (!graph[state.first].samplers->contains(state.second))
                         {
@@ -299,14 +302,28 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						// update the walk index as well --------------------------------
 //						if (position == 0)
 //								this->walk_index.insert(state.first, std::set<types::Vertex>()); // todo: check if this is correct
-						this->walk_index.update_fn(state.first, [&](auto& set)
-						{
-								set.insert(walk_id);
-						});
+//						this->walk_index.update_fn(state.first, [&](auto& set)
+//						{
+//							set.insert(walk_id);
+//						});
+						// ---------------------------------------------------------------
+						if (temp_walk_index.find(state.first) == temp_walk_index.end())
+							temp_walk_index.insert(std::pair(state.first, std::set<types::WalkID>()));
+						temp_walk_index[state.first].insert(walk_id);
 						// --------------------------------------------------------------
 
                         state = new_state;
                     }
+
+					// Add to walk index
+					for (auto entry : temp_walk_index)
+					{
+						this->walk_index.update_fn(entry.first, [&](auto& set)
+						{
+						  set.insert(entry.second.begin(), entry.second.end());
+						});
+					}
+					temp_walk_index.clear();
 
 					// Add new walk
                     this->walk_storage.update_fn(walk_id, [&](auto& vector)
@@ -314,6 +331,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //	                    vector.push_back(state.first);
 						vector = temp_walk_vector;
                     });
+					temp_walk_vector.clear();
                 });
 
                 delete model;
