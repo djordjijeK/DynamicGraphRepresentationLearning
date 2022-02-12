@@ -94,15 +94,15 @@ void throughput(commandLine& command_line)
 
 	int n_batches = 5; // todo: how many batches per batch size?
 
-	auto batch_sizes = pbbs::sequence<size_t>(8);
+	auto batch_sizes = pbbs::sequence<size_t>(1);
 	batch_sizes[0] = 5; //5;
-	batch_sizes[1] = 50;
-	batch_sizes[2] = 500;
-	batch_sizes[3] = 5000;
-	batch_sizes[4] = 10000;
-	batch_sizes[5] = 15000;
-	batch_sizes[6] = 25000;
-	batch_sizes[7] = 50000;
+//	batch_sizes[1] = 50;
+//	batch_sizes[2] = 500;
+//	batch_sizes[3] = 5000;
+//	batch_sizes[4] = 10000;
+//	batch_sizes[5] = 15000;
+//	batch_sizes[6] = 25000;
+//	batch_sizes[7] = 50000;
 //  batch_sizes[5] = 500000;
 
 	for (short int i = 0; i < batch_sizes.size(); i++)
@@ -153,6 +153,7 @@ void throughput(commandLine& command_line)
 
 			latency[b] = latency_insert[b];
 
+			// Delete the batch of edges
 			WharfMH.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
 
 			// free edges
@@ -188,61 +189,16 @@ void throughput(commandLine& command_line)
 	}
 
 	// Measure read walk time
-	auto ReadWalks = timer("ReadWalks", false);
-	ReadWalks.start();
-	for (auto i = 0; i < WharfMH.number_of_vertices() * config::walks_per_vertex; i++)
-		WharfMH.walk_silent(i);
-//		cout << WharfMH.walk(i) << endl;
-
-	ReadWalks.stop();
-	cout << "Read all walks time: " << ReadWalks.get_total() << endl;
+//	auto ReadWalks = timer("ReadWalks", false);
+//	ReadWalks.start();
+//	for (auto i = 0; i < WharfMH.number_of_vertices() * config::walks_per_vertex; i++)
+//		WharfMH.walk_silent(i);
+////		cout << WharfMH.walk(i) << endl;
+//	ReadWalks.stop();
+//	cout << "Read all walks time: " << ReadWalks.get_total() << endl;
 
 	// Measure the total memory in the end
 	WharfMH.memory_footprint();
-
-	// Merge all walks after the bathes
-//	timer MergeAll("MergeAllTimer", false);
-//	MergeAll.start();
-//	malin.merge_walk_trees_all_vertices_parallel(n_batches); // use the parallel merging
-//	MergeAll.stop();
-//	std::cout << "Merge all the walk-trees time: " << MergeAll.get_total() << std::endl;
-
-
-//	auto flat_graph = malin.flatten_vertex_tree();
-//	for (auto i = 0; i < malin.number_of_vertices(); i++)
-//	{
-//		cout << "vertex " << i << endl;
-////		flat_graph[i].compressed_edges.iter_elms(i, [&](auto edge){
-////			cout << edge << " ";
-////		});
-////		cout << endl;
-//
-//		cout << "size of walk-tree vector " << flat_graph[i].compressed_walks.size() << endl;
-//		int inc = 0;
-//		for (auto wt = flat_graph[i].compressed_walks.begin(); wt != flat_graph[i].compressed_walks.end(); wt++) // print the walk-trees in chronological order
-//		{
-////			inc++;
-//			cout << "walk-tree " << inc << endl;
-//			inc++;
-//			wt->iter_elms(i, [&](auto enc_triplet){
-//			  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
-//
-//			  auto walk_id  = pair.first / config::walk_length;                  // todo: needs floor?
-//			  auto position = pair.first - (walk_id * config::walk_length); // todo: position here starts from 0. verify this one!
-//			  auto next_vertex   = pair.second;
-////				cout << enc_triplet << " ";
-////			  cout << "{" << walk_id << ", " << position << ", " << next_vertex << "}" << " " << endl;
-//			});
-//			cout << endl;
-//			cout << "size of walk-tree " << wt->size() << endl;
-//		}
-//	}
-//
-//// ----------------------------------------------
-//	cout << "(NEW) WALKS" << endl;
-//	for (auto i = 0; i < total_vertices * config::walks_per_vertex; i++)
-//		cout << malin.walk_simple_find(i) << endl;
-//// ----------------------------------------------
 }
 
 int main(int argc, char** argv)
