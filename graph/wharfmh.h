@@ -11,7 +11,6 @@
 #include <models/deepwalk.h>
 #include <models/node2vec.h>
 #include <set>
-#include <map>
 
 namespace dynamic_graph_representation_learning_with_metropolis_hastings
 {
@@ -220,8 +219,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             void generate_initial_random_walks()
             {
                 auto graph            = this->flatten_graph();
-                auto total_vertices   = this->number_of_vertices();
-                auto walks            = total_vertices * config::walks_per_vertex;
+                auto total_vertices = this->number_of_vertices();
+                auto walks          = total_vertices * config::walks_per_vertex;
+//                auto cuckoo         = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices);
 
                 using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto vertices       = pbbs::sequence<VertexStruct>(total_vertices);
@@ -251,9 +251,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 {
                     if (graph[walk_id % total_vertices].degrees == 0)
                     {
-						return; // TODO: Let's see how this works out
-
-/*                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
+                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length));
 //                        this->walk_storage.insert(walk_id, std::vector<types::Vertex>());
 
                         this->walk_storage.update_fn(walk_id, [&](auto& vector)
@@ -269,7 +267,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						}); // todo
 						// -------------------------------------------------------------------------------
 
-                        return;*/
+                        return;
                     }
 
 //                    this->walk_storage.insert(walk_id, std::vector<types::Vertex>(config::walk_length)); // do not initialize like this because it inserts zeros
@@ -277,14 +275,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                     auto random = config::random;
 					if (config::determinism)
-						random = utility::Random(walk_id / total_vertices);
+						random = utility::Random(walk_id / total_vertices); // disable this if you need pure randomness
                     types::State state = model->initial_state(walk_id % total_vertices);
 
-                    std::vector<types::Vertex> temp_walk_vector;
-					std::map<types::Vertex, std::set<types::WalkID>> temp_walk_index;
                     for(types::Position position = 0; position < config::walk_length; position++)
                     {
-	                    if (!graph[state.first].samplers->contains(state.second))
+                        if (!graph[state.first].samplers->contains(state.second))
                         {
                             graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
                         }
@@ -293,45 +289,22 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 	                    if (config::determinism)
                             new_state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
 
-						temp_walk_vector.push_back(state.first);
-//                        this->walk_storage.update_fn(walk_id, [&](auto& vector)
-//                        {
-//                            vector.push_back(state.first);
-//                        });
+                        this->walk_storage.update_fn(walk_id, [&](auto& vector)
+                        {
+                            vector.push_back(state.first);
+                        });
 
 						// update the walk index as well --------------------------------
 //						if (position == 0)
 //								this->walk_index.insert(state.first, std::set<types::Vertex>()); // todo: check if this is correct
-//						this->walk_index.update_fn(state.first, [&](auto& set)
-//						{
-//							set.insert(walk_id);
-//						});
-						// ---------------------------------------------------------------
-						if (temp_walk_index.find(state.first) == temp_walk_index.end())
-							temp_walk_index.insert(std::pair(state.first, std::set<types::WalkID>()));
-						temp_walk_index[state.first].insert(walk_id);
+						this->walk_index.update_fn(state.first, [&](auto& set)
+						{
+								set.insert(walk_id);
+						});
 						// --------------------------------------------------------------
 
                         state = new_state;
                     }
-
-					// Add to walk index
-					for (auto entry : temp_walk_index)
-					{
-						this->walk_index.update_fn(entry.first, [&](auto& set)
-						{
-						  set.insert(entry.second.begin(), entry.second.end());
-						});
-					}
-					temp_walk_index.clear();
-
-					// Add new walk
-                    this->walk_storage.update_fn(walk_id, [&](auto& vector)
-                    {
-//	                    vector.push_back(state.first);
-						vector = temp_walk_vector;
-                    });
-					temp_walk_vector.clear();
                 });
 
                 delete model;
@@ -589,7 +562,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     graph_update_time.start();
                 #endif
 
+cout << "2" << endl;
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace, true, run_seq);
+cout << "3" << endl;
                 #ifdef WHARFMH_TIMER
                     graph_update_time.stop();
                 #endif
@@ -597,11 +572,11 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 #ifdef WHARFMH_TIMER
                     walk_update_time.start();
                 #endif
-
+cout << "4" << endl;
 				walk_update_time_on_insert.start();
                 if (apply_walk_updates) this->update_walks(rewalk_points);
 				walk_update_time_on_insert.stop();
-
+cout << "9" << endl;
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
                 #endif
@@ -853,72 +828,155 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                         std::cerr << "Unrecognized random walking model" << std::endl;
                         std::exit(1);
                 }
-
+cout << "5" << endl;
                 parallel_for(0, affected_walks.size(), [&](auto index)
                 {
-					// Do not walk zero degree nodes
-					if (graph[affected_walks[index] % number_of_vertices()].degrees != 0)
-					{
-						auto current_position = rewalk_points.find(affected_walks[index]);
+                    auto current_position = rewalk_points.template find(affected_walks[index]);
+//                    auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
 
-						// Delete all entries of the walk from the walk index
-						for (types::Position position = 0; position < config::walk_length; position++)
+					// Delete all entries of the walk from the walk index
+					for (types::Position position = 0; position < config::walk_length; position++)
+					{
+						auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
+						this->walk_index.update_fn(cur_vertex, [&](auto &set) {
+                             set.erase(affected_walks[index]);
+//							 cout << "erased wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
+						});
+					}
+
+                    auto random = config::random; // By default random initialization
+                    if (config::determinism)
+//                        random = utility::Random(walk_id / total_vertices);
+						random = utility::Random(affected_walks[index] / number_of_vertices());
+//                    types::State state  = model->initial_state(walk_id % total_vertices);
+//                    types::State state  = model->initial_state(affected_walks[index] % number_of_vertices());
+//					         auto state = model->initial_state(current_vertex_new_walk);
+                    auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
+
+					// Insert all entries of the walk into the walk index
+					for (types::Position position = 0; position < config::walk_length; position++)
+                    {
+//	                    // check
+//						if (graph[state.first].degrees == 0) // TODO: Check this for walks with only one vertex
+//						{
+////							cout << "ZERO DEGREES!" << endl;
+//							break;
+//						}
+
+						if (position < current_position)
 						{
 							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
 							this->walk_index.update_fn(cur_vertex, [&](auto &set) {
-	                             set.erase(affected_walks[index]);
-	//							 cout << "erased wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
+							  set.insert(affected_walks[index]);
+//							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
 							});
 						}
+						else // position >= current_position
+						{
 
-	                    auto random = config::random; // By default random initialization
-	                    if (config::determinism)
-							random = utility::Random(affected_walks[index] / number_of_vertices());
-
-	                    auto state = model->initial_state(this->walk_storage.find(affected_walks[index])[current_position]);
-
-						// Insert all entries of the walk into the walk index
-						for (types::Position position = 0; position < config::walk_length; position++)
-	                    {
-							if (position < current_position)
+							this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
 							{
-								auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
-								this->walk_index.update_fn(cur_vertex, [&](auto &set) {
-								  set.insert(affected_walks[index]);
-	//							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
-								});
-							}
-							else // position >= current_position
+							  vector[position] = state.first;
+							});
+
+							this->walk_index.update_fn(state.first, [&](auto& set)
 							{
+							  set.insert(affected_walks[index]);
+//							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << state.first << endl;
+							});
 
-								this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
-								{
-								  vector[position] = state.first;
-								});
-
-								this->walk_index.update_fn(state.first, [&](auto& set)
-								{
-								  set.insert(affected_walks[index]);
-	//							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << state.first << endl;
-								});
-
-								if (!graph[state.first].samplers->contains(state.second))
-								{
-									graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
-								}
-
-								// Deterministic walks or not?
-								if (config::determinism)
-									state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
-	//								state = model->new_state(state, graph[state.first].neighbors[0]); // todo: do not use this one
-								else
-									state = graph[state.first].samplers->find(state.second).sample(state, model);
-
-								number_sampled_vertices++;
+							if (!graph[state.first].samplers->contains(state.second))
+							{
+								graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
 							}
-	                    }
-					}
+
+							// Deterministic walks or not?
+							if (config::determinism)
+								state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
+//								state = model->new_state(state, graph[state.first].neighbors[0]); // todo: do not use this one
+							else
+								state = graph[state.first].samplers->find(state.second).sample(state, model);
+
+							number_sampled_vertices++;
+						}
+                    }
+
+//					for (types::Position position = 0/*current_position*/; position < config::walk_length; position++)
+//                    {
+//						if (position < current_position)
+//						{
+//							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
+//							if (affected_walks[index] == 1)
+//								cout << "(PRE)(wid-1)current vertex= " << cur_vertex << endl;
+//							prefix_set.insert(cur_vertex);
+////							cout << "wid=" << index << " has vertex " << cur_vertex << " at position " << (int)position << endl;
+//						}
+//						else // position >= current_position
+//						{
+//							// -------
+//							// update the walk index accordingly
+//							// -------
+////							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
+////							if (affected_walks[index] == 1)
+////								cout << "(UPD)(wid-1)current vertex= " << cur_vertex << endl;
+//////							if (position == 0)                 // ************
+//////								prefix_set.insert(cur_vertex); // special case
+////							if (prefix_set.find(cur_vertex) == prefix_set.end()) // vertex does not appear in the prefix of the walk. we can erase it from inv. index
+////							{
+////								this->walk_index.update_fn(cur_vertex, [&](auto& set)
+////								{
+////									set.erase(affected_walks[index]);
+////									assert(set.find(affected_walks[index]) == set.end());
+//////									cout << "assertion passed" << endl;
+////								});
+////							}
+//							// ------
+//
+//							this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
+//							{
+//							  vector[position] = state.first;
+//							});
+//
+//							if (affected_walks[index] == 1)
+//								cout << "(UPD-NEW)(wid-1)current vertex= " << state.first << endl;
+//
+//							// ----
+//							// update the walk index accordingly after the re-sampling
+////							cur_vertex = this->walk_storage.find(affected_walks[index])[position]; // take again the new vertex value
+//							// cur_vertex is state.first!
+//							this->walk_index.update_fn(state.first, [&](auto& set)
+//							{
+//							  set.insert(affected_walks[index]);
+//							});
+//							// ---
+//
+//							if (!graph[state.first].samplers->contains(state.second))
+//							{
+//								graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
+//							}
+//
+//							state = graph[state.first].samplers->find(state.second).sample(state, model);
+//						}
+//                    }
+
+
+//                    for (types::Position position = current_position; position < config::walk_length; position++)
+//                    {
+//                        this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
+//                        {
+//                            vector[position] = state.first;
+//                        });
+//
+//                        if (!graph[state.first].samplers->contains(state.second))
+//                        {
+//                            graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
+//                        }
+//
+//                        state = graph[state.first].samplers->find(state.second).sample(state, model);
+//                    }
                 });
+cout << "6" << endl;
+
             }
 
 		/**
