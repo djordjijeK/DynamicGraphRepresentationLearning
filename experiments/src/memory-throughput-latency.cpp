@@ -137,8 +137,8 @@ void throughput(commandLine& command_line)
 //		szudzik_hash.reset();
 //		fnir_tree_search.reset();
 		MAV_time.reset();
-		MAV_min = 0;
-		MAV_max = 20000;
+		MAV_min = 20000;
+		MAV_max = 0;
 //		read_access_MAV.reset();
 //		bdown_create_vertex_entries.reset();
 //		apply_multiinsert_ctrees.reset();
@@ -148,8 +148,8 @@ void throughput(commandLine& command_line)
 //		ij_sampling.reset();
 //		ij_szudzik.reset();
 		Merge_time.reset();
-		Merge_min = 0;
-		Merge_max = 20000;
+		Merge_min = 20000;
+		Merge_max = 0;
 //		sortAtMergeAll.reset();
 //		accumultinsert.reset();
 		LastMerge.reset();
