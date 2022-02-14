@@ -900,13 +900,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
                 walk_update_time_on_delete.start();
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
-                if (apply_walk_updates)
-                {
-//                    if (config::mini_batch_mode)
-//                        this->mini_batch_walk_update(rewalk_points, affected_walks);
-//                    else
-                        this->batch_walk_update(rewalk_points, affected_walks, batch_num);
-                }
+                if (apply_walk_updates) this->batch_walk_update(rewalk_points, affected_walks, batch_num);
                 walk_update_time_on_delete.stop();
 
                 // 6. Deallocate memory

@@ -137,6 +137,8 @@ void throughput(commandLine& command_line)
 //		szudzik_hash.reset();
 //		fnir_tree_search.reset();
 		MAV_time.reset();
+		MAV_min = 0;
+		MAV_max = 20000;
 //		read_access_MAV.reset();
 //		bdown_create_vertex_entries.reset();
 //		apply_multiinsert_ctrees.reset();
@@ -146,6 +148,8 @@ void throughput(commandLine& command_line)
 //		ij_sampling.reset();
 //		ij_szudzik.reset();
 		Merge_time.reset();
+		Merge_min = 0;
+		Merge_max = 20000;
 //		sortAtMergeAll.reset();
 //		accumultinsert.reset();
 		LastMerge.reset();
@@ -188,6 +192,9 @@ void throughput(commandLine& command_line)
 			latency_insert[b] = (double) last_insert_time / x.size();
 
 			latency[b] = latency_insert[b];
+
+			// Delete the batch of edges
+			malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
 
 			// Update the MAV min and max
 			last_MAV_time = MAV_time.get_total() - last_MAV_time;
@@ -236,14 +243,16 @@ void throughput(commandLine& command_line)
 //			std::cout << latency[i] << " ";
 //		}
 //		std::cout << "}" << std::endl;
+
+		// Last Merge
+		LastMerge.start();
+//	malin.merge_walk_trees_all_vertices_parallel(n_batches);
+		malin.last_merge_all_vertices_parallel_with_minmax(n_batches);
+		LastMerge.stop();
+		cout << "Last merge (with MIN-MAX Ranges) time: " << LastMerge.get_total() << endl << endl;
 	}
 
-	// Last Merge
-	LastMerge.start();
-//	malin.merge_walk_trees_all_vertices_parallel(n_batches);
-	malin.last_merge_all_vertices_parallel_with_minmax(n_batches);
-	LastMerge.stop();
-	cout << "Last merge (with MIN-MAX Ranges) time: " << LastMerge.get_total() << endl;
+
 
 	// Measure time to read-rewalk all walks
 /*	ReadWalks.start();
