@@ -168,6 +168,9 @@ cout << "10" << endl;
 
 			latency[b] = latency_insert[b];
 
+			// Delete the edges only
+			WharfMH.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
+
 			// free edges
 			pbbs::free_array(edges.first);
 		}
