@@ -222,7 +222,7 @@ void throughput(commandLine& command_line)
 			cout << "METRICS AT BATCH-" << b+1 << endl;
 			std::cout << "Insert time (avg) = " << insert_timer.get_total() / (b+1) << std::endl;
 			std::cout << "GUP (avg) = " << graph_update_time_on_insert.get_total() / (b+1) << std::endl;
-			std::cout << "BWUP (avg, includes merge) = " << walk_update_time_on_insert.get_total() / (b+1) << ", average walk affected = " << total_insert_walks_affected / n_batches << ", sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
+			std::cout << "BWUP (avg, includes merge) = " << walk_update_time_on_insert.get_total() / (b+1) << ", average walk affected = " << total_insert_walks_affected / (b+1) << ", sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
 			std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / (b+1) << "\t(sampling= " << Walking_new_sampling_time.get_total() / (b+1) << ", inserting= " << Walking_insert_new_samples.get_total() / (b+1) << ")" << endl;
 			std::cout << "MAV (avg)   = " << MAV_time.get_total() / (b+1) << "\tMAV (min) = " << MAV_min << "\tMAV (max) = " << MAV_max << std::endl;
 			std::cout << "Merge (avg," << std::floor(n_batches / merge_frequency) << " times) = " << Merge_time.get_total() / std::floor((b+1) / merge_frequency) << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
