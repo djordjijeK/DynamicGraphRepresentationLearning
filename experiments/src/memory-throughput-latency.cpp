@@ -155,11 +155,11 @@ void throughput(commandLine& command_line)
 //			for (auto i = 0; i < edges.second; i++)
 //				cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
-cout << "1" << endl;
+//cout << "1" << endl;
 			insert_timer.start();
 			auto x = WharfMH.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
-cout << "10" << endl;
+//cout << "10" << endl;
 
 			total_insert_walks_affected += x;
 
@@ -173,41 +173,20 @@ cout << "10" << endl;
 
 			// free edges
 			pbbs::free_array(edges.first);
+
+			cout << "STATS AT BATCH-" << (b+1) << endl;
+			std::cout << "Average insert time = " << insert_timer.get_total() / (b+1) << std::endl;
+			std::cout << "Average graph update insert time = " << graph_update_time_on_insert.get_total() / (b+1) << std::endl;
+			std::cout << "Average walk update insert time = " << walk_update_time_on_insert.get_total() / (b+1) << ", average walk affected = " << total_insert_walks_affected / (b+1) << std::endl;
 		}
 		cout << fixed;
 		std::cout << std::endl;
 
-		std::cout << "Average insert time = "
-		          << insert_timer.get_total() / n_batches << std::endl;
-		std::cout << "Average graph update insert time = "
-		          << graph_update_time_on_insert.get_total() / n_batches
-		          << std::endl;
-		std::cout << "Average walk update insert time = "
-		          << walk_update_time_on_insert.get_total() / n_batches
-		          << ", average walk affected = "
-		          << total_insert_walks_affected / n_batches << std::endl;
+		cout << "STATS FOR ALL BATCHES" << endl;
+		std::cout << "Average insert time = " << insert_timer.get_total() / n_batches << std::endl;
+		std::cout << "Average graph update insert time = " << graph_update_time_on_insert.get_total() / n_batches << std::endl;
+		std::cout << "Average walk update insert time = " << walk_update_time_on_insert.get_total() / n_batches << ", average walk affected = " << total_insert_walks_affected / n_batches << std::endl;
 
-//		std::cout << "Average delete time = "
-//		          << delete_timer.get_total() / n_batches << std::endl;
-//		std::cout << "Average graph update delete time = "
-//		          << graph_update_time_on_delete.get_total() / n_batches
-//		          << std::endl;
-//		std::cout << "Average walk update delete time = "
-//		          << walk_update_time_on_delete.get_total() / n_batches
-//		          << ", average walk affected = "
-//		          << total_delete_walks_affected / n_batches << std::endl;
-
-//		// MAV time
-//		std::cout << "Average MAV (we are not deleting obsolete parts) = "
-//		          << MAV_time.get_total() / n_batches
-//		          << std::endl;
-//		// read access time MAV
-//		std::cout << "Average Read Access Time MAV = "
-//		          << read_access_MAV.get_total() / n_batches
-//		          << std::endl;
-
-//		std::cout << "Total MAV (we are not deleting obsolete parts) = " << MAV_time.get_total() << std::endl;
-//		std::cout << "Total Read Access Time MAV = " << read_access_MAV.get_total() << std::endl;
 		std::cout << "Total walk update insert time = " << walk_update_time_on_insert.get_total() << ", average walk affected = " << total_insert_walks_affected / n_batches << std::endl;
 		std::cout << "Total #sampled vertices = " << WharfMH.number_sampled_vertices << std::endl;
 
