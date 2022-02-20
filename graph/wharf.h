@@ -488,6 +488,37 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //                return string_stream.str();
             }
 
+			// todo: left to right traversal to find the previous vertex in a walk (highly inefficient)
+			// todo: (Solution 1) extend wharf to support right to left traversal too
+			// todo: (Solution 2) cache somehow in each node of a walk the previous node id as well (tailored to 2nd order walks)
+			types::Vertex vertex_at_walk(types::WalkID walk_id, types::Position position)
+			{
+			    types::Vertex current_vertex = walk_id % this->number_of_vertices();
+
+			    for (types::Position pos = 0; pos < position; pos++)
+			    {
+			        auto tree_node = this->graph_tree.find(current_vertex);
+
+			        #ifdef MALIN_DEBUG
+			            if (!tree_node.valid)
+			            {
+			                std::cerr << "Malin debug error! Malin::Walk::Vertex="
+			                          << current_vertex << " is not found in the vertex tree!"
+			                          << std::endl;
+
+			                std::exit(1);
+			            }
+			        #endif
+
+			        if (config::range_search_mode)
+			            current_vertex = tree_node.value.compressed_walks.front().find_next_in_range(walk_id, pos, current_vertex);
+			        else
+			            current_vertex = tree_node.value.compressed_walks.front().find_next(walk_id, pos, current_vertex);
+			    }
+
+			    return current_vertex;
+			}
+
             /**
             * @brief Inserts a batch of edges in the graph.
             *
@@ -1007,6 +1038,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 					  if (config::deterministic_mode)
 						  random = utility::Random(affected_walks[index] / this->number_of_vertices());
 					  auto state = model->initial_state(current_vertex_new_walk);
+
+					  if (config::random_walk_model == types::NODE2VEC && current_position > 0)
+					  {
+						  state.first  = current_vertex_new_walk;
+						  state.second = this->vertex_at_walk(affected_walks[index], current_position - 1); // todo: inefficient
+					  }
 
 					  for (types::Position position = current_position; position < config::walk_length; position++)
 					  {
