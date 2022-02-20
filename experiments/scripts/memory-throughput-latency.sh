@@ -4,7 +4,7 @@
 clean_build=True
 
 # execution options
-walk_model="deepwalk"             # deepwalk | node2vec
+walk_model="node2vec"             # deepwalk | node2vec
 paramP=0.5                        # node2vec paramP
 paramQ=2.0                        # node2vec paramQ
 sampler_init_strategy="weight"    # random | burnin | weight

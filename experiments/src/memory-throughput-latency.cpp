@@ -156,6 +156,7 @@ void throughput(commandLine& command_line)
 //		sortAtMergeAll.reset();
 //		accumultinsert.reset();
 		LastMerge.reset();
+		FindPreviousVertexNode2Vec.reset();
 		// ---
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
@@ -180,11 +181,14 @@ void throughput(commandLine& command_line)
 		{
 			cout << "batch-" << b << " and batch_seed-" << batch_seed[b] << endl;
 
-			// ---------------------------
-			cout << "START -- merge before to execute node2vec" << endl;
-			malin.last_merge_all_vertices_parallel_with_minmax(b+1);
-			cout << "END   -- merge before to execute node2vec" << endl;
-			// ---------------------------
+			if (config::random_walk_model == types::NODE2VEC)
+			{
+				// ---------------------------
+				cout << "START -- merge before to execute node2vec" << endl;
+				malin.last_merge_all_vertices_parallel_with_minmax(b+1);
+				cout << "END   -- merge before to execute node2vec" << endl;
+				// ---------------------------
+			}
 
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[b], false, false);
@@ -255,6 +259,7 @@ void throughput(commandLine& command_line)
 
 		cout << "(1) throughput: " << fixed << setprecision(8) << total_insert_walks_affected / (walk_update_time_on_insert.get_total() * 1.0) << endl;
 		cout << "(2) average latency: " << fixed << setprecision(8) << average_latency / (n_batches * 1.0) << endl;
+		cout << "FindPrev vertex in node2vec: " << FindPreviousVertexNode2Vec.get_total() << endl;
 
 //		std::cout << "Average walk update latency = { ";
 //		for (int i = 0; i < n_batches; i++) {
