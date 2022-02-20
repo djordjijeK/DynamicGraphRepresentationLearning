@@ -493,6 +493,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 			// todo: (Solution 2) cache somehow in each node of a walk the previous node id as well (tailored to 2nd order walks)
 			types::Vertex vertex_at_walk(types::WalkID walk_id, types::Position position)
 			{
+				cout << "EHHHHHHH" << endl;
+
 			    types::Vertex current_vertex = walk_id % this->number_of_vertices();
 
 			    for (types::Position pos = 0; pos < position; pos++)
@@ -1129,6 +1131,12 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							  if (config::deterministic_mode)
 								  random = utility::Random(affected_walks[index] / this->number_of_vertices());
 							  auto state = model->initial_state(current_vertex_new_walk);
+
+							  if (config::random_walk_model == types::NODE2VEC && current_position > 0)
+							  {
+								  state.first  = current_vertex_new_walk;
+								  state.second = this->vertex_at_walk(affected_walks[index], current_position - 1); // todo: inefficient
+							  }
 
 							  //                    ij.start();
 							  for (types::Position position = current_position; position < config::walk_length; position++)

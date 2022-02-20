@@ -180,6 +180,12 @@ void throughput(commandLine& command_line)
 		{
 			cout << "batch-" << b << " and batch_seed-" << batch_seed[b] << endl;
 
+			// ---------------------------
+			cout << "START -- merge before to execute node2vec" << endl;
+			malin.last_merge_all_vertices_parallel_with_minmax(b+1);
+			cout << "END   -- merge before to execute node2vec" << endl;
+			// ---------------------------
+
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[b], false, false);
 
