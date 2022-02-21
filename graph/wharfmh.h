@@ -1088,9 +1088,9 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             std::cout << std::endl;
         }
 
+            WalkStorage walk_storage, walk_storage_backup;
         private:
             Graph graph_tree;
-            WalkStorage walk_storage;
 			WalkIndex   walk_index;  // simplistic inverted index structure {nid, set of wids}
 
             /**

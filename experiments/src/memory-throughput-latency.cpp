@@ -92,7 +92,14 @@ void throughput(commandLine& command_line)
 	scratchWalks.stop();
 	cout << "Produce the initial walk corpus: " << scratchWalks.get_total() << endl;
 
-	int n_batches = 10; // todo: how many batches per batch size?
+	cout << "Keep a backup of initial walk corpus" << endl;
+	for (auto& entry : WharfMH.walk_storage.lock_table())
+	{
+		WharfMH.walk_storage_backup.insert(entry.first, entry.second);
+	}
+	assert(WharfMH.walk_storage.size() == WharfMH.walk_storage_backup.size());
+
+	int n_batches = 1; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
@@ -129,6 +136,19 @@ void throughput(commandLine& command_line)
 //		MAV_time.reset();
 //		read_access_MAV.reset();
 //		// ---
+
+		if (i > 0)
+		{
+			// Bring back the initial walk corpus
+			WharfMH.walk_storage.clear();
+			cout << "Bringing back the initial walk corpus..." << endl;
+			for (auto& entry : WharfMH.walk_storage_backup.lock_table())
+			{
+				WharfMH.walk_storage.insert(entry.first, entry.second);
+			}
+			assert(WharfMH.walk_storage.size() == WharfMH.walk_storage_backup.size());
+			cout << "Done...now the walk corpus is the same as the initial." << endl;
+		}
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
 
