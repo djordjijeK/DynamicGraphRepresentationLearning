@@ -199,7 +199,7 @@ void throughput(commandLine& command_line)
 			latency[b] = latency_insert[b];
 
 			// Delete the batch of edges
-			malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, true/*false*/);
+			malin.delete_edges_batch(edges.second, edges.first, b+2, false, true, graph_size_pow2, true/*false*/);
 
 			// Update the MAV min and max
 			last_MAV_time = MAV_time.get_total() - last_MAV_time;
