@@ -714,12 +714,29 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 graph_update_time_on_insert.stop();
 //cout << "3" << endl;
 
+
+				// Calculate the distribution of p_min in the affected walks
+				uintV pmin_distribution[config::walk_length];
+	            for (auto i = 0; i < config::walk_length; i++)
+	                pmin_distribution[i] = 0; // initialize the distribution
+
 				// Store/cache the MAV of each batch
 	            for(auto& entry : rewalk_points.lock_table()) // todo: blocking?
 	            {
 		            MAVS2[batch_num].insert(entry.first, entry.second);
+
+					// populate the distribution
+					pmin_distribution[get<0>(entry.second)]++;
 	            }
 	            assert(rewalk_points.size() == MAVS2[batch_num].size());
+
+				// Print out the distribution
+				cout << endl << "pmin distribution" << endl;
+				for (auto i = 0; i < config::walk_length; i++)
+				{
+//					cout << "position: " << i+1 << "\t#walks: " << pmin_distribution[i] << endl;
+					cout << pmin_distribution[i] << endl;
+				}
 
 //cout << "4" << endl;
                 walk_update_time_on_insert.start();
