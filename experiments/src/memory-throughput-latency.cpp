@@ -128,7 +128,9 @@ void throughput(commandLine& command_line)
 		timer delete_timer("DeleteTimer");
 
 		graph_update_time_on_insert.reset();
+		graph_update_time_on_delete.reset();
 		walk_update_time_on_insert.reset();
+		walk_update_time_on_delete.reset();
 		// --- profiling initialization
 //		walk_insert_init.reset();
 		Walking_new_sampling_time.reset();
@@ -197,7 +199,7 @@ void throughput(commandLine& command_line)
 			latency[b] = latency_insert[b];
 
 			// Delete the batch of edges
-			malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
+			malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, true/*false*/);
 
 			// Update the MAV min and max
 			last_MAV_time = MAV_time.get_total() - last_MAV_time;
@@ -226,6 +228,9 @@ void throughput(commandLine& command_line)
 			std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / (b+1) << "\t(sampling= " << Walking_new_sampling_time.get_total() / (b+1) << ", inserting= " << Walking_insert_new_samples.get_total() / (b+1) << ")" << endl;
 			std::cout << "MAV (avg)   = " << MAV_time.get_total() / (b+1) << "\tMAV (min) = " << MAV_min << "\tMAV (max) = " << MAV_max << std::endl;
 			std::cout << "Merge (avg," << std::floor(n_batches / merge_frequency) << " times) = " << Merge_time.get_total() / std::floor((b+1) / merge_frequency) << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
+
+			std::cout << "(delete) BWUP (avg, includes merge) = " << walk_update_time_on_delete.get_total() / (b+1) << std::endl;
+
 		}
 		cout << fixed;
 		std::cout << std::endl;
@@ -237,6 +242,8 @@ void throughput(commandLine& command_line)
 		std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / n_batches << "\t(sampling= " << Walking_new_sampling_time.get_total() / n_batches << ", inserting= " << Walking_insert_new_samples.get_total() / n_batches << ")" << endl;
 		std::cout << "MAV (avg)   = " << MAV_time.get_total() / n_batches << "\tMAV (min) = " << MAV_min << "\tMAV (max) = " << MAV_max << std::endl;
 		std::cout << "Merge (avg," << std::floor(n_batches / merge_frequency) << " times) = " << Merge_time.get_total() / std::floor(n_batches / merge_frequency) << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
+
+		std::cout << "(delete) BWUP (avg, includes merge) = " << walk_update_time_on_delete.get_total() / n_batches << std::endl;
 
 		// latencies
 		double average_latency = 0.0;
