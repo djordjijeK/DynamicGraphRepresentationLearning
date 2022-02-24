@@ -122,6 +122,55 @@ void throughput(commandLine& command_line)
 //  batch_sizes[5] = 500000;
 
 
+
+	// Sample the batch from the input graph so that it follows the same distribution
+	auto flat_snap = malin.flatten_vertex_tree();
+	pbbs::sequence<std::tuple<uintV, uintV>> edges_of_graph(malin.number_of_edges());
+	std::vector<std::tuple<uintV, uintV>> skata_vector;
+//	types::Vertex buffer = 0;
+	for (auto i = 0; i < malin.number_of_vertices(); i++)
+	{
+		flat_snap[i].compressed_edges.iter_elms(i, [&](auto j) {
+			skata_vector.push_back(std::make_tuple(i, j));
+//			edges_of_graph[i+buffer] = make_tuple(i, j);
+//			cout << "(" << i << ", " << j << ")" << endl;
+		});
+//		buffer = flat_snap[i].compressed_edges.size();
+	}
+	assert(skata_vector.size() == edges_of_graph.size());
+
+	cout << "***" << endl;
+	for (auto i = 0; i < skata_vector.size(); i++)
+	{
+		edges_of_graph[i] = skata_vector[i];
+//		cout << "(" << get<0>(edges_of_graph[i]) << ", " << get<1>(edges_of_graph[i]) << ")" << endl;
+	}
+	cout << "these were the edges" << endl;
+
+
+	// Shuffle the edges
+	auto shuffled_edges = pbbs::random_shuffle(edges_of_graph);
+
+	cout << "*** after shuffling " << endl;
+
+	for (auto i = 0; i < shuffled_edges.size(); i++)
+//		cout << "(" << get<0>(shuffled_edges[i]) << ", " << get<1>(shuffled_edges[i]) << ")" << endl;
+
+	cout << "*** the batch of edges *** " << endl;
+
+	// Keep only the the amount of edges you need
+	pbbs::sequence<std::tuple<uintV, uintV>> batch(2*half_of_bsize);
+	for (auto i = 0; i < batch.size(); i++)
+	{
+		batch[i] = shuffled_edges[i];
+//		cout << "(" << get<0>(batch[i]) << ", " << get<1>(batch[i]) << ")" << endl;
+	}
+
+
+
+
+
+
 	for (short int i = 0; i < batch_sizes.size(); i++)
 	{
 		timer insert_timer("InsertTimer");
@@ -183,10 +232,12 @@ void throughput(commandLine& command_line)
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
 			auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[b], false, false);
 
-			std::cout << edges.second << " ";
+//			std::cout << edges.second << " ";
+//			cout << batch.size() << " ";
 
 			insert_timer.start();
-			auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
+//			auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
+			auto x = malin.insert_edges_batch(batch.size(), batch.begin(), b+1, true, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
 
 			total_insert_walks_affected += x.size();
@@ -197,7 +248,8 @@ void throughput(commandLine& command_line)
 			latency[b] = latency_insert[b];
 
 			// Delete the batch of edges
-			malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
+//			malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
+//			malin.delete_edges_batch(batch.size(), batch.begin(), b+1, true, true, graph_size_pow2, false);
 
 			// Update the MAV min and max
 			last_MAV_time = MAV_time.get_total() - last_MAV_time;
@@ -217,7 +269,8 @@ void throughput(commandLine& command_line)
 			WalkInsert_min = std::min(WalkInsert_min, last_Walk_new_insert_time);
 			WalkInsert_max = std::max(WalkInsert_max, last_Walk_new_insert_time);
 
-			pbbs::free_array(edges.first);
+//			pbbs::free_array(edges.first);
+//			pbbs::free_array(batch);
 
 			cout << "METRICS AT BATCH-" << b+1 << endl;
 			std::cout << "Insert time (avg) = " << insert_timer.get_total() / (b+1) << std::endl;

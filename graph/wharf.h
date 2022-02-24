@@ -520,6 +520,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 {
                     Wharf::sort_edge_batch_by_source(edges, m, nn);
                 }
+				cout << "size of batch: " << edges_original.size() << endl;
 
                 // 3. Remove duplicate edges
                 if (remove_dups)
