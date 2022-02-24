@@ -153,7 +153,7 @@ void throughput(commandLine& command_line)
 
 	cout << "*** after shuffling " << endl;
 
-	for (auto i = 0; i < shuffled_edges.size(); i++)
+//	for (auto i = 0; i < shuffled_edges.size(); i++)
 //		cout << "(" << get<0>(shuffled_edges[i]) << ", " << get<1>(shuffled_edges[i]) << ")" << endl;
 
 	cout << "*** the batch of edges *** " << endl;
