@@ -508,7 +508,25 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 			                std::exit(1);
 			            }
-			        #endif
+					#endif
+
+					// --- benchmark the simple vs range search
+					if (pos == position - 2)
+					{
+						types::Vertex dummy_next_vertex_simple;
+						types::Vertex dummy_next_vertex_range;
+
+						FindNextNodeSimpleSearch.start();
+						dummy_next_vertex_simple = tree_node.value.compressed_walks.front().find_next(walk_id, pos, current_vertex);
+						FindNextNodeSimpleSearch.stop();
+
+						FindNextNodeRangeSearch.start();
+						dummy_next_vertex_range = tree_node.value.compressed_walks.front().find_next_in_range(walk_id, pos, current_vertex);
+						FindNextNodeRangeSearch.stop();
+						assert(dummy_next_vertex_range == dummy_next_vertex_simple);
+					}
+
+					// ---
 
 			        if (config::range_search_mode)
 			            current_vertex = tree_node.value.compressed_walks.front().find_next_in_range(walk_id, pos, current_vertex);

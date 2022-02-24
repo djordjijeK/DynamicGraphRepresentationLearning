@@ -46,7 +46,9 @@ auto Merge_time                      = timer("MergeAllTimer", false);
 auto LastMerge                     = timer("LastMerge", false);
 // ---
 auto ReadWalks                     = timer("ReadWalks", false);
-auto FindPreviousVertexNode2Vec    = timer("FindPreviousVertexNode2Vec", false);
+auto FindPreviousVertexNode2Vec    = timer("FindPreviousVertexNode2Vec", false); // Time to rewalk from the first node till the end
+auto FindNextNodeSimpleSearch      = timer("FindNextSimpleSearch", false);
+auto FindNextNodeRangeSearch       = timer("FindNextRangeSearch", false);
 
 // Min and Max Measurements
 auto MAV_min = 1000.0;
