@@ -149,7 +149,7 @@ void throughput(commandLine& command_line)
 
 
 	// Shuffle the edges
-	auto shuffled_edges = pbbs::random_shuffle(edges_of_graph);
+//	auto shuffled_edges = pbbs::random_shuffle(edges_of_graph); // Do not shuffle
 
 	cout << "*** after shuffling " << endl;
 
@@ -162,7 +162,8 @@ void throughput(commandLine& command_line)
 	pbbs::sequence<std::tuple<uintV, uintV>> batch(2*half_of_bsize);
 	for (auto i = 0; i < batch.size(); i++)
 	{
-		batch[i] = shuffled_edges[i];
+//		batch[i] = shuffled_edges[i];
+		batch[i] = edges_of_graph[i];
 //		cout << "(" << get<0>(batch[i]) << ", " << get<1>(batch[i]) << ")" << endl;
 	}
 
