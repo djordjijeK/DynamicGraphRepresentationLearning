@@ -103,16 +103,64 @@ void throughput(commandLine& command_line)
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
-	auto batch_sizes = pbbs::sequence<size_t>(8);
+	auto batch_sizes = pbbs::sequence<size_t>(1);
 	batch_sizes[0] = 5; //5;
-	batch_sizes[1] = 50;
-	batch_sizes[2] = 500;
-	batch_sizes[3] = 5000;
-	batch_sizes[4] = 10000;
-	batch_sizes[5] = 15000;
-	batch_sizes[6] = 25000;
-	batch_sizes[7] = 50000;
+//	batch_sizes[1] = 50;
+//	batch_sizes[2] = 500;
+//	batch_sizes[3] = 5000;
+//	batch_sizes[4] = 10000;
+//	batch_sizes[5] = 15000;
+//	batch_sizes[6] = 25000;
+//	batch_sizes[7] = 50000;
 //  batch_sizes[5] = 500000;
+
+
+	// Sample the batch from the input graph so that it follows the same distribution
+	auto flat_snap = WharfMH.flatten_vertex_tree();
+	pbbs::sequence<std::tuple<uintV, uintV>> edges_of_graph(WharfMH.number_of_edges());
+	std::vector<std::tuple<uintV, uintV>> skata_vector;
+//	types::Vertex buffer = 0;
+	for (auto i = 0; i < WharfMH.number_of_vertices(); i++)
+	{
+		flat_snap[i].compressed_edges.iter_elms(i, [&](auto j) {
+		  skata_vector.push_back(std::make_tuple(i, j));
+//			edges_of_graph[i+buffer] = make_tuple(i, j);
+//			cout << "(" << i << ", " << j << ")" << endl;
+		});
+//		buffer = flat_snap[i].compressed_edges.size();
+	}
+	assert(skata_vector.size() == edges_of_graph.size());
+
+	cout << "***" << endl;
+	for (auto i = 0; i < skata_vector.size(); i++)
+	{
+		edges_of_graph[i] = skata_vector[i];
+//		cout << "(" << get<0>(edges_of_graph[i]) << ", " << get<1>(edges_of_graph[i]) << ")" << endl;
+	}
+	cout << "these were the edges" << endl;
+
+
+	// Shuffle the edges
+//	auto shuffled_edges = pbbs::random_shuffle(edges_of_graph); // Do not shuffle
+
+	cout << "*** after shuffling " << endl;
+
+//	for (auto i = 0; i < shuffled_edges.size(); i++)
+//		cout << "(" << get<0>(shuffled_edges[i]) << ", " << get<1>(shuffled_edges[i]) << ")" << endl;
+
+	cout << "*** the batch of edges *** " << endl;
+
+	// Keep only the the amount of edges you need
+	pbbs::sequence<std::tuple<uintV, uintV>> batch(10000);
+	for (auto i = 0; i < batch.size(); i++)
+	{
+//		batch[i] = shuffled_edges[i];
+		batch[i] = edges_of_graph[i];
+//		cout << "(" << get<0>(batch[i]) << ", " << get<1>(batch[i]) << ")" << endl;
+	}
+
+
+
 
 	for (short int i = 0; i < batch_sizes.size(); i++)
 	{
@@ -169,15 +217,16 @@ void throughput(commandLine& command_line)
 			cout << "batch-" << b << " and batch_seed-" << batch_seed[b] << endl;
 
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
-			auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[b], false, false);
+//			auto edges = utility::generate_batch_of_edges(batch_sizes[i], n, batch_seed[b], false, false);
 
-			std::cout << edges.second << " ";
+//			std::cout << edges.second << " ";
 //			for (auto i = 0; i < edges.second; i++)
 //				cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
 
 //cout << "1" << endl;
 			insert_timer.start();
-			auto x = WharfMH.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
+//			auto x = WharfMH.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
+			auto x = WharfMH.insert_edges_batch(batch.size(), batch.begin(), b+1, false, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
 //cout << "10" << endl;
 
@@ -189,10 +238,10 @@ void throughput(commandLine& command_line)
 			latency[b] = latency_insert[b];
 
 			// Delete the edges only
-			WharfMH.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
+//			WharfMH.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
 
 			// free edges
-			pbbs::free_array(edges.first);
+//			pbbs::free_array(edges.first);
 
 			cout << "STATS AT BATCH-" << (b+1) << endl;
 			std::cout << "Average insert time = " << insert_timer.get_total() / (b+1) << std::endl;
