@@ -162,7 +162,9 @@ void throughput(commandLine& command_line)
 
 		double last_insert_time = 0;
 		double last_MAV_time    = 0.0;
+		double last_MAV_total   = 0.0;
 		double last_Merge_time  = 0.0;
+		double last_Merge_total = 0.0;
 		double last_Walk_sampling_time = 0.0;
 		double last_Walk_new_insert_time = 0.0;
 
@@ -200,12 +202,16 @@ void throughput(commandLine& command_line)
 			malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
 
 			// Update the MAV min and max
-			last_MAV_time = MAV_time.get_total() - last_MAV_time;
+//			last_MAV_time = MAV_time.get_total() - last_MAV_time;
+			last_MAV_time = MAV_time.get_total() - last_MAV_total;
+			last_MAV_total = MAV_time.get_total();
 			MAV_min = std::min(MAV_min, last_MAV_time);
 			MAV_max = std::max(MAV_max, last_MAV_time);
 			// Update the Merge min and max
 			if ((b+1) % config::merge_frequency == 0) {
-				last_Merge_time = Merge_time.get_total() - last_Merge_time;
+//				last_Merge_time = Merge_time.get_total() - last_Merge_time;
+				last_Merge_time = Merge_time.get_total() - last_Merge_total;
+				last_Merge_total = Merge_time.get_total();
 				Merge_min = std::min(Merge_min, last_Merge_time);
 				Merge_max = std::max(Merge_max, last_Merge_time);
 			}
@@ -226,6 +232,9 @@ void throughput(commandLine& command_line)
 			std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / (b+1) << "\t(sampling= " << Walking_new_sampling_time.get_total() / (b+1) << ", inserting= " << Walking_insert_new_samples.get_total() / (b+1) << ")" << endl;
 			std::cout << "MAV (avg)   = " << MAV_time.get_total() / (b+1) << "\tMAV (min) = " << MAV_min << "\tMAV (max) = " << MAV_max << std::endl;
 			std::cout << "Merge (avg," << std::floor(n_batches / merge_frequency) << " times) = " << Merge_time.get_total() / std::floor((b+1) / merge_frequency) << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
+			if ((b+1) % config::merge_frequency == 0)
+				std::cout << "Last Merge = " << last_Merge_time << std::endl;
+			cout << "Merge TOTAL: " << Merge_time.get_total() << " and Last Merge: " << last_Merge_time << endl;
 		}
 		cout << fixed;
 		std::cout << std::endl;
