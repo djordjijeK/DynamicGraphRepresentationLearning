@@ -235,6 +235,8 @@ void throughput(commandLine& command_line)
 			if ((b+1) % config::merge_frequency == 0)
 				std::cout << "Last Merge = " << last_Merge_time << std::endl;
 			cout << "Merge TOTAL: " << Merge_time.get_total() << " and Last Merge: " << last_Merge_time << endl;
+
+			malin.memory_footprint();
 		}
 		cout << fixed;
 		std::cout << std::endl;
