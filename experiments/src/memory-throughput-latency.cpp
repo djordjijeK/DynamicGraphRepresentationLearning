@@ -236,6 +236,7 @@ void throughput(commandLine& command_line)
 				std::cout << "Last Merge = " << last_Merge_time << std::endl;
 			cout << "Merge TOTAL: " << Merge_time.get_total() << " and Last Merge: " << last_Merge_time << endl;
 			cout << "MAV last time: " << last_MAV_time << endl;
+			cout << "Total time for WUP this batch: " << last_insert_time << endl;
 
 			malin.memory_footprint();
 		}
