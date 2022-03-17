@@ -160,7 +160,8 @@ void throughput(commandLine& command_line)
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
 
-		double last_insert_time = 0;
+		double last_insert_time = 0.0;
+		double last_insert_total = 0.0;
 		double last_MAV_time    = 0.0;
 		double last_MAV_total   = 0.0;
 		double last_Merge_time  = 0.0;
@@ -193,7 +194,9 @@ void throughput(commandLine& command_line)
 
 			total_insert_walks_affected += x.size();
 
-			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
+//			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
+			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_total;
+			last_insert_total =  walk_update_time_on_insert.get_total();
 			latency_insert[b] = (double) last_insert_time / x.size();
 
 			latency[b] = latency_insert[b];
