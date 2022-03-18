@@ -99,19 +99,19 @@ void throughput(commandLine& command_line)
 	}
 	assert(WharfMH.walk_storage.size() == WharfMH.walk_storage_backup.size());
 
-	int n_batches = 1; // todo: how many batches per batch size?
+	int n_batches = 10; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
-	auto batch_sizes = pbbs::sequence<size_t>(8);
-	batch_sizes[0] = 5; //5;
-	batch_sizes[1] = 50;
-	batch_sizes[2] = 500;
-	batch_sizes[3] = 5000;
-	batch_sizes[4] = 10000;
-	batch_sizes[5] = 15000;
-	batch_sizes[6] = 25000;
-	batch_sizes[7] = 50000;
+	auto batch_sizes = pbbs::sequence<size_t>(1);
+	batch_sizes[0] = 500; //5;
+//	batch_sizes[1] = 50;
+//	batch_sizes[2] = 500;
+//	batch_sizes[3] = 5000;
+//	batch_sizes[4] = 10000;
+//	batch_sizes[5] = 15000;
+//	batch_sizes[6] = 25000;
+//	batch_sizes[7] = 50000;
 //  batch_sizes[5] = 500000;
 
 	for (short int i = 0; i < batch_sizes.size(); i++)
@@ -153,6 +153,7 @@ void throughput(commandLine& command_line)
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
 
 		double last_insert_time = 0;
+		double last_insert_total = 0;
 
 		auto latency_insert = pbbs::sequence<double>(n_batches);
 		auto latency = pbbs::sequence<double>(n_batches);
@@ -183,7 +184,9 @@ void throughput(commandLine& command_line)
 
 			total_insert_walks_affected += x;
 
-			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
+//			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
+			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_total;
+			last_insert_total = walk_update_time_on_insert.get_total();
 			latency_insert[b] = (double) last_insert_time / x;
 
 			latency[b] = latency_insert[b];
@@ -198,6 +201,9 @@ void throughput(commandLine& command_line)
 			std::cout << "Average insert time = " << insert_timer.get_total() / (b+1) << std::endl;
 			std::cout << "Average graph update insert time = " << graph_update_time_on_insert.get_total() / (b+1) << std::endl;
 			std::cout << "Average walk update insert time = " << walk_update_time_on_insert.get_total() / (b+1) << ", average walk affected = " << total_insert_walks_affected / (b+1) << std::endl;
+			cout << "walk update time now: " << last_insert_time << endl;
+			cout << "---" << endl;
+
 		}
 		cout << fixed;
 		std::cout << std::endl;
