@@ -167,6 +167,7 @@ void throughput(commandLine& command_line)
 		double last_Merge_time  = 0.0;
 		double last_Merge_total = 0.0;
 		double last_Walk_sampling_time = 0.0;
+		double last_Walk_sampling_total = 0.0;
 		double last_Walk_new_insert_time = 0.0;
 
 		auto latency_insert = pbbs::sequence<double>(n_batches);
@@ -219,7 +220,8 @@ void throughput(commandLine& command_line)
 				Merge_max = std::max(Merge_max, last_Merge_time);
 			}
 			// Update the Walk Update (without Merge) min and max
-			last_Walk_sampling_time = Walking_new_sampling_time.get_total() - last_Walk_sampling_time;
+			last_Walk_sampling_time = Walking_new_sampling_time.get_total() - last_Walk_sampling_total;
+			last_Walk_sampling_total = Walking_new_sampling_time.get_total();
 			WalkSampling_min = std::min(WalkSampling_min, last_Walk_sampling_time);
 			WalkSampling_max = std::max(WalkSampling_max, last_Walk_sampling_time);
 			last_Walk_new_insert_time = Walking_insert_new_samples.get_total() - last_Walk_new_insert_time;
@@ -240,6 +242,7 @@ void throughput(commandLine& command_line)
 			cout << "Merge TOTAL: " << Merge_time.get_total() << " and Last Merge: " << last_Merge_time << endl;
 			cout << "MAV last time: " << last_MAV_time << endl;
 			cout << "Total time for WUP this batch: " << last_insert_time << endl;
+			cout << "*** Re-sampling time NOW: " << last_Walk_sampling_total << endl;
 
 			malin.memory_footprint();
 		}
