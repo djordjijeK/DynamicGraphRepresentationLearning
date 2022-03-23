@@ -145,7 +145,7 @@ void throughput(commandLine& command_line)
             latency_insert[trial] = last_insert_time / x.size();
 
             delete_timer.start();
-            auto y = WharfMH.delete_edges_batch(edges.second, edges.first, false, true, graph_size_pow2);
+            auto y = WharfMH.delete_edges_batch(edges.second, edges.first, false, true, graph_size_pow2, false);
             delete_timer.stop();
 
             total_delete_walks_affected += y.size();
