@@ -90,9 +90,13 @@ void throughput(commandLine& command_line)
 //	WharfMH.memory_footprint();
 	// ----
 
+	// Number of batches-trials
+	n_trials = 10;
+	// ------------------------
+
 	// continue with the throughput-latency experiment
     auto batch_sizes = pbbs::sequence<size_t>(1);
-    batch_sizes[0] = 500;
+    batch_sizes[0] = 5000;
 //    batch_sizes[0] = 5;
 //    batch_sizes[1] = 50;
 //    batch_sizes[2] = 500;
@@ -145,7 +149,7 @@ void throughput(commandLine& command_line)
             latency_insert[trial] = last_insert_time / x.size();
 
             delete_timer.start();
-            auto y = WharfMH.delete_edges_batch(edges.second, edges.first, false, true, graph_size_pow2, false);
+            auto y = WharfMH.delete_edges_batch(edges.second, edges.first, false, true, graph_size_pow2, false); // do not apply walk updates after deletion
             delete_timer.stop();
 
             total_delete_walks_affected += y.size();
@@ -193,19 +197,19 @@ void throughput(commandLine& command_line)
     }
 
     WharfMH.destroy_index();
-    timer generate_initial_walks("Generate Initial Random Walks", false);
-    for (int i = 0; i < n_trials; i++)
-    {
-        generate_initial_walks.start();
-        WharfMH.generate_initial_random_walks();
-        generate_initial_walks.stop();
-
-        WharfMH.destroy_index();
-    }
-
-    std::cout << std::endl
-              << "Average time to generate random walks from scratch = "
-              << generate_initial_walks.get_total() / n_trials << std::endl;
+//    timer generate_initial_walks("Generate Initial Random Walks", false);
+//    for (int i = 0; i < n_trials; i++)
+//    {
+//        generate_initial_walks.start();
+//        WharfMH.generate_initial_random_walks();
+//        generate_initial_walks.stop();
+//
+//        WharfMH.destroy_index();
+//    }
+//
+//    std::cout << std::endl
+//              << "Average time to generate random walks from scratch = "
+//              << generate_initial_walks.get_total() / n_trials << std::endl;
 
     std::cout << std::endl;
 }
