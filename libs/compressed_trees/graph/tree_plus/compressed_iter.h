@@ -204,13 +204,14 @@ namespace compressed_iter
 
         inline uintV next()
         {
-            if (proc == 0)
-            {
-                ngh = read_first_neighbor(start, src);
-            } else
-            {
-                ngh += read_neighbor(start);
-            }
+//            if (proc == 0)
+//            {
+//                ngh = read_first_neighbor(start, src);
+//            } else
+//            {
+//                ngh += read_neighbor(start);
+//            }
+			ngh = read_first_neighbor(start, src);
 
             proc++;
             return ngh;
@@ -245,17 +246,20 @@ namespace compressed_iter
 
         void compress_next(const uintV& ngh)
         {
-            if (proc == 0)
-            {
-                offset = compress_first_neighbor(node_ptr, offset, src, ngh);
-            }
-            else
-            {
-                uintV difference = ngh - last_ngh;
-                offset = compress_neighbor(node_ptr, offset, difference);
-            }
+//            if (proc == 0)
+//            {
+//                offset = compress_first_neighbor(node_ptr, offset, src, ngh);
+//            }
+//            else
+//            {
+//                uintV difference = ngh - last_ngh;
+////	            uintV difference = ngh; // we do not do any difference encoding
+//	            offset = compress_neighbor(node_ptr, offset, difference);
+//            }
+	        offset = compress_first_neighbor(node_ptr, offset, src, ngh);
 
-            proc++;
+
+	        proc++;
             last_ngh = ngh;
         }
 
