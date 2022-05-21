@@ -615,7 +615,13 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
             * @param nn
             * @param run_seq - decides if walk updates will be executed
             */
-            int delete_edges_batch(size_t m, tuple<uintV, uintV>* edges, int batch_num, bool sorted = false, bool remove_dups = false, size_t nn = std::numeric_limits<size_t>::max(), bool apply_walk_updates = true, bool run_seq = false)
+            int delete_edges_batch(size_t m, tuple<uintV, uintV>* edges,
+								   int batch_num,
+								   bool sorted = false,
+								   bool remove_dups = false,
+								   size_t nn = std::numeric_limits<size_t>::max(),
+								   bool apply_walk_updates = true,
+								   bool run_seq = false)
             {
                 #ifdef WHARFMH_TIMER
                     timer graph_update_time("WharfMH::DeleteEdgesBatch::GraphUpdateTime");
