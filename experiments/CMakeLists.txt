@@ -46,5 +46,6 @@ file(COPY bin/inverted_index_pam DESTINATION .)
 add_executable(all_exps src/all_exp.cpp)
 add_executable(vertex-classification src/vertex-classification.cpp)
 add_executable(memory-throughput-latency src/memory-throughput-latency.cpp)
+add_executable(mixed-workload src/mixed-workload.cpp)
 
 # -------------------------- DYNAMIC GRAPH REPRESENTATION LEARNING WITH METROPOLIS HASTINGS ----------------------------
