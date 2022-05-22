@@ -176,6 +176,7 @@ cout << "2" << endl;
 			delete_timer.start();     // todo: check the batch number that you pass. REMARK: for baseline it does not matter
 			auto y = WharfMH.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
 			delete_timer.stop();
+cout << "2-1" << endl;
 			total_delete_walks_affected += y;
 			// last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
 			last_delete_time  = walk_update_time_on_delete.get_total() - last_delete_total;
