@@ -106,9 +106,7 @@ void throughput(commandLine& command_line)
 	initial_walks_from_scratch_timer.stop();
 	cout << "Total time to generate the walk corpus from scratch: " << initial_walks_from_scratch_timer.get_total() << endl;
 
-	int n_batches = num_of_batches; // todo: how many batches per batch size?
-
-	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
+	int n_batches = num_of_batches; // todo: say this is 5 for now
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
 	batch_sizes[0] = half_of_bsize; //5;
@@ -120,7 +118,6 @@ void throughput(commandLine& command_line)
 //	batch_sizes[6] = 25000;
 //	batch_sizes[7] = 50000;
 //  batch_sizes[5] = 500000;
-
 
 	for (short int i = 0; i < batch_sizes.size(); i++)
 	{
@@ -181,12 +178,17 @@ void throughput(commandLine& command_line)
 
 			std::cout << edges.second << " ";
 
-			insert_timer.start();
+			insert_timer.start();                               // todo: check the number of batches you pass here
 			auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
-
 			total_insert_walks_affected += x.size();
+			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
+			latency_insert[b] = (double) last_insert_time / x.size();
 
+			delete_timer.start();                               // todo: check the number of batches you pass here
+			auto y = malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
+			delete_timer.stop();
+			total_insert_walks_affected += y.size();
 			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
 			latency_insert[b] = (double) last_insert_time / x.size();
 
