@@ -576,7 +576,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				walk_update_time_on_insert.start();
                 if (apply_walk_updates) this->update_walks(rewalk_points);
 				walk_update_time_on_insert.stop();
-//cout << "9" << endl;
+cout << "9" << endl;
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
                 #endif
@@ -584,6 +584,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 // 6. Deallocate memory
                 if (num_starts > stack_size) pbbs::free_array(new_verts);
                 if (edges_deduped)           pbbs::free_array(edges_deduped);
+cout << "10" << endl;
 
                 #ifdef WHARFMH_DEBUG
                     std::cout << "Rewalk points (MapOfChanges): " << rewalk_points.size() << std::endl;
