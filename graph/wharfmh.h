@@ -624,6 +624,7 @@ cout << "10" << endl;
 								   bool apply_walk_updates = true,
 								   bool run_seq = false)
             {
+cout << "665" << endl;
                 #ifdef WHARFMH_TIMER
                     timer graph_update_time("WharfMH::DeleteEdgesBatch::GraphUpdateTime");
                     timer walk_update_time("WharfMH::DeleteEdgesBatch::WalkUpdateTime");
@@ -693,6 +694,8 @@ cout << "10" << endl;
 
                     new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), new SamplerManager(0)));
                 });
+
+cout << "666" << endl;
 
                 types::MapOfChanges rewalk_points = types::MapOfChanges();
 
