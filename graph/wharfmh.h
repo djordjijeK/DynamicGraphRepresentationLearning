@@ -771,6 +771,7 @@ cout << "666" << endl;
 
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace, true, run_seq);
 
+cout << "667" << endl;
                 #ifdef WHARFMH_TIMER
                     graph_update_time.stop();
                 #endif
@@ -786,6 +787,7 @@ cout << "666" << endl;
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
                 #endif
+cout << "669" << endl;
 
                 // 6. Deallocate memory
                 if (num_starts > stack_size) pbbs::free_array(new_verts);
