@@ -144,13 +144,14 @@ void throughput(commandLine& command_line)
 
 		std::cout << "Batch size = " << 2 * batch_sizes[i] << " | ";
 
-		double last_insert_time = 0;
+		double last_insert_time = 0; double last_delete_time = 0;
 		double last_MAV_time    = 0.0;
 		double last_Merge_time  = 0.0;
 		double last_Walk_sampling_time = 0.0;
 		double last_Walk_new_insert_time = 0.0;
 
 		auto latency_insert = pbbs::sequence<double>(n_batches);
+		auto latency_delete = pbbs::sequence<double>(n_batches);
 		auto latency = pbbs::sequence<double>(n_batches);
 
 		double total_insert_walks_affected = 0;
@@ -166,6 +167,8 @@ void throughput(commandLine& command_line)
 
 			if (config::random_walk_model == types::NODE2VEC)
 			{
+				exit(666); // todo: leave node2vec for now
+
 				// ---------------------------
 				cout << "START -- merge before to execute node2vec" << endl;
 				malin.last_merge_all_vertices_parallel_with_minmax(b+1);
@@ -179,30 +182,29 @@ void throughput(commandLine& command_line)
 			std::cout << edges.second << " ";
 
 			insert_timer.start();                               // todo: check the number of batches you pass here
-			auto x = malin.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
+			auto x = malin.insert_edges_batch(edges.second, edges.first, (2*b)+1 /*b+1*/, false, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
 			total_insert_walks_affected += x.size();
 			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
 			latency_insert[b] = (double) last_insert_time / x.size();
 
 			delete_timer.start();                               // todo: check the number of batches you pass here
-			auto y = malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
+			auto y = malin.delete_edges_batch(edges.second, edges.first, (2*b+1)+1 /*b+1*/, false, true, graph_size_pow2); // pass the batch number as well
 			delete_timer.stop();
-			total_insert_walks_affected += y.size();
-			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
-			latency_insert[b] = (double) last_insert_time / x.size();
+			total_delete_walks_affected += y.size();
+			last_delete_time = walk_update_time_on_delete.get_total() - last_delete_time;
+			latency_delete[b] = (double) last_delete_time / y.size();
 
-			latency[b] = latency_insert[b];
-
-			// Delete the batch of edges
-			malin.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
+			// latency[b] = latency_insert[b];
+			latency[b] = (last_insert_time + last_delete_time) / (x.size() + y.size()); // latency of updating one random walk
 
 			// Update the MAV min and max
 			last_MAV_time = MAV_time.get_total() - last_MAV_time;
 			MAV_min = std::min(MAV_min, last_MAV_time);
 			MAV_max = std::max(MAV_max, last_MAV_time);
 			// Update the Merge min and max
-			if ((b+1) % config::merge_frequency == 0) {
+			// todo: this here needs modification as well
+			if (((2*b+1)+1 /*b+1*/) % config::merge_frequency == 0) { // todo: here things change with the merging
 				last_Merge_time = Merge_time.get_total() - last_Merge_time;
 				Merge_min = std::min(Merge_min, last_Merge_time);
 				Merge_max = std::max(Merge_max, last_Merge_time);
@@ -217,56 +219,82 @@ void throughput(commandLine& command_line)
 
 			pbbs::free_array(edges.first);
 
-			cout << "METRICS AT BATCH-" << b+1 << endl;
+			cout << "METRICS AT BATCH-" << b+1 << " INSERTION" << endl;
 			std::cout << "Insert time (avg) = " << insert_timer.get_total() / (b+1) << std::endl;
 			std::cout << "GUP (avg) = " << graph_update_time_on_insert.get_total() / (b+1) << std::endl;
 			std::cout << "BWUP (avg, includes merge) = " << walk_update_time_on_insert.get_total() / (b+1) << ", average walk affected = " << total_insert_walks_affected / (b+1) << ", sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
-			std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / (b+1) << "\t(sampling= " << Walking_new_sampling_time.get_total() / (b+1) << ", inserting= " << Walking_insert_new_samples.get_total() / (b+1) << ")" << endl;
+			// todo: the WUP is for insertions and deletions as it is measured in apply_walk_updates function
+			std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / 2*(b+1) << "\t(sampling= " << Walking_new_sampling_time.get_total() / (b+1) << ", inserting= " << Walking_insert_new_samples.get_total() / (b+1) << ")" << endl;
+			// todo: MAV is only measured in INSERT_edges
 			std::cout << "MAV (avg)   = " << MAV_time.get_total() / (b+1) << "\tMAV (min) = " << MAV_min << "\tMAV (max) = " << MAV_max << std::endl;
 			std::cout << "Merge (avg," << std::floor(n_batches / merge_frequency) << " times) = " << Merge_time.get_total() / std::floor((b+1) / merge_frequency) << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
+
+			cout << "METRICS AT BATCH-" << b+1 << " DELETION" << endl;
+			std::cout << "Delete time (avg) = " << delete_timer.get_total() / (b+1) << std::endl;
+			std::cout << "GUP (avg) = " << graph_update_time_on_delete.get_total() / (b+1) << std::endl;
+			std::cout << "BWUP (avg, includes merge) = " << walk_update_time_on_delete.get_total() / (b+1) << ", average walk affected = " << total_delete_walks_affected / (b+1) << ", sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
+			// todo: the WUP is for insertions and deletions as it is measured in apply_walk_updates function
+			std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / 2*(b+1) << "\t(sampling= " << Walking_new_sampling_time.get_total() / (b+1) << ", inserting= " << Walking_insert_new_samples.get_total() / (b+1) << ")" << endl;
+//			std::cout << "MAV (avg)   = " << MAV_time.get_total() / (b+1) << "\tMAV (min) = " << MAV_min << "\tMAV (max) = " << MAV_max << std::endl;
+			// todo: Merge time is measured for both insertions and deletions
+			std::cout << "Merge (avg," << std::floor(n_batches / merge_frequency) << " times) = " << Merge_time.get_total() / std::floor((b+1) / merge_frequency) << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
+
 		}
 		cout << fixed;
 		std::cout << std::endl;
 
 		cout << "METRICS FOR ALL BATCHES" << endl;
 		std::cout << "Insert time (avg) = " << insert_timer.get_total() / n_batches << std::endl;
-		std::cout << "GUP (avg) = " << graph_update_time_on_insert.get_total() / n_batches << std::endl;
-		std::cout << "BWUP (avg, includes merge) = " << walk_update_time_on_insert.get_total() / n_batches << ", average walk affected = " << total_insert_walks_affected / n_batches << ", sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
-		std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / n_batches << "\t(sampling= " << Walking_new_sampling_time.get_total() / n_batches << ", inserting= " << Walking_insert_new_samples.get_total() / n_batches << ")" << endl;
+		std::cout << "Delete time (avg) = " << delete_timer.get_total() / n_batches << std::endl;
+
+		std::cout << "GUP ins (avg) = " << graph_update_time_on_insert.get_total() / n_batches << std::endl;
+		std::cout << "GUP del (avg) = " << graph_update_time_on_delete.get_total() / n_batches << std::endl;
+
+		std::cout << "BWUP ins (avg, includes merge) = " << walk_update_time_on_insert.get_total() / n_batches << ", average walk affected = " << total_insert_walks_affected / n_batches << ", sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
+		std::cout << "BWUP del (avg, includes merge) = " << walk_update_time_on_delete.get_total() / n_batches << ", average walk affected = " << total_delete_walks_affected / n_batches << ", sampled vertices = " << malin.number_of_sampled_vertices << std::endl;
+
+		// todo: the WUP is for insertions and deletions as it is measured in apply_walk_updates function
+		std::cout << "WUP (avg)   = " << (Walking_new_sampling_time.get_total() + Walking_insert_new_samples.get_total()) / 2*n_batches << "\t(sampling= " << Walking_new_sampling_time.get_total() / n_batches << ", inserting= " << Walking_insert_new_samples.get_total() / n_batches << ")" << endl;
 		std::cout << "MAV (avg)   = " << MAV_time.get_total() / n_batches << "\tMAV (min) = " << MAV_min << "\tMAV (max) = " << MAV_max << std::endl;
-		std::cout << "Merge (avg," << std::floor(n_batches / merge_frequency) << " times) = " << Merge_time.get_total() / std::floor(n_batches / merge_frequency) << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
+		std::cout << "Merge (avg," << std::floor(2*n_batches / merge_frequency) << " times) = " << Merge_time.get_total() / std::floor((2*n_batches) / merge_frequency) << "\tMerge (min) = " << Merge_min << "\tMerge (max) = " << Merge_max << std::endl;
 
 		// latencies
-		double average_latency = 0.0;
 		std::cout << "Average walk insert latency = { ";
 		for (int i = 0; i < n_batches; i++) {
-			average_latency += latency_insert[i];
 			std::cout << latency_insert[i] << " ";
 		}
 		std::cout << "}" << std::endl;
 
-		cout << "(1) throughput: " << fixed << setprecision(8) << total_insert_walks_affected / (walk_update_time_on_insert.get_total() * 1.0) << endl;
-		cout << "(2) average latency: " << fixed << setprecision(8) << average_latency / (n_batches * 1.0) << endl;
-		cout << "FindPrev vertex in node2vec: " << FindPreviousVertexNode2Vec.get_total() << endl;
+		std::cout << "Average walk delete latency = { ";
+		for (int i = 0; i < n_batches; i++) {
+			std::cout << latency_delete[i] << " ";
+		}
+		std::cout << "}" << std::endl;
 
+		double total_latency = 0.0;
+		std::cout << "Average walk total latency = { ";
+		for (int i = 0; i < n_batches; i++) {
+			std::cout << latency[i] << " ";
+			total_latency += latency[i];
+		}
+		std::cout << "}" << std::endl;
+
+//		cout << "(1) throughput: " << fixed << setprecision(8) << total_insert_walks_affected / (walk_update_time_on_insert.get_total() * 1.0) << endl;
+		cout << "(1) throughput: " << fixed << setprecision(8) << (total_insert_walks_affected+total_delete_walks_affected) / ((walk_update_time_on_insert.get_total() + walk_update_time_on_delete.get_total())* 1.0) << endl;
+		cout << "(2) average latency: " << fixed << setprecision(8) << total_latency / (n_batches * 1.0) << endl;
+
+		cout << "FindPrev vertex in node2vec: " << FindPreviousVertexNode2Vec.get_total() << endl;
 		cout << "(11) SIMPLE SEARCH throughput: " << fixed << setprecision(8) << total_insert_walks_affected / ((walk_update_time_on_insert.get_total() - FindPreviousVertexNode2Vec.get_total() + FindNextNodeSimpleSearch.get_total()) * 1.0) << endl;
 //		cout << "(22) average latency: " << fixed << setprecision(8) << average_latency / (n_batches * 1.0) << endl;
 		cout << "FindPrev SIMPLE in node2vec: " << FindNextNodeSimpleSearch.get_total() << endl;
-
 		cout << "(111) RANGE SEARCH throughput: " << fixed << setprecision(8) << total_insert_walks_affected / ((walk_update_time_on_insert.get_total() - FindPreviousVertexNode2Vec.get_total() + FindNextNodeRangeSearch.get_total()) * 1.0) << endl;
 //		cout << "(222) average latency: " << fixed << setprecision(8) << average_latency / (n_batches * 1.0) << endl;
 		cout << "FindPrev vertex in node2vec: " << FindNextNodeRangeSearch.get_total() << endl;
 
-//		std::cout << "Average walk update latency = { ";
-//		for (int i = 0; i < n_batches; i++) {
-//			std::cout << latency[i] << " ";
-//		}
-//		std::cout << "}" << std::endl;
-
 		// Last Merge
 		LastMerge.start();
 //	malin.merge_walk_trees_all_vertices_parallel(n_batches);
-		malin.last_merge_all_vertices_parallel_with_minmax(n_batches);
+		malin.last_merge_all_vertices_parallel_with_minmax(2*n_batches /*n_batches*/); // todo: this needed modification
 		LastMerge.stop();
 		cout << "Last merge (with MIN-MAX Ranges) time: " << LastMerge.get_total() << endl << endl;
 	}
