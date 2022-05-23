@@ -906,8 +906,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 							// ----------------------------------------------------
 							// todo: check if this vertex has degree zero now. // -
 							if (graph[state.first].degrees == 0) // ---------------
-							{
-								cout << "node " << state.first << " has 0 degree now. Cannot continue walking." << endl;
+							{ // todo: do not print something here
+//								cout << "node " << state.first << " has 0 degree now. Cannot continue walking." << endl;
 								break; // -----------------------------------------
 							} // --------------------------------------------------
 							// ----------------------------------------------------
