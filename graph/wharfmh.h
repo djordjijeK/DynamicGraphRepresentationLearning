@@ -817,14 +817,15 @@ cout << "669" << endl;
 
             void update_walks(types::MapOfChanges& rewalk_points)
             {
+cout << "rewalk points size: " << rewalk_points.size() << endl;
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 uintV index = 0;
-
+cout << "701" << endl;
                 for(auto& entry : rewalk_points.lock_table())
                 {
                     affected_walks[index++] = entry.first;
                 }
-
+cout << "702" << endl;
                 auto graph = this->flatten_graph();
                 RandomWalkModel* model;
 
@@ -841,6 +842,7 @@ cout << "669" << endl;
                         std::exit(1);
                 }
 //cout << "5" << endl;
+cout << "703" << endl;
                 parallel_for(0, affected_walks.size(), [&](auto index)
                 {
                     auto current_position = rewalk_points.template find(affected_walks[index]);
@@ -988,6 +990,7 @@ cout << "669" << endl;
 //                    }
                 });
 //cout << "6" << endl;
+cout << "707" << endl;
 
             }
 
