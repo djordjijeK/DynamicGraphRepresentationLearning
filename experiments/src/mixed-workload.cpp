@@ -160,7 +160,7 @@ void throughput(commandLine& command_line)
 			std::cout << edges.second << " ";
 //			for (auto i = 0; i < edges.second; i++)
 //				cout << "edge-" << i + 1 << " is [" << get<0>(edges.first[i]) << ", " << get<1>(edges.first[i]) << "]" << endl;
-cout << "1" << endl;
+//cout << "1" << endl;
 			// INSERT a generated batch of edges (and update the walks)
 			insert_timer.start();
 			auto x = WharfMH.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
@@ -170,24 +170,24 @@ cout << "1" << endl;
 			last_insert_time = walk_update_time_on_insert.get_total() - last_insert_total;
 			last_insert_total = walk_update_time_on_insert.get_total();
 			latency_insert[b] = (double) last_insert_time / x;
-cout << "2" << endl;
+//cout << "2" << endl;
 
 			// DELETE the same generated batch of edges (and update the walks)
 			delete_timer.start();     // todo: check the batch number that you pass. REMARK: for baseline it does not matter
 			auto y = WharfMH.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
 			delete_timer.stop();
-cout << "2-1" << endl;
+//cout << "2-1" << endl;
 			total_delete_walks_affected += y;
 			// last_insert_time = walk_update_time_on_insert.get_total() - last_insert_time;
 			last_delete_time  = walk_update_time_on_delete.get_total() - last_delete_total;
 			last_delete_total = walk_update_time_on_delete.get_total();
 			latency_delete[b] = (double) last_delete_time / y;
-cout << "3" << endl;
+//cout << "3" << endl;
 
 //			latency[b] = latency_insert[b];
 			latency[b] = (last_insert_time + last_delete_time) / (x + y); // latency of updating one random walk
 
-cout << "4" << endl;
+//cout << "4" << endl;
 
 			// free edges
 			pbbs::free_array(edges.first);
@@ -207,7 +207,7 @@ cout << "4" << endl;
 			cout << "walk update time now: " << last_delete_time << endl;
 			cout << "---" << endl;
 			cout << "---" << endl;
-cout << "5" << endl;
+//cout << "5" << endl;
 		}
 		cout << fixed;
 		std::cout << std::endl;

@@ -576,7 +576,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 				walk_update_time_on_insert.start();
                 if (apply_walk_updates) this->update_walks(rewalk_points);
 				walk_update_time_on_insert.stop();
-cout << "9" << endl;
+//cout << "9" << endl;
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
                 #endif
@@ -584,7 +584,7 @@ cout << "9" << endl;
                 // 6. Deallocate memory
                 if (num_starts > stack_size) pbbs::free_array(new_verts);
                 if (edges_deduped)           pbbs::free_array(edges_deduped);
-cout << "10" << endl;
+//cout << "10" << endl;
 
                 #ifdef WHARFMH_DEBUG
                     std::cout << "Rewalk points (MapOfChanges): " << rewalk_points.size() << std::endl;
@@ -624,7 +624,7 @@ cout << "10" << endl;
 								   bool apply_walk_updates = true,
 								   bool run_seq = false)
             {
-cout << "665" << endl;
+//cout << "665" << endl;
                 #ifdef WHARFMH_TIMER
                     timer graph_update_time("WharfMH::DeleteEdgesBatch::GraphUpdateTime");
                     timer walk_update_time("WharfMH::DeleteEdgesBatch::WalkUpdateTime");
@@ -695,7 +695,7 @@ cout << "665" << endl;
                     new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), new SamplerManager(0)));
                 });
 
-cout << "666" << endl;
+//cout << "666" << endl;
 
                 types::MapOfChanges rewalk_points = types::MapOfChanges();
 
@@ -771,7 +771,7 @@ cout << "666" << endl;
 
                 this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace, true, run_seq);
 
-cout << "667" << endl;
+//cout << "667" << endl;
                 #ifdef WHARFMH_TIMER
                     graph_update_time.stop();
                 #endif
@@ -787,7 +787,7 @@ cout << "667" << endl;
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
                 #endif
-cout << "669" << endl;
+//cout << "669" << endl;
 
                 // 6. Deallocate memory
                 if (num_starts > stack_size) pbbs::free_array(new_verts);
@@ -817,15 +817,15 @@ cout << "669" << endl;
 
             void update_walks(types::MapOfChanges& rewalk_points)
             {
-cout << "rewalk points size: " << rewalk_points.size() << endl;
+//cout << "rewalk points size: " << rewalk_points.size() << endl;
                 auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
                 uintV index = 0;
-cout << "701" << endl;
+//cout << "701" << endl;
                 for(auto& entry : rewalk_points.lock_table())
                 {
                     affected_walks[index++] = entry.first;
                 }
-cout << "702" << endl;
+//cout << "702" << endl;
                 auto graph = this->flatten_graph();
                 RandomWalkModel* model;
 
@@ -842,12 +842,12 @@ cout << "702" << endl;
                         std::exit(1);
                 }
 //cout << "5" << endl;
-cout << "703" << endl;
+//cout << "703" << endl;
                 parallel_for(0, affected_walks.size(), [&](auto index)
                 {
                     auto current_position = rewalk_points.template find(affected_walks[index]);
 //                    auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
-cout << "**1" << endl;
+//cout << "**1" << endl;
 					// Delete all entries of the walk from the walk index
 					for (types::Position position = 0; position < config::walk_length; position++)
 					{
@@ -857,7 +857,7 @@ cout << "**1" << endl;
 //							 cout << "erased wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
 						});
 					}
-cout << "**2" << endl;
+//cout << "**2" << endl;
                     auto random = config::random; // By default random initialization
                     if (config::determinism)
 //                        random = utility::Random(walk_id / total_vertices);
@@ -865,9 +865,9 @@ cout << "**2" << endl;
 //                    types::State state  = model->initial_state(walk_id % total_vertices);
 //                    types::State state  = model->initial_state(affected_walks[index] % number_of_vertices());
 //					         auto state = model->initial_state(current_vertex_new_walk);
-cout << "**3" << endl;
+//cout << "**3" << endl;
                     auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
-cout << "**4" << endl;
+//cout << "**4" << endl;
 					// Insert all entries of the walk into the walk index
 					for (types::Position position = 0; position < config::walk_length; position++)
                     {
@@ -877,48 +877,60 @@ cout << "**4" << endl;
 ////							cout << "ZERO DEGREES!" << endl;
 //							break;
 //						}
-cout << "**5.1" << endl;
+//cout << "**5.1" << endl;
 						if (position < current_position)
 						{
-cout << "**5.2" << endl;
+//cout << "**5.2" << endl;
 							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
-cout << "**5.3" << endl;
+//cout << "**5.3" << endl;
 							this->walk_index.update_fn(cur_vertex, [&](auto &set) {
 							  set.insert(affected_walks[index]);
 //							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
 							});
-cout << "**5.4" << endl;
+//cout << "**5.4" << endl;
 						}
 						else // position >= current_position
 						{
-cout << "**5.5" << endl;
+//cout << "**5.5" << endl;
 							this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
 							{
 							  vector[position] = state.first;
 							});
-cout << "**5.6" << endl;
+//cout << "**5.6" << endl;
 							this->walk_index.update_fn(state.first, [&](auto& set)
 							{
 							  set.insert(affected_walks[index]);
 //							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << state.first << endl;
 							});
-cout << "**5.7" << endl;
+//cout << "**5.7" << endl;
+							// ----------------------------------------------------
+							// todo: check if this vertex has degree zero now. // -
+							if (graph[state.first].degrees == 0) // ---------------
+							{
+								cout << "node " << state.first << " has 0 degree now. Cannot continue walking." << endl;
+								break; // -----------------------------------------
+							} // --------------------------------------------------
+							// ----------------------------------------------------
+
 							if (!graph[state.first].samplers->contains(state.second))
 							{
 								graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
 							}
-cout << "**5.8" << endl;
+//cout << "**5.8" << endl;
 							// Deterministic walks or not?
 							if (config::determinism)
+							{
 								state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
 //								state = model->new_state(state, graph[state.first].neighbors[0]); // todo: do not use this one
+
+							}
 							else
 								state = graph[state.first].samplers->find(state.second).sample(state, model);
-cout << "**5.9" << endl;
+//cout << "**5.9" << endl;
 							number_sampled_vertices++;
 						}
                     }
-cout << "**5.10" << endl;
+//cout << "**5.10" << endl;
 //					for (types::Position position = 0/*current_position*/; position < config::walk_length; position++)
 //                    {
 //						if (position < current_position)
@@ -994,7 +1006,7 @@ cout << "**5.10" << endl;
 //                    }
                 });
 //cout << "6" << endl;
-cout << "707" << endl;
+//cout << "707" << endl;
 
             }
 
