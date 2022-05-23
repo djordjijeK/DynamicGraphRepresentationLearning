@@ -847,7 +847,7 @@ cout << "703" << endl;
                 {
                     auto current_position = rewalk_points.template find(affected_walks[index]);
 //                    auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
-
+cout << "**1" << endl;
 					// Delete all entries of the walk from the walk index
 					for (types::Position position = 0; position < config::walk_length; position++)
 					{
@@ -857,7 +857,7 @@ cout << "703" << endl;
 //							 cout << "erased wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
 						});
 					}
-
+cout << "**2" << endl;
                     auto random = config::random; // By default random initialization
                     if (config::determinism)
 //                        random = utility::Random(walk_id / total_vertices);
@@ -865,8 +865,9 @@ cout << "703" << endl;
 //                    types::State state  = model->initial_state(walk_id % total_vertices);
 //                    types::State state  = model->initial_state(affected_walks[index] % number_of_vertices());
 //					         auto state = model->initial_state(current_vertex_new_walk);
+cout << "**3" << endl;
                     auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
-
+cout << "**4" << endl;
 					// Insert all entries of the walk into the walk index
 					for (types::Position position = 0; position < config::walk_length; position++)
                     {
@@ -876,45 +877,48 @@ cout << "703" << endl;
 ////							cout << "ZERO DEGREES!" << endl;
 //							break;
 //						}
-
+cout << "**5.1" << endl;
 						if (position < current_position)
 						{
+cout << "**5.2" << endl;
 							auto cur_vertex = this->walk_storage.find(affected_walks[index])[position];
+cout << "**5.3" << endl;
 							this->walk_index.update_fn(cur_vertex, [&](auto &set) {
 							  set.insert(affected_walks[index]);
 //							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << cur_vertex << endl;
 							});
+cout << "**5.4" << endl;
 						}
 						else // position >= current_position
 						{
-
+cout << "**5.5" << endl;
 							this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
 							{
 							  vector[position] = state.first;
 							});
-
+cout << "**5.6" << endl;
 							this->walk_index.update_fn(state.first, [&](auto& set)
 							{
 							  set.insert(affected_walks[index]);
 //							  cout << "inserted wid-" << affected_walks[index] << " from entry nid-" << state.first << endl;
 							});
-
+cout << "**5.7" << endl;
 							if (!graph[state.first].samplers->contains(state.second))
 							{
 								graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
 							}
-
+cout << "**5.8" << endl;
 							// Deterministic walks or not?
 							if (config::determinism)
 								state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
 //								state = model->new_state(state, graph[state.first].neighbors[0]); // todo: do not use this one
 							else
 								state = graph[state.first].samplers->find(state.second).sample(state, model);
-
+cout << "**5.9" << endl;
 							number_sampled_vertices++;
 						}
                     }
-
+cout << "**5.10" << endl;
 //					for (types::Position position = 0/*current_position*/; position < config::walk_length; position++)
 //                    {
 //						if (position < current_position)
