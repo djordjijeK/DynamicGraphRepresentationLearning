@@ -17,7 +17,9 @@ auto Walking_insert_new_samples           = timer("WalkInsertTimeFor2Accs", fals
 //auto dj                          = timer("WalkDeleteJobTime", false);
 //auto walk_find_in_vertex_tree    = timer("FindInVertexTreeTime", false);
 //auto walk_find_next_tree         = timer("FindNextTime", false);
-//auto szudzik_hash                = timer("SzudzikTime", false);
+auto szudzik_hash_insert                = timer("SzudzikTimeInsert", false);
+auto szudzik_hash_delete                = timer("SzudzikTimeDelete", false);
+
 auto MAV_time                    = timer("MAVTime", false);
 // --- profile find next in range
 //auto fnir_tree_search            = timer("FNIR_TreeSearchTime", false);

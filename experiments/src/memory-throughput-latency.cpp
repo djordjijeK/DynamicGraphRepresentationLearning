@@ -137,7 +137,8 @@ void throughput(commandLine& command_line)
 //		dj.reset();
 //		walk_find_in_vertex_tree.reset();
 //		walk_find_next_tree.reset();
-//		szudzik_hash.reset();
+		szudzik_hash_insert.reset();
+		szudzik_hash_delete.reset();
 //		fnir_tree_search.reset();
 		MAV_time.reset();
 		MAV_min = 20000;
@@ -261,15 +262,19 @@ void throughput(commandLine& command_line)
 
 		cout << "(1) throughput: " << fixed << setprecision(8) << total_insert_walks_affected / (walk_update_time_on_insert.get_total() * 1.0) << endl;
 		cout << "(2) average latency: " << fixed << setprecision(8) << average_latency / (n_batches * 1.0) << endl;
-		cout << "FindPrev vertex in node2vec: " << FindPreviousVertexNode2Vec.get_total() << endl;
+//		cout << "FindPrev vertex in node2vec: " << FindPreviousVertexNode2Vec.get_total() << endl;
+//
+//		cout << "(11) SIMPLE SEARCH throughput: " << fixed << setprecision(8) << total_insert_walks_affected / ((walk_update_time_on_insert.get_total() - FindPreviousVertexNode2Vec.get_total() + FindNextNodeSimpleSearch.get_total()) * 1.0) << endl;
+////		cout << "(22) average latency: " << fixed << setprecision(8) << average_latency / (n_batches * 1.0) << endl;
+//		cout << "FindPrev SIMPLE in node2vec: " << FindNextNodeSimpleSearch.get_total() << endl;
+//
+//		cout << "(111) RANGE SEARCH throughput: " << fixed << setprecision(8) << total_insert_walks_affected / ((walk_update_time_on_insert.get_total() - FindPreviousVertexNode2Vec.get_total() + FindNextNodeRangeSearch.get_total()) * 1.0) << endl;
+////		cout << "(222) average latency: " << fixed << setprecision(8) << average_latency / (n_batches * 1.0) << endl;
+//		cout << "FindPrev vertex in node2vec: " << FindNextNodeRangeSearch.get_total() << endl;
 
-		cout << "(11) SIMPLE SEARCH throughput: " << fixed << setprecision(8) << total_insert_walks_affected / ((walk_update_time_on_insert.get_total() - FindPreviousVertexNode2Vec.get_total() + FindNextNodeSimpleSearch.get_total()) * 1.0) << endl;
-//		cout << "(22) average latency: " << fixed << setprecision(8) << average_latency / (n_batches * 1.0) << endl;
-		cout << "FindPrev SIMPLE in node2vec: " << FindNextNodeSimpleSearch.get_total() << endl;
-
-		cout << "(111) RANGE SEARCH throughput: " << fixed << setprecision(8) << total_insert_walks_affected / ((walk_update_time_on_insert.get_total() - FindPreviousVertexNode2Vec.get_total() + FindNextNodeRangeSearch.get_total()) * 1.0) << endl;
-//		cout << "(222) average latency: " << fixed << setprecision(8) << average_latency / (n_batches * 1.0) << endl;
-		cout << "FindPrev vertex in node2vec: " << FindNextNodeRangeSearch.get_total() << endl;
+		// MERGE function
+		std::cout << "szudzik   compression (insert): " << szudzik_hash_insert.get_total() << std::endl;
+		std::cout << "szudzik decompression (delete): " << szudzik_hash_delete.get_total() << std::endl;
 
 //		std::cout << "Average walk update latency = { ";
 //		for (int i = 0; i < n_batches; i++) {
