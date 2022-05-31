@@ -1040,8 +1040,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 					  if (graph[current_vertex_new_walk].degree == 0)
 					  {
+						  #pragma omp atomic
 						  szudzik_hash_insert.start();
 						  types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
+						  #pragma omp atomic
 						  szudzik_hash_insert.stop();
 
 						  if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
@@ -1133,8 +1135,10 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 							  if (graph[current_vertex_new_walk].degree == 0)
 							  {
+								  #pragma omp atomic
 								  szudzik_hash_insert.start();
 								  types::PairedTriplet hash = pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + 0, current_vertex_new_walk});
+								  #pragma omp atomic
 								  szudzik_hash_insert.stop();
 
 								  if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
@@ -1177,14 +1181,15 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 
 								  number_of_sampled_vertices++;
 								  //	                    ij_sampling.stop();
-
+													    #pragma omp atomic
 								  						szudzik_hash_insert.start();
 								  //                        ij_szudzik.start();
 								  types::PairedTriplet hash = (position != config::walk_length - 1) ?
 								                              pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, state.first}) : // new sampled next
 								                              pairings::Szudzik<types::Vertex>::pair({affected_walks[index] * config::walk_length + position, current_vertex_new_walk});
 								  //						ij_szudzik.stop();
-								  						szudzik_hash_insert.stop();
+														#pragma omp atomic
+								                        szudzik_hash_insert.stop();
 
 								  if (!inserts.contains(current_vertex_new_walk)) inserts.insert(current_vertex_new_walk, std::vector<types::PairedTriplet>());
 								  inserts.update_fn(current_vertex_new_walk, [&](auto& vector) {
@@ -1612,12 +1617,14 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 						// Define the triplets to delete vector for each walk-tree
 						wt->iter_elms(i, [&](auto enc_triplet)
 						{
+						  #pragma omp atomic
 						  szudzik_hash_delete.start();
 						  auto pair = pairings::Szudzik<types::Vertex>::unpair(enc_triplet);
 
 						  auto walk_id  = pair.first / config::walk_length;
 						  auto position = pair.first - (walk_id * config::walk_length);
 						  auto next_vertex   = pair.second;
+						  #pragma omp atomic
 						  szudzik_hash_delete.stop();
 
 			//				cout << enc_triplet << " ";

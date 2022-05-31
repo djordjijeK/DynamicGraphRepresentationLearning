@@ -5,9 +5,11 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <atomic>
 
 struct timer {
-  double total_time;
+  double total_time; // added
+//  std::atomic<double> total_time; // added
   double last_time;
   bool on;
   std::string name;
