@@ -4,7 +4,7 @@
 clean_build=True
 
 # execution options
-walk_model="node2vec"             # deepwalk | node2vec
+walk_model="deepwalk"             # deepwalk | node2vec
 paramP=0.5                        # node2vec paramP
 paramQ=2.0                        # node2vec paramQ
 sampler_init_strategy="weight"    # random | burnin | weight
@@ -13,10 +13,10 @@ declare -a walks_per_node=(10)
 declare -a walk_length=(80)
 range_search="true"               # range search mode
 determinism="true"                # determinism
-num_of_batches=1                 # numbers of batches
-half_of_batch_size=3500           # batch_size / 2
+num_of_batches=10                 # numbers of batches
+half_of_batch_size=5000           # batch_size / 2
 merge_wu_exec_mode="parallel"     # parallel | serial
-merge_frequency=1                 # every how many batches to merge
+merge_frequency=10                 # every how many batches to merge
 
 # create the data dir
 #mkdir -p data/latency_throughput/

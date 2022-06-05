@@ -275,6 +275,11 @@ void throughput(commandLine& command_line)
 		// MERGE function
 		std::cout << "szudzik   compression (insert): " << szudzik_hash_insert.get_total() << std::endl;
 		std::cout << "szudzik decompression (delete): " << szudzik_hash_delete.get_total() << std::endl;
+		std::cout << "total time for the parallel loop that Szudzik_del is: " << merge_calc_triplets_to_delete.get_total() << std::endl;
+		std::cout << "total BWUP is: " << walk_update_time_on_insert.get_total() << std::endl;
+		std::cout << "total Szudzik(ins) PERC is: " << (szudzik_hash_insert.get_total() / walk_update_time_on_insert.get_total())*100 << std::endl;
+		std::cout << "total Szudzik(ins+del) PERC is: " << ((szudzik_hash_insert.get_total()+szudzik_hash_delete.get_total()) / walk_update_time_on_insert.get_total())*100 << std::endl;
+
 
 //		std::cout << "Average walk update latency = { ";
 //		for (int i = 0; i < n_batches; i++) {
