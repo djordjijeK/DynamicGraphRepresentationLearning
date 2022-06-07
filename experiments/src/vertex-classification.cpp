@@ -37,6 +37,181 @@ void create_edge_stream(commandLine& command_line, std::vector<std::pair<Edge*, 
     }
 }
 
+void vertex_classification_periodic(commandLine& command_line, const std::vector<std::pair<Edge*, uintV>>& stream, unsigned int k)
+{
+	size_t walks_per_vertex  = command_line.getOptionLongValue("-w", config::walks_per_vertex);
+	size_t length_of_walks   = command_line.getOptionLongValue("-l", config::walk_length);
+	string model             = string(command_line.getOptionValue("-model", "deepwalk"));
+	double paramP            = command_line.getOptionDoubleValue("-paramP", config::paramP);
+	double paramQ            = command_line.getOptionDoubleValue("-paramQ", config::paramQ);
+	string init_strategy     = string(command_line.getOptionValue("-init", "random"));
+	size_t vector_dimension  = command_line.getOptionLongValue("-d", 128);
+	size_t learning_strategy = command_line.getOptionLongValue("-le", 2);
+
+	config::walks_per_vertex = walks_per_vertex;
+	config::walk_length      = length_of_walks;
+
+	std::cout << "Periodic Learning" << std::endl;
+	std::cout << "Walks per vertex: " << (int) config::walks_per_vertex << std::endl;
+	std::cout << "Walk length: " << (int) config::walk_length << std::endl;
+	std::cout << "Vector dimension: " << vector_dimension << std::endl;
+	std::cout << "Learning strategy: ";
+
+	if(learning_strategy == 1)
+	{
+		std::cout << "ONLINE" << std::endl;
+	}
+	else if(learning_strategy == 2)
+	{
+		std::cout << "MINI-BATCH" << std::endl;
+	}
+	else
+	{
+		std::cerr << "Unrecognized learning strategy! Abort" << std::endl;
+		std::exit(1);
+	}
+
+	if (model == "deepwalk")
+	{
+		config::random_walk_model = types::RandomWalkModelType::DEEPWALK;
+
+		std::cout << "Walking model: DEEPWALK" << std::endl;
+	}
+	else if (model == "node2vec")
+	{
+		config::random_walk_model = types::RandomWalkModelType::NODE2VEC;
+		config::paramP = paramP;
+		config::paramQ = paramQ;
+
+		std::cout << "Walking model: NODE2VEC | Params (p,q) = " << "(" << config::paramP << "," << config::paramQ << ")" << std::endl;
+	}
+	else
+	{
+		std::cerr << "Unrecognized walking model! Abort" << std::endl;
+		std::exit(1);
+	}
+
+	if (init_strategy == "burnin")
+	{
+		config::sampler_init_strategy = types::SamplerInitStartegy::BURNIN;
+
+		std::cout << "Sampler strategy: BURNIN" << std::endl;
+	}
+	else if (init_strategy == "weight")
+	{
+		config::sampler_init_strategy = types::SamplerInitStartegy::WEIGHT;
+
+		std::cout << "Sampler strategy: WEIGHT" << std::endl;
+	}
+	else if (init_strategy == "random")
+	{
+		config::sampler_init_strategy = types::SamplerInitStartegy::RANDOM;
+
+		std::cout << "Sampler strategy: RANDOM" << std::endl;
+	}
+	else
+	{
+		std::cerr << "Unrecognized sampler init strategy" << std::endl;
+		std::exit(1);
+	}
+
+	string fname             = string(command_line.getOptionValue("-f", default_file_name));
+	bool mmap                = command_line.getOption("-m");
+	bool is_symmetric        = command_line.getOption("-s");
+
+	size_t n; size_t m;
+	uintE* offsets; uintV* edges;
+	stringstream ss; ss << fname << ".adj";
+
+	std::tie(n, m, offsets, edges) = read_unweighted_graph(ss.str().c_str(), is_symmetric, mmap);
+	pbbs::free_array(offsets);
+	pbbs::free_array(edges);
+
+	timer periodic_timer("PeriodicTimer", false);
+
+	/******************************************************************************************************************/
+
+	// 1. load all vertices in isolation (every vertex has a degree of 0)
+	periodic_timer.start();
+	dygrl::WharfMH WharfMH = dygrl::WharfMH(n, m);
+	WharfMH.generate_initial_random_walks();
+	periodic_timer.stop();
+
+	// 2. train initial embeddings
+	std::cout << "Learning initial embeddings" << std::endl;
+	stringstream command; std::ofstream file("walks.txt");
+
+	periodic_timer.start();
+	for (int i = 0; i < n * config::walks_per_vertex; i++)
+	{
+		command << WharfMH.walk(i) << std::endl;
+	}
+
+	file << command.str(); file.close(); command.str(std::string());
+	command << "yskip --thread-num="
+	        << num_workers()
+	        << " -d " << vector_dimension
+	        << " -l " << learning_strategy
+	        << " walks.txt model;";
+
+	system(command.str().c_str());
+	periodic_timer.stop();
+
+	command.str(std::string());
+	command << "perl to_word2vec.pl < model > model.w2v; python3 vertex-classification.py";
+	system(command.str().c_str());
+
+	unsigned int inc = 0;
+	// 3. train embeddings incrementally
+	command.str(std::string());
+	for (auto& edge_batch : stream)
+	{
+		if (inc == k)
+		{
+			inc = 0;
+			// Now, rewalk the walks and retrain the embeddings.
+			periodic_timer.start();
+			file.open("walks.txt");
+			auto walks = WharfMH.insert_edges_batch(edge_batch.second, edge_batch.first, false, true);
+
+			for (auto& walk_id : walks)
+			{
+				command << WharfMH.walk(walk_id) << std::endl;
+			}
+
+			file << command.str(); file.close(); command.str(std::string());
+
+			command << "yskip --thread-num="
+			        << num_workers()
+			        << " --initial-model=model"
+			        << " -d " << vector_dimension
+			        << " -l " << learning_strategy
+			        << " walks.txt model;";
+			system(command.str().c_str());
+			periodic_timer.stop();
+		}
+		else
+		{
+			inc++;
+			// Now, it is time to skip rewalking and retraining embeddings. Use the latest model produced for conducting the vertex classification
+			// Note that the graph should actually be updated normally.
+			periodic_timer.start();
+			size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
+			WharfMH.insert_edges_batch(edge_batch.second, edge_batch.first, false, true, graph_size_pow2, false);
+			periodic_timer.stop();
+		}
+
+		// The following command does the actual vertex classification
+		command.str(std::string());
+		command << "perl to_word2vec.pl < model > model.w2v; python3 vertex-classification.py";
+		system(command.str().c_str());
+		command.str(std::string());
+	}
+
+	periodic_timer.reportTotal("Total");
+	WharfMH.destroy();
+}
+
 void vertex_classification_incremental(commandLine& command_line, const std::vector<std::pair<Edge*, uintV>>& stream)
 {
     size_t walks_per_vertex  = command_line.getOptionLongValue("-w", config::walks_per_vertex);
@@ -365,6 +540,14 @@ int main(int argc, char** argv)
     commandLine command_line(argc, argv, "");
 
     create_edge_stream(command_line, stream);
-    vertex_classification_incremental(command_line, stream);
+	// Static
     vertex_classification_static(command_line, stream);
+	// Incremental
+	vertex_classification_incremental(command_line, stream);
+	// Periodic k = 3
+	vertex_classification_periodic(command_line, stream, 3);  // retrain every 3 snapshots
+	// Periodic k = 5
+	vertex_classification_periodic(command_line, stream, 5);  // retrain every 5 snapshots
+	// Periodic k = 10
+	vertex_classification_periodic(command_line, stream, 10); // retrain every 10 snapshots
 }
