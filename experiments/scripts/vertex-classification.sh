@@ -5,18 +5,18 @@ clean_build=False                    # removes build folder after the execution
 
 # execution options
 walk_model="deepwalk"                # deepwalk | node2vec
-paramP=4.0                           # node2vec's paramP
+paramP=3.0                           # node2vec's paramP
 paramQ=1.0                           # node2vec's paramQ
 sampler_init_strategy="weight"       # random | weight | burnin
 vector_dimension=128                 # size of learned vectors
-learning_strategy=1                  # 1: online | 2: mini-batch (default)
-edge_parition_size=5000              # size of the edges parition
-declare -a graphs=("flickr-graph")     # array of graphs
+learning_strategy=2                  # 1: online | 2: mini-batch (default)
+edge_parition_size=250              # size of the edges parition
+declare -a graphs=("cora-graph")     # array of graphs
 declare -a walks_per_vertex=(10)     # walks per vertex to generate
 declare -a walk_length=(80)          # length of one walk
 
 # 1. convert graphs in adjacency graph format if necessary
-for graph in "${graphs[@]}"; do
+for graph in "${graphs[@]}"; do #skata sta moutra mas skata
   FILE=../data/"${graph}".adj
   if test -f "$FILE"; then
       echo 'Skipping conversion of a graph' "${graph[@]}" 'to adjacency graph format'
