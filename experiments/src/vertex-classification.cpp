@@ -489,11 +489,17 @@ void vertex_classification_periodic(commandLine& command_line, const std::vector
 	system(command.str().c_str());
 
 	unsigned int inc = 0;
+	unsigned int batch_num = 0;
 	// 3. train embeddings incrementally
 	command.str(std::string());
 	for (auto& edge_batch : stream)
 	{
-		if (inc >= k)
+		// Increase the counter
+		batch_num++;
+		inc++;
+		cout << "Processing batch #" << batch_num << endl;
+
+		if (inc == k)
 		{
 			// Do rewalk and retrain embeddings
 			inc = 0;
@@ -518,6 +524,7 @@ void vertex_classification_periodic(commandLine& command_line, const std::vector
 
 			system(command.str().c_str());
 			periodic_timer.stop();
+cout << "11" << endl;
 		}
 		else
 		{
@@ -525,18 +532,18 @@ void vertex_classification_periodic(commandLine& command_line, const std::vector
 			// ----
 			periodic_timer.start();
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
-			WharfMH.insert_edges_batch(edge_batch.second, edge_batch.first, false, true, graph_size_pow2, false);
+			WharfMH.insert_edges_batch(edge_batch.second, edge_batch.first, false, true, std::numeric_limits<size_t>::max(), false);
 			periodic_timer.stop();
+cout << "22" << endl;
 		}
 
+cout << "Started the classification for batch #" << batch_num << endl;
 		// Do the vertex classification either way
 		command.str(std::string());
 		command << "perl to_word2vec.pl < model > model.w2v; python3 vertex-classification.py";
 		system(command.str().c_str());
 		command.str(std::string());
-
-		// Increase the counter
-		inc++;
+cout << "Completed the classification for batch #" << batch_num << endl;
 	}
 
 	periodic_timer.reportTotal("Total");
@@ -555,8 +562,8 @@ int main(int argc, char** argv)
 //    vertex_classification_static(command_line, stream);
 //	vertex_classification_incremental(command_line, stream);
 	vertex_classification_periodic(command_line, stream, 3);
-//	vertex_classification_periodic(command_line, stream, 5);
-//	vertex_classification_periodic(command_line, stream, 10);
+	vertex_classification_periodic(command_line, stream, 5);
+	vertex_classification_periodic(command_line, stream, 10);
 }
 
 
