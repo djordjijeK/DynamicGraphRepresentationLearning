@@ -559,8 +559,8 @@ int main(int argc, char** argv)
     commandLine command_line(argc, argv, "");
 
     create_edge_stream(command_line, stream);
-//    vertex_classification_static(command_line, stream);
-//	vertex_classification_incremental(command_line, stream);
+    vertex_classification_static(command_line, stream);
+	vertex_classification_incremental(command_line, stream);
 	vertex_classification_periodic(command_line, stream, 3);
 	vertex_classification_periodic(command_line, stream, 5);
 	vertex_classification_periodic(command_line, stream, 10);
