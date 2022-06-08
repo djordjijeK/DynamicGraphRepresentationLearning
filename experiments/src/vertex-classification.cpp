@@ -377,7 +377,7 @@ void vertex_classification_periodic(commandLine& command_line, const std::vector
 	config::walks_per_vertex = walks_per_vertex;
 	config::walk_length      = length_of_walks;
 
-	std::cout << "\nPeriodic Learning" << std::endl;
+	std::cout << "\nPeriodic Learning (k=" << k << ")" << std::endl;
 	std::cout << "Walks per vertex: " << (int) config::walks_per_vertex << std::endl;
 	std::cout << "Walk length: " << (int) config::walk_length << std::endl;
 	std::cout << "Vector dimension: " << vector_dimension << std::endl;
@@ -493,12 +493,12 @@ void vertex_classification_periodic(commandLine& command_line, const std::vector
 	command.str(std::string());
 	for (auto& edge_batch : stream)
 	{
-		periodic_timer.start();
-		if (inc == k)
+		if (inc >= k)
 		{
 			// Do rewalk and retrain embeddings
 			inc = 0;
 			// -----
+			periodic_timer.start();
 			file.open("walks.txt");
 			auto walks = WharfMH.insert_edges_batch(edge_batch.second, edge_batch.first, false, true);
 
@@ -517,22 +517,26 @@ void vertex_classification_periodic(commandLine& command_line, const std::vector
 			        << " walks.txt model;";
 
 			system(command.str().c_str());
+			periodic_timer.stop();
 		}
 		else
 		{
 			// Just apply the graph updates. No rewalking or retraining whatsoever
-			inc++;
 			// ----
+			periodic_timer.start();
 			size_t graph_size_pow2 = 1 << (pbbs::log2_up(n) - 1);
 			WharfMH.insert_edges_batch(edge_batch.second, edge_batch.first, false, true, graph_size_pow2, false);
+			periodic_timer.stop();
 		}
-		periodic_timer.stop();
 
 		// Do the vertex classification either way
 		command.str(std::string());
 		command << "perl to_word2vec.pl < model > model.w2v; python3 vertex-classification.py";
 		system(command.str().c_str());
 		command.str(std::string());
+
+		// Increase the counter
+		inc++;
 	}
 
 	periodic_timer.reportTotal("Total");
@@ -548,11 +552,11 @@ int main(int argc, char** argv)
     commandLine command_line(argc, argv, "");
 
     create_edge_stream(command_line, stream);
-    vertex_classification_static(command_line, stream);
-	vertex_classification_incremental(command_line, stream);
+//    vertex_classification_static(command_line, stream);
+//	vertex_classification_incremental(command_line, stream);
 	vertex_classification_periodic(command_line, stream, 3);
-	vertex_classification_periodic(command_line, stream, 5);
-	vertex_classification_periodic(command_line, stream, 10);
+//	vertex_classification_periodic(command_line, stream, 5);
+//	vertex_classification_periodic(command_line, stream, 10);
 }
 
 
