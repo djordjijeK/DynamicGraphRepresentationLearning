@@ -221,6 +221,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 auto graph            = this->flatten_graph();
                 auto total_vertices = this->number_of_vertices();
                 auto walks          = total_vertices * config::walks_per_vertex;
+				cout << "GENERATING " << walks << " random walks." << endl;
 //                auto cuckoo         = libcuckoo::cuckoohash_map<types::Vertex, std::vector<types::Vertex>>(total_vertices);
 
                 using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
