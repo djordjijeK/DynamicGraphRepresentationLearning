@@ -17,7 +17,10 @@ class WharfTest : public testing::Test
         bool is_symmetric = true;
 //        std::string default_file_path = "data/email-graph";
 //        std::string default_file_path = "data/flickr-graph";
-        std::string default_file_path = "data/aspen-paper-graph";
+//        std::string default_file_path = "data/aspen-paper-graph";
+        std::string default_file_path = "/home/serafeim/Desktop/g2-r1w6-graph";
+//        std::string default_file_path = "/home/serafeim/Desktop/g2-r1w6-times20-graph";
+//        std::string default_file_path = "/home/serafeim/Desktop/g2-r1w6-random1M-graph";
 };
 
 void WharfTest::SetUp()
@@ -120,23 +123,24 @@ TEST_F(WharfTest, MalinDestroyIndex)
 {
     dygrl::Wharf malin = dygrl::Wharf(total_vertices, total_edges, offsets, edges);
     malin.generate_initial_random_walks();
+	malin.memory_footprint();
 
-    malin.print_memory_pool_stats();
-    malin.destroy_index();
-    malin.print_memory_pool_stats();
-
-    // assert vertices and edges
-    ASSERT_EQ(malin.number_of_vertices(), total_vertices);
-    ASSERT_EQ(malin.number_of_edges(), total_edges);
-
-    // construct a flat snapshot of a graph
-    auto flat_snapshot = malin.flatten_vertex_tree();
-
-    parallel_for(0, total_vertices, [&] (long i)
-    {
-//        ASSERT_EQ(flat_snapshot[i].compressed_walks.size(), 0); // todo: removed it
-        ASSERT_EQ(flat_snapshot[i].sampler_manager->size(), 0);
-    });
+//    malin.print_memory_pool_stats();
+//    malin.destroy_index();
+//    malin.print_memory_pool_stats();
+//
+//    // assert vertices and edges
+//    ASSERT_EQ(malin.number_of_vertices(), total_vertices);
+//    ASSERT_EQ(malin.number_of_edges(), total_edges);
+//
+//    // construct a flat snapshot of a graph
+//    auto flat_snapshot = malin.flatten_vertex_tree();
+//
+//    parallel_for(0, total_vertices, [&] (long i)
+//    {
+////        ASSERT_EQ(flat_snapshot[i].compressed_walks.size(), 0); // todo: removed it
+//        ASSERT_EQ(flat_snapshot[i].sampler_manager->size(), 0);
+//    });
 }
 
 TEST_F(WharfTest, InsertBatchOfEdges)

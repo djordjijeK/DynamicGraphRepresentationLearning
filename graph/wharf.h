@@ -13,12 +13,34 @@
 #include <models/deepwalk.h>
 #include <models/node2vec.h>
 #include <set>
+#include <random>
+#include <vector>
 //#include <tbb/concurrent_unordered_set.h>
 //#include <ppl.h>
 //#include <cds/container/cuckoo_map.h>
 
 namespace dynamic_graph_representation_learning_with_metropolis_hastings
 {
+    // Used in random sampling without replacement
+    template<typename I>
+	class boxed_iterator {
+	    I i;
+
+	public:
+	    typedef I difference_type;
+	    typedef I value_type;
+	    typedef I pointer;
+	    typedef I reference;
+	    typedef std::random_access_iterator_tag iterator_category;
+
+	    boxed_iterator(I i) : i{i} {}
+
+	    bool operator==(boxed_iterator<I> &other) { return i == other.i; }
+	    I operator-(boxed_iterator<I> &other) { return i - other.i; }
+	    I operator++() { return i++; }
+	    I operator*() { return i; }
+	};
+
     /**
      * @brief Malin represents a structure that stores a graph as an augmented parallel balanced binary tree.
      * Keys in this tree are graph vertices and values are compressed edges, compressed walks, and metropolis hastings samplers.
@@ -264,6 +286,31 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 using VertexStruct  = std::pair<types::Vertex, VertexEntry>;
                 auto vertices       = pbbs::sequence<VertexStruct>(total_vertices);
 
+				// ---
+				// Generate a set of random integers distributed from [0,1M) and from [0,5M)
+	            std::vector<int> result;
+	            auto rng = std::mt19937{std::random_device{}()};
+
+	            // sample five values without replacement from [0, 1M]
+	            std::sample(
+		            boxed_iterator{0}, boxed_iterator{5000000},
+		            std::back_inserter(result), 262097, rng);
+
+//	            for (auto i : result) {
+//		            std::cout << i << ' ';
+//	            }
+
+//				exit(666);
+
+				// Copy everything to the cuckoo hashmap
+				auto mappingID2ArtID = libcuckoo::cuckoohash_map<types::Vertex, types::Vertex>(total_vertices);
+	            for (auto i = 0; i < result.size(); i++)
+				{
+		            mappingID2ArtID.insert(i, result[i]);
+	                cout << i << " -- " << mappingID2ArtID.find(i) << endl;
+				}
+				// ---
+
                 RandomWalkModel* model;
                 switch (config::random_walk_model)
                 {
@@ -322,8 +369,8 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                             cuckoo.insert(state.first, std::vector<types::Vertex>());
 
                         types::PairedTriplet hash = (position != config::walk_length - 1) ?
-                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, new_state.first}) :
-                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, state.first}); // assign the current as next if EOW
+                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, mappingID2ArtID.find(new_state.first) /*new_state.first*/}) : // todo: the x20 variant
+                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position, mappingID2ArtID.find(state.first) /*state.first*/}); // assign the current as next if EOW
 //                                pairings::Szudzik<types::Vertex>::pair({walk_id * config::walk_length + position,std::numeric_limits<uint32_t>::max() - 1});
 
                         cuckoo.update_fn(state.first, [&](auto& vector) {

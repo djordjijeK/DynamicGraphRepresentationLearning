@@ -2,6 +2,8 @@
 cmake_minimum_required(VERSION 3.13)
 project(dynamic_graph_representation_learning_with_metropolis_hastings)
 
+#set (CMAKE_CXX_STANDARD 20)
+
 # libraries
 include_directories(libs/libcuckoo)
 include_directories(libs/compressed_trees)

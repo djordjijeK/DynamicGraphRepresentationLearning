@@ -106,6 +106,10 @@ void throughput(commandLine& command_line)
 	initial_walks_from_scratch_timer.stop();
 	cout << "Total time to generate the walk corpus from scratch: " << initial_walks_from_scratch_timer.get_total() << endl;
 
+	malin.memory_footprint();
+
+	exit(666);
+
 	int n_batches = num_of_batches; // todo: how many batches per batch size?
 
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
