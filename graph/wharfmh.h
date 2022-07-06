@@ -607,6 +607,191 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                 return rewalk_points.size();
             }
 
+
+
+
+
+
+
+
+			            /**
+            * @brief Inserts a batch of edges in the graph.
+            *
+            * @param m - size of the batch
+            * @param edges - atch of edges to insert
+            * @param sorted - sort the edges in the batch
+            * @param remove_dups - removes duplicate edges in the batch
+            * @param nn
+            * @param apply_walk_updates - decides if walk updates will be executed
+            */
+            int insert_edges_batch_NO_INDEX(size_t m,
+											std::tuple<uintV, uintV>* edges,
+											int batch_num,
+											bool sorted = false,
+											bool remove_dups = false,
+											size_t nn = std::numeric_limits<size_t>::max(),
+											bool apply_walk_updates = true, bool run_seq = false)
+            {
+                #ifdef WHARFMH_TIMER
+                    timer graph_update_time("WharfMH::InsertEdgesBatch::GraphUpdateTime");
+                    timer walk_update_time("WharfMH::InsertEdgesBatch::WalkUpdateTime");
+                #endif
+
+                auto fl = run_seq ? pbbs::fl_sequential : pbbs::no_flag;
+
+                // 1. Set up
+                using Edge = std::tuple<uintV, uintV>;
+
+                auto edges_original = pbbs::make_range(edges, edges + m);
+                Edge* edges_deduped = nullptr;
+
+                // 2. Sort the edges in the batch (by source)
+                if (!sorted)
+                {
+                    WharfMH::sort_edge_batch_by_source(edges, m, nn);
+                }
+
+                // 3. Remove duplicate edges
+                if (remove_dups)
+                {
+                    // true when no duplicated edge, false otherwise
+                    auto bool_seq = pbbs::delayed_seq<bool>(edges_original.size(), [&] (size_t i)
+                    {
+                        if(get<0>(edges_original[i]) == get<1>(edges_original[i])) return false;
+                        return (i == 0 || edges_original[i] != edges_original[i-1]);
+                    });
+
+                    auto E = pbbs::pack(edges_original, bool_seq, fl); // creates a new pbbs::sequence
+                    auto m_initial = m;                                // Initial number of generated edges
+                    m = E.size();                                      // the size is not the same
+                    auto m_final = m;                                  // Final number of edges in batch after duplicate removal
+                    edges_deduped = E.to_array();                      // E afterwards is empty and nullptr
+                }
+
+                auto E = (edges_deduped) ? pbbs::make_range(edges_deduped, edges_deduped + m) : edges_original;
+
+                // 4. Pack the starts vertices of edges
+                auto start_im = pbbs::delayed_seq<size_t>(m, [&] (size_t i)
+                {
+                    return (i == 0 || (get<0>(E[i]) != get<0>(E[i-1])));
+                });
+
+                auto starts = pbbs::pack_index<size_t>(start_im, fl);
+                size_t num_starts = starts.size();
+
+                // 5. Build new wharf vertices
+                using KV = std::pair<uintV, VertexEntry>;
+
+                // decides to store whatf vertices on stack or heap
+                constexpr const size_t stack_size = 20;
+                KV kv_stack[stack_size];
+                KV* new_verts = kv_stack;
+                if (num_starts > stack_size)
+                {
+                    new_verts = pbbs::new_array<KV>(num_starts);
+                }
+
+                // pack the edges in the form: vertex_id - array of new edges
+                parallel_for(0, num_starts, [&] (size_t i) {
+                    size_t off = starts[i];
+                    size_t deg = ((i == (num_starts-1)) ? m : starts[i+1]) - off;
+                    uintV v = get<0>(E[starts[i]]);
+
+                    auto S = pbbs::delayed_seq<uintV>(deg, [&] (size_t i) { return get<1>(E[off + i]); });
+
+                    new_verts[i] = make_pair(v, VertexEntry(types::CompressedEdges(S, v, fl), new dygrl::SamplerManager(0)));
+                });
+
+                types::MapOfChanges rewalk_points = types::MapOfChanges();
+                auto replace = [&, run_seq] (const intV& v, const VertexEntry& a, const VertexEntry& b)
+                {
+                    auto union_edge_tree = tree_plus::uniont(b.compressed_edges, a.compressed_edges, v, run_seq);
+
+                    lists::deallocate(a.compressed_edges.plus);
+                    tree_plus::Tree_GC::decrement_recursive(a.compressed_edges.root, run_seq);
+
+                    lists::deallocate(b.compressed_edges.plus);
+                    tree_plus::Tree_GC::decrement_recursive(b.compressed_edges.root, run_seq);
+
+                    for(auto& element : this->walk_storage.lock_table())
+                    {
+                        for (types::Position position = 0; position < element.second.size(); position++)
+                        {
+                            if (element.second[position] != v) continue;
+
+                            if (!rewalk_points.contains(element.first))
+                            {
+                                rewalk_points.insert(element.first, position);
+                            }
+                            else
+                            {
+                                types::Position current_min_pos = rewalk_points.find(element.first);
+
+                                if (current_min_pos > position)
+                                {
+                                    rewalk_points.update(element.first, position);
+                                }
+                            }
+                        }
+                    }
+
+                    return VertexEntry(union_edge_tree, a.sampler_manager);
+                };
+
+                #ifdef WHARFMH_TIMER
+                    graph_update_time.start();
+                #endif
+
+                this->graph_tree = Graph::Tree::multi_insert_sorted_with_values(this->graph_tree.root, new_verts, num_starts, replace, true, run_seq);
+
+                #ifdef WHARFMH_TIMER
+                    graph_update_time.stop();
+                #endif
+
+                #ifdef WHARFMH_TIMER
+                    walk_update_time.start();
+                #endif
+
+//                if (apply_walk_updates) this->update_walks(rewalk_points);
+
+                #ifdef WHARFMH_TIMER
+                    walk_update_time.stop();
+                #endif
+
+                // 6. Deallocate memory
+                if (num_starts > stack_size) pbbs::free_array(new_verts);
+                if (edges_deduped)           pbbs::free_array(edges_deduped);
+
+                #ifdef WHARFMH_DEBUG
+                    std::cout << "Rewalk points (MapOfChanges): " << rewalk_points.size() << std::endl;
+
+                    for(auto& item : rewalk_points.lock_table())
+                    {
+                        std::cout << "Walk ID: " << item.first
+                                  << " Position: "
+                                  << (int) item.second
+                                  << std::endl;
+                    }
+                #endif
+
+                #ifdef WHARFMH_TIMER
+                    graph_update_time.reportTotal("time(seconds)");
+                    walk_update_time.reportTotal("time(seconds)");
+                #endif
+
+                return rewalk_points.size();
+            }
+
+
+
+
+
+
+
+
+
+
+
             /**
             * @brief Deletes a batch of edges from the graph.
             *

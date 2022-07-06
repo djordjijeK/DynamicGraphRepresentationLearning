@@ -104,7 +104,7 @@ void throughput(commandLine& command_line)
 	// TODO: Why incorrect numbers when MALIN_DEBUG is off?
 
 	auto batch_sizes = pbbs::sequence<size_t>(1);
-	batch_sizes[0] = 500; //5;
+	batch_sizes[0] = 5000; //5;
 //	batch_sizes[1] = 50;
 //	batch_sizes[2] = 500;
 //	batch_sizes[3] = 5000;
@@ -178,7 +178,7 @@ void throughput(commandLine& command_line)
 
 //cout << "1" << endl;
 			insert_timer.start();
-			auto x = WharfMH.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
+			auto x = WharfMH.insert_edges_batch_NO_INDEX(edges.second, edges.first, b+1, false, true, graph_size_pow2); // pass the batch number as well
 			insert_timer.stop();
 //cout << "10" << endl;
 
@@ -192,7 +192,7 @@ void throughput(commandLine& command_line)
 			latency[b] = latency_insert[b];
 
 			// Delete the edges only
-			WharfMH.insert_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
+			WharfMH.delete_edges_batch(edges.second, edges.first, b+1, false, true, graph_size_pow2, false);
 
 			// free edges
 			pbbs::free_array(edges.first);
