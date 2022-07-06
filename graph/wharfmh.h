@@ -752,7 +752,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_update_time.start();
                 #endif
 
-                if (apply_walk_updates) this->update_walks(rewalk_points);
+                if (apply_walk_updates) this->update_walks_NO_INDEX(rewalk_points);
 
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
@@ -1194,6 +1194,80 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
 //cout << "6" << endl;
 //cout << "707" << endl;
 
+            }
+
+
+
+			void update_walks_NO_INDEX(types::MapOfChanges& rewalk_points)
+            {
+                auto affected_walks = pbbs::sequence<types::WalkID>(rewalk_points.size());
+                uintV index = 0;
+
+                for(auto& entry : rewalk_points.lock_table())
+                {
+                    affected_walks[index++] = entry.first;
+                }
+
+                auto graph = this->flatten_graph();
+                RandomWalkModel* model;
+
+                switch (config::random_walk_model)
+                {
+                    case types::DEEPWALK:
+                        model = new DeepWalk(&graph);
+                        break;
+                    case types::NODE2VEC:
+                        model = new Node2Vec(&graph, config::paramP, config::paramQ);
+                        break;
+                    default:
+                        std::cerr << "Unrecognized random walking model" << std::endl;
+                        std::exit(1);
+                }
+
+                parallel_for(0, affected_walks.size(), [&](auto index)
+                {
+                    auto current_position = rewalk_points.template find(affected_walks[index]);
+//                    auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
+
+					// ---
+		            auto random = config::random; // By default random initialization
+		            if (config::determinism)
+			            random = utility::Random(affected_walks[index] / number_of_vertices());
+					auto state = model->initial_state(this->walk_storage.template find(affected_walks[index])[current_position]);
+					// ---
+
+                    for (types::Position position = current_position; position < config::walk_length; position++)
+                    {
+                        this->walk_storage.update_fn(affected_walks[index], [&](auto& vector)
+                        {
+                            vector[position] = state.first;
+                        });
+
+                        if (!graph[state.first].samplers->contains(state.second))
+                        {
+                            graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
+                        }
+
+//                        state = graph[state.first].samplers->find(state.second).sample(state, model);
+
+	                    if (graph[state.first].degrees == 0) // ---------------
+	                    { // todo: do not print something here
+		                    break; // -----------------------------------------
+	                    } // --------------------------------------------------
+
+	                    if (!graph[state.first].samplers->contains(state.second))
+	                    {
+		                    graph[state.first].samplers->insert(state.second, MetropolisHastingsSampler(state, model));
+	                    }
+
+	                    // Deterministic walks or not?
+	                    if (config::determinism)
+		                    state = model->new_state(state, graph[state.first].neighbors[random.irand(graph[state.first].degrees)]);
+	                    else
+		                    state = graph[state.first].samplers->find(state.second).sample(state, model);
+	                    number_sampled_vertices++;
+                    }
+                });
             }
 
 		/**
