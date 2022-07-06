@@ -752,7 +752,7 @@ namespace dynamic_graph_representation_learning_with_metropolis_hastings
                     walk_update_time.start();
                 #endif
 
-//                if (apply_walk_updates) this->update_walks(rewalk_points);
+                if (apply_walk_updates) this->update_walks(rewalk_points);
 
                 #ifdef WHARFMH_TIMER
                     walk_update_time.stop();
